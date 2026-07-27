@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronDown, Download01 } from '@untitledui/icons';
-import posthog from 'posthog-js';
 import { Button } from '@/components/base/buttons/button';
 import { Dropdown } from '@/components/base/dropdown/dropdown';
 import { RouteHelper } from '@/libs/routes';
@@ -59,12 +58,6 @@ export function ArticleDownloadButtons({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    posthog.capture('article_downloaded', {
-      project_id: projectId,
-      prompt_id: promptId,
-      prompt_article_id: outlineId,
-      format: 'markdown',
-    });
   };
 
   const htmlDownloadUrl = RouteHelper.Api.Project.getPromptArticleBodyDownloadHtml(
@@ -83,7 +76,7 @@ export function ArticleDownloadButtons({
     outlineId
   );
 
-  // The server routes fire their own PostHog event, so no client capture here.
+
   // Using location.assign rather than window.open avoids opening a new tab
   // for a Content-Disposition: attachment response.
   const handleDownloadHtml = () => window.location.assign(htmlDownloadUrl);

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 // @ts-expect-error html-to-docx ships no type declarations
 import HTMLtoDOCX from 'html-to-docx';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptArticleRowWithId } from '@/libs/database/PromptArticles/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 
@@ -55,10 +53,10 @@ function slugify(input: string): string {
 /**
  * GET download.docx — markdown → sanitized HTML → .docx via html-to-docx.
  * Same ownership, fallback (`user_edited_article_markdown ?? article_markdown`),
- * and PostHog event shape as the .html route.
+ * as the .html route.
  */
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   {
     params,
   }: { params: Promise<{ projectId: string; promptId: string; promptArticleId: string }> }
@@ -109,18 +107,6 @@ export async function GET(
     // html-to-docx returns Buffer on Node and Blob on browsers; we're always Node.
     const buffer = result instanceof Buffer ? result : Buffer.from(await (result as Blob).arrayBuffer());
 
-    const posthog = getPostHogServer();
-    posthog.capture({
-      distinctId: user.id,
-      event: 'article_downloaded',
-      properties: {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: promptArticleId,
-        format: 'docx',
-      },
-    });
-    waitUntil(posthog.flush());
 
     const body = new Uint8Array(buffer);
     return new NextResponse(body, {
@@ -135,11 +121,6 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

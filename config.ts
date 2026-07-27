@@ -1,5 +1,4 @@
 import { isDevEnv, isPreviewEnv, isProdEnv } from './libs/env';
-import { ROUTES } from './libs/routes';
 
 export const config = {
   appName: 'AllSearch',
@@ -56,12 +55,6 @@ export const config = {
   colors: {
     // REQUIRED — This color will be reflected on the whole app outside of the document (loading bar, Chrome tabs, etc..)
     main: 'var(--color-brand-500)', // #55c891
-  },
-  auth: {
-    // REQUIRED — the path to log in users. It's use to protect private routes (like /dashboard)
-    loginUrl: ROUTES.SIGNIN,
-    // REQUIRED — the path you want to redirect users after successfull login (i.e. /dashboard, /private)
-    callbackUrl: ROUTES.DASHBOARD,
   },
   lemonsqueezy: {
     // TODO: update product ids

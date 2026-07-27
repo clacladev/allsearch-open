@@ -1,8 +1,8 @@
 'use server';
+import { ROUTES } from '@/libs/routes';
 
 import 'server-only';
 
-import { config } from '@/config';
 import { createServerClient } from '@supabase/ssr';
 import { User } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
@@ -55,9 +55,12 @@ export async function getUserOrThrow(): Promise<User> {
   return user;
 }
 
+// TODO(issue 06): there is no user and no sign-in page. This whole function
+// goes when the user is removed from the application layer; until then it sends
+// callers home rather than to a route that no longer exists.
 export async function getUserOrRedirectToSignin(): Promise<User> {
   const user = await getUser();
-  if (!user) redirect(config.auth.loginUrl);
+  if (!user) redirect(ROUTES.HOME);
   return user;
 }
 

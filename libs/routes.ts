@@ -1,23 +1,9 @@
 export const ROUTES = {
-  // Public
   HOME: '/',
-  AEO_CONTENT_STRATEGY: '/aeo-content-strategy',
-  AGENCIES: '/agencies',
-  AI_PROMPT_TRACKING: '/ai-prompt-tracking-tool',
-  AI_TRAFFIC_CITATION_TRACKING: '/ai-traffic-citation-and-source-tracking',
-  AI_VISIBILITY_TRACKER: '/ai-visibility-tracker',
-  AI_CRAWL_CHECKER: '/ai-crawl-checker',
-  AI_PRODUCT_PROMPT_IDEAS: '/ai-product-prompt-ideas',
-  SIGNIN: '/signin',
-  BLOG: '/blog',
-  TOS: '/tos',
-  PRIVACY_POLICY: '/privacy-policy',
 
   // Private
   DASHBOARD: '/dashboard',
   ACCOUNT_SETTINGS: '/account-settings',
-  ADMIN_PANEL: '/admin-panel',
-  SUBSCRIPTION: '/subscription',
 
   // Organization
   ORGANIZATION: '/organization',
@@ -53,10 +39,7 @@ export const ROUTES = {
   API: {
     // Main
     AUTH_CALLBACK: '/api/auth/callback',
-    SEARCH_CREATE: '/api/search/create',
     OPENGRAPH_IMAGE: '/api/opengraph-image',
-    LEMONSQUEEZY_CREATE_PORTAL: '/api/lemonsqueezy/create-portal',
-    LEMONSQUEEZY_CREATE_CHECKOUT: '/api/lemonsqueezy/create-checkout',
 
     // Tools
     AI_CRAWL_CHECKER: '/api/tools/ai-crawl-checker',

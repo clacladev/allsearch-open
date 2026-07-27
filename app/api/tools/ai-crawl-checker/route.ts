@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
 import { checkAICrawlability } from '@/libs/aiCrawlChecker';
-import { getPostHogServer } from '@/libs/posthog';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,9 +53,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const posthog = getPostHogServer();
-  const start = Date.now();
-
   let body: z.infer<typeof BodySchema>;
   try {
     body = BodySchema.parse(await req.json());
@@ -64,69 +60,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  posthog.capture({
-    distinctId: ip,
-    event: 'tool_check_started',
-    properties: { tool: 'ai-crawl-checker', input_url: body.url },
-  });
 
   try {
     const result = await checkAICrawlability(body.url);
-    const durationMs = Date.now() - start;
 
     if (result.errorCategory) {
-      posthog.capture({
-        distinctId: ip,
-        event: 'tool_check_failed',
-        properties: {
-          tool: 'ai-crawl-checker',
-          error_category: result.errorCategory,
-          duration_ms: durationMs,
-          host: safeHost(result.url),
-        },
-      });
       const status = result.errorCategory === 'invalid_url' ? 400 : 200;
       return NextResponse.json(result, { status });
     }
 
-    const robots = result.robotsTxt;
-    const allowedCount = robots?.bots.filter((b) => b.allowed).length ?? 0;
-    const blockedCount = (robots?.bots.length ?? 0) - allowedCount;
-    posthog.capture({
-      distinctId: ip,
-      event: 'tool_check_completed',
-      properties: {
-        tool: 'ai-crawl-checker',
-        host: safeHost(result.url),
-        duration_ms: durationMs,
-        robots_status: robots?.status ?? 0,
-        had_robots_txt: robots ? !robots.noRobotsTxt : false,
-        allowed_count: allowedCount,
-        blocked_count: blockedCount,
-        page_status: result.pageResponse?.status ?? 0,
-        redirect_hops: Math.max(0, (result.pageResponse?.redirectChain.length ?? 1) - 1),
-        rendering_likely_client_side: result.rendering?.likelyClientSide ?? false,
-        rendering_visible_text_length: result.rendering?.visibleTextLength ?? 0,
-        structured_data_jsonld_count: result.structuredData?.jsonLd.length ?? 0,
-        structured_data_og_count: result.structuredData?.openGraphCount ?? 0,
-      },
-    });
-
     return NextResponse.json(result);
   } catch (error) {
     console.error('[ai-crawl-checker] unexpected error', error);
-    posthog.captureException(error, ip, { tool: 'ai-crawl-checker', input_url: body.url });
     return NextResponse.json(
       { error: 'Something went wrong checking that site' },
       { status: 500 }
     );
-  }
-}
-
-function safeHost(url: string): string {
-  try {
-    return new URL(url).host;
-  } catch {
-    return 'unknown';
   }
 }

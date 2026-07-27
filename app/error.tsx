@@ -5,12 +5,10 @@ import { Button } from '@/components/base/buttons/button';
 import { Home02, RefreshCcw01 } from '@untitledui/icons';
 import { TextBackground } from '@/components/application/TextBackground';
 import { useEffect } from 'react';
-import posthog from 'posthog-js';
 
 export default function ErrorPage({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     console.error(error);
-    posthog.captureException(error);
   }, [error]);
 
   return (

@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { BrandSchema } from '../../new-project/save/types';
 import { getProjectRowWithId, updateProjectRow } from '@/libs/database/Projects/queries';
 import { getSafeNewUrl } from '@/libs/utils/urls';
@@ -35,11 +34,6 @@ export async function PATCH(
     return NextResponse.json(updatedProjectRow);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

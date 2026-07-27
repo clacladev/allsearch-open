@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getUserProfileRowWithId } from '@/libs/database/UserProfiles/queries';
 import { getProjectRowWithId, insertProjectRow } from '@/libs/database/Projects/queries';
 import { getOrganizationRowWithOwnerId } from '@/libs/database/Organizations/queries';
@@ -52,7 +51,7 @@ function remapSentiment(
 }
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
@@ -246,11 +245,6 @@ export async function POST(
     return NextResponse.json(newProject);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

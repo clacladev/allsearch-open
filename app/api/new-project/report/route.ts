@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseSummaryRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
@@ -54,11 +53,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(overviewData);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

@@ -12,29 +12,6 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['pdfmake', 'pdfkit', 'html-to-docx'],
   images: {
     formats: ['image/webp'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.lemonsqueezy.com',
-        pathname: '/**',
-      },
-    ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/ingest/static/:path*',
-        destination: 'https://eu-assets.i.posthog.com/static/:path*',
-      },
-      {
-        source: '/ingest/:path*',
-        destination: 'https://eu.i.posthog.com/:path*',
-      },
-      {
-        source: '/ingest/decide',
-        destination: 'https://eu.i.posthog.com/decide',
-      },
-    ];
   },
   async headers() {
     return [
@@ -47,8 +24,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // This is required to support PostHog trailing slash API requests
-  skipTrailingSlashRedirect: true,
 };
 
+// TODO(issue 11): drops out with the Workflow DevKit runtime.
 export default withWorkflow(nextConfig);

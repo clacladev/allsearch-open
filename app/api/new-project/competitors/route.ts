@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import z from 'zod';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
 import { getCompetitors } from '@/libs/ai/competitors/getCompetitors';
 import { getDomainMetadata } from '@/libs/utils/urlAnalysis';
 import { Competitor } from './types';
@@ -44,11 +43,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(competitorsWithIcons);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

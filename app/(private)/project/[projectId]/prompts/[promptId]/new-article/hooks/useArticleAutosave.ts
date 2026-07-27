@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import posthog from 'posthog-js';
 import { useDebouncedCallback } from 'use-debounce';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
@@ -152,12 +151,6 @@ export function useArticleAutosave({
     if (result === 'success') {
       const at = new Date().toISOString();
       dispatch({ type: 'saved', at });
-      posthog.capture('article_edited', {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: outlineId,
-        word_count: latestMarkdownRef.current.trim().split(/\s+/).filter(Boolean).length,
-      });
     } else {
       dispatch({ type: 'error' });
     }
@@ -204,11 +197,6 @@ export function useArticleAutosave({
     );
     dispatch({ type: 'saved', at: new Date().toISOString() });
     if (onSavedRef.current) onSavedRef.current(result.promptArticle);
-    posthog.capture('article_restored', {
-      project_id: projectId,
-      prompt_id: promptId,
-      prompt_article_id: outlineId,
-    });
     return result.promptArticle;
   }, [debouncedSave, outlineId, projectId, promptId, url]);
 

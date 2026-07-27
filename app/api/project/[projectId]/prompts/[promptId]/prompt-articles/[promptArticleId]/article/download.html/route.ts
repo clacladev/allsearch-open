@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptArticleRowWithId } from '@/libs/database/PromptArticles/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 
@@ -78,7 +76,7 @@ function wrapInDocument(bodyHtml: string, titleAttr: string): string {
  * out of the client bundle. The trade-off: one round-trip per download click.
  */
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   {
     params,
   }: { params: Promise<{ projectId: string; promptId: string; promptArticleId: string }> }
@@ -124,18 +122,6 @@ export async function GET(
     const sanitized = sanitizeHtml(rawHtml, SANITIZE_OPTIONS);
     const document = wrapInDocument(sanitized, titleAttr);
 
-    const posthog = getPostHogServer();
-    posthog.capture({
-      distinctId: user.id,
-      event: 'article_downloaded',
-      properties: {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: promptArticleId,
-        format: 'html',
-      },
-    });
-    waitUntil(posthog.flush());
 
     return new NextResponse(document, {
       status: 200,
@@ -147,11 +133,6 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

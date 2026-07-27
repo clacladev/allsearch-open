@@ -1,7 +1,11 @@
-import { withTracing } from '@posthog/ai';
-import { getPostHogServer } from '../posthog';
 import { createGateway } from 'ai';
 
+/**
+ * Call-site metadata that used to be forwarded to PostHog's LLM tracing. The
+ * telemetry is gone, but the shape is kept so the ~14 call sites do not have to
+ * change twice: issue 07 replaces the gateway with direct provider clients and
+ * will decide what, if anything, this becomes.
+ */
 export type AIAnalyticsProps = {
   userId?: string;
   userEmail?: string;
@@ -10,37 +14,7 @@ export type AIAnalyticsProps = {
   others?: Record<string, unknown>;
 };
 
-type PosthogClientOptions = {
-  posthogDistinctId?: string;
-  posthogTraceId?: string;
-  posthogProperties?: Record<string, unknown>;
-  posthogPrivacyMode?: boolean;
-  posthogGroups?: Record<string, unknown>;
-  posthogModelOverride?: string;
-  posthogProviderOverride?: string;
-  posthogCostOverride?: {
-    inputCost: number;
-    outputCost: number;
-  };
-  posthogCaptureImmediate?: boolean;
-};
-
-function createPosthogClientOptions(props?: AIAnalyticsProps): PosthogClientOptions {
-  return {
-    posthogDistinctId: props?.userId,
-    posthogProperties: {
-      ...(props?.userEmail && { userEmail: props?.userEmail }),
-      ...(props?.subscriptionName && { subscriptionName: props?.subscriptionName }),
-      ...(props?.operationId && { operationId: props?.operationId }),
-      ...props?.others,
-    },
-  };
-}
-
-export const createAiGatewayModel = (modelId: string, aiAnalyticsProps?: AIAnalyticsProps) => {
-  const posthog = getPostHogServer();
-  const options = createPosthogClientOptions(aiAnalyticsProps);
+export const createAiGatewayModel = (modelId: string, _aiAnalyticsProps?: AIAnalyticsProps) => {
   const gateway = createGateway();
-  const model = gateway(modelId);
-  return withTracing(model, posthog, options);
+  return gateway(modelId);
 };
