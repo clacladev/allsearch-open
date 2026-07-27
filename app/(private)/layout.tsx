@@ -3,7 +3,7 @@ import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { PrivateLayoutContextProvider } from './components/PrivateLayoutContext';
 import { EventContextProvider } from './components/EventContext';
 import { Sidebar } from './components/Sidebar/Sidebar';
-import ClientLayout from '../(public)/components/ClientLayout';
+import ClientLayout from '@/components/ClientLayout';
 import { getProjectsRowsWithOrganizationId } from '@/libs/database/Projects/queries';
 import { getOrganizationRowWithOwnerId } from '@/libs/database/Organizations/queries';
 import { getUserProfileRowWithId } from '@/libs/database/UserProfiles/queries';

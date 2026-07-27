@@ -22,7 +22,7 @@ import { RouteHelper, ROUTES } from '@/libs/routes';
 import { NavList } from '@/components/application/app-navigation/base-components/nav-list';
 import { NavItemBase } from '@/components/application/app-navigation/base-components/nav-item';
 import { MobileNavigationHeader } from '@/components/application/app-navigation/base-components/mobile-header';
-import { AppLogo } from '@/app/(public)/components/AppLogo';
+import { AppLogo } from '@/components/AppLogo';
 import { usePrivateLayoutContext } from '../PrivateLayoutContext';
 import { BOOK_DEMO_SIDEBAR_CARD_ID, BookDemoSidebarCard } from './Cards/BookDemoSidebarCard';
 import { HIDE_MESSAGE_ONE_DAY_MS, useMessagesContext } from '../MessagesContext';

@@ -12,7 +12,7 @@ import {
 import { cx } from '@/utils/cx';
 import Link from 'next/link';
 import { ROUTES } from '@/libs/routes';
-import { AppLogo } from '@/app/(public)/components/AppLogo';
+import { AppLogo } from '@/components/AppLogo';
 
 export const MobileNavigationHeader = ({ children }: PropsWithChildren) => {
   return (

@@ -8,7 +8,7 @@ import { ROUTES } from '@/libs/routes';
 import { SectionLabel } from '@/components/application/section-headers/section-label';
 import SettingsFormHeader from './SettingsFormHeader';
 import { useMessagesContext } from '@/app/(private)/components/MessagesContext';
-import { showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showSuccessAlertToast } from '@/components/Alerts';
 
 export default function Others() {
   const router = useRouter();

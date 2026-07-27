@@ -11,7 +11,6 @@ import { getTopicRowWithId } from '@/libs/database/Topics/queries';
 import z from 'zod';
 import { findOrCreateCustomTopic } from './helpers';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
-import { MAX_PROMPTS_DURING_TRIAL } from '@/libs/subscriptions';
 import { normalizePromptName } from '@/libs/utils/prompts';
 
 export async function POST(
@@ -49,14 +48,6 @@ export async function POST(
       getPromptRowsWithProjectId(projectId, true),
     ]);
     if (!projectRow) throw new Error('Project not found');
-
-    // TODO: Check subscription status
-    const activePromptsCount = promptRows.filter((p) => !p.is_archived).length;
-    if (activePromptsCount + names.length > MAX_PROMPTS_DURING_TRIAL) {
-      throw new Error(
-        `You've reached the trial limit of ${MAX_PROMPTS_DURING_TRIAL} prompts. Subscribe to unlock more.`
-      );
-    }
 
     const results = [];
     for (const name of names) {

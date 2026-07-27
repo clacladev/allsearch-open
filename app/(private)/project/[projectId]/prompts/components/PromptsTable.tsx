@@ -16,14 +16,13 @@ import { Badge } from '@/components/base/badges/badges';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { ExportActionsButton } from '@/app/(private)/components/ExportActionsButton';
 import { exportPromptsToCsv } from '@/app/(private)/project/[projectId]/prompts/utils/exportPromptsCsv';
-import { MAX_PROMPTS_DURING_TRIAL } from '@/libs/subscriptions';
 import { NewPromptSlideoutMenu } from './NewPromptSlideoutMenu';
 import { EditPromptSlideoutMenu } from './EditPromptSlideoutMenu';
 import { TopicsSlideoutMenu } from './TopicsSlideoutMenu';
 import { SUPPORTED_CHATBOTS_IDS, CHATBOT_DISPLAY_LABELS } from '@/libs/database/shared/ChatbotId';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
 import { appFetch } from '@/hooks/appFetch';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import StandardTable, {
   StandardTableFooterContainer,
 } from '@/app/(private)/components/StandardTable/StandardTable';
@@ -335,12 +334,8 @@ export default function PromptsTable({
             />
           </div>
 
-          <Badge
-            type="pill-color"
-            size="sm"
-            color={activePromptsCount >= MAX_PROMPTS_DURING_TRIAL ? 'error' : 'gray'}
-          >
-            {activePromptsCount} of {MAX_PROMPTS_DURING_TRIAL} prompts used
+          <Badge type="pill-color" size="sm" color="gray">
+            {activePromptsCount} {activePromptsCount === 1 ? 'prompt' : 'prompts'}
           </Badge>
         </div>
 

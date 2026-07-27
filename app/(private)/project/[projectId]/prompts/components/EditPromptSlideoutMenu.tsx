@@ -1,5 +1,5 @@
 import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/SlideoutMenu';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Button } from '@/components/base/buttons/button';
 import { InputBase } from '@/components/base/input/input';

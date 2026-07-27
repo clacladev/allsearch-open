@@ -19,11 +19,12 @@ import {
 } from '@/libs/database/Sources/queries';
 import { SourceRow } from '@/libs/database/Sources/types';
 import { SUPPORTED_CHATBOTS_IDS } from '@/libs/database/shared/ChatbotId';
-import { MAX_PROMPTS_DURING_TRIAL } from '@/libs/subscriptions';
 import { isDevEnv } from '@/libs/env';
 
 const BATCH_SIZE = 500;
 const BACKFILL_DAYS = 91;
+/** How many prompts this dev tool tops a project up to. Was the SaaS trial cap. */
+const DEMO_PROMPTS_TARGET = 25;
 
 function dateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -76,7 +77,7 @@ export async function POST(
     // 2. Max out prompts
     const existingPrompts = await getPromptRowsWithProjectId(projectId, false, { asAdmin: true });
     let promptsCreated = 0;
-    const promptsToCreate = MAX_PROMPTS_DURING_TRIAL - existingPrompts.length;
+    const promptsToCreate = DEMO_PROMPTS_TARGET - existingPrompts.length;
 
     if (promptsToCreate > 0) {
       const newPrompts = await insertPromptRows(

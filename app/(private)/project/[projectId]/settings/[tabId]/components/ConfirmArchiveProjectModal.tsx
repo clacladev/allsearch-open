@@ -1,5 +1,5 @@
 import { ConfirmModal, ModalProps } from '@/app/(private)/components/ConfirmModal';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { RouteHelper } from '@/libs/routes';
 import { useTransition } from 'react';
 import { appFetch } from '@/hooks/appFetch';

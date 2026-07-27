@@ -6,10 +6,8 @@ import type { Placement } from 'react-aria';
 import {
   ChevronSelectorVertical,
   LogOut01,
-  MessageChatCircle,
   Plus,
   Settings01,
-  Shield01,
 } from '@untitledui/icons';
 import { useFocusManager } from 'react-aria';
 import type { DialogProps as AriaDialogProps } from 'react-aria-components';
@@ -28,29 +26,12 @@ import Link from 'next/link';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import { useRouter } from 'next/navigation';
 import { userSignOut } from '@/libs/database/supabase/client';
-import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
-import { openSupportOnClick } from '@/app/(public)/components/SupportButton';
 
-const getLinksItems = (isAdmin: boolean) => [
+const getLinksItems = () => [
   {
     label: 'Account settings',
     href: ROUTES.ACCOUNT_SETTINGS,
     icon: Settings01,
-  },
-  ...(isAdmin
-    ? [
-        {
-          label: 'Admin Panel',
-          href: ROUTES.ADMIN_PANEL,
-          icon: Shield01,
-        },
-      ]
-    : []),
-  {
-    label: 'Support',
-    href: '#',
-    action: openSupportOnClick,
-    icon: MessageChatCircle,
   },
 ];
 
@@ -84,8 +65,8 @@ export const NavProjectMenu = ({
   const focusManager = useFocusManager();
   const dialogRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { userProfile } = usePrivateLayoutContext();
-  const linksItems = getLinksItems(userProfile?.role === 'admin');
+
+  const linksItems = getLinksItems();
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -132,7 +113,6 @@ export const NavProjectMenu = ({
                   key={item.label}
                   href={item.href}
                   onClick={() => {
-                    item.action?.();
                     close();
                   }}
                 >
