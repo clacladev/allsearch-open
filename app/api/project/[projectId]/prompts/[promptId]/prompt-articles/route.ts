@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
@@ -154,13 +153,11 @@ export async function POST(
       },
     };
 
-    const startedAt = Date.now();
     const generation = await generateOutline(generationInput, {
       userId: user.id,
       userEmail: user.email,
       others: { projectId, promptId, opportunityType: body.opportunityType },
     });
-    const durationMs = Date.now() - startedAt;
 
     const persisted = toPersistedOutline(generation);
 
@@ -188,24 +185,6 @@ export async function POST(
 
     // Emit analytics event; flush before returning so the event isn't lost in
     // short-lived serverless invocations.
-    const posthog = getPostHogServer();
-    posthog.capture({
-      distinctId: user.id,
-      event: 'prompt_article_outline_generated',
-      properties: {
-        project_id: projectId,
-        organization_id: projectRow.organization_id,
-        prompt_id: promptId,
-        opportunity_id: body.opportunityId ?? null,
-        opportunity_type: body.opportunityType,
-        target_source_clean_url: targetSourceCleanUrl,
-        prompt_article_id: inserted.id,
-        headings_count: persisted.headings.length,
-        duration_ms: durationMs,
-        model_id: OUTLINE_MODEL_ID,
-      },
-    });
-    await posthog.flush();
 
     return NextResponse.json({
       promptArticle: inserted,
@@ -215,11 +194,6 @@ export async function POST(
       const status = errorCodeToStatus(error.code);
       if (status >= 500) {
         console.error(error);
-        getPostHogServer().captureException(
-          error,
-          await getUserId(),
-          searchParamsToObject(req.nextUrl.searchParams)
-        );
       }
       return NextResponse.json(
         { error: error.message, code: error.code },
@@ -235,11 +209,6 @@ export async function POST(
     }
 
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

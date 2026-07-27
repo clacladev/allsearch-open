@@ -95,23 +95,12 @@ const mockGenerateOutline = mock(async (): Promise<any> => ({
     { tag: 'h2' as const, text: 'Section One', keyPoint: 'Cover basics.' },
   ],
 }));
-const mockCapture = mock(() => {});
-const mockFlush = mock(async () => {});
-const mockCaptureException = mock(() => {});
 
 mock.module('@/libs/database/supabase/server', () => ({
   getUserOrThrow: mockGetUserOrThrow,
   getUserId: mockGetUserId,
 }));
 
-mock.module('@/libs/posthog', () => ({
-  getPostHogServer: () => ({
-    capture: mockCapture,
-    flush: mockFlush,
-    captureException: mockCaptureException,
-  }),
-  searchParamsToObject: () => ({}),
-}));
 
 mock.module('@/libs/database/Projects/queries', () => ({
   getProjectRowWithId: mockGetProjectRowWithId,
@@ -181,8 +170,6 @@ describe('POST /api/project/[projectId]/prompts/[promptId]/prompt-articles', () 
     mockGetPromptRowWithId.mockReset();
     mockGetPromptResponseRows.mockReset();
     mockGetSourceRows.mockReset();
-    mockCapture.mockReset();
-    mockFlush.mockReset();
 
     mockInsertPromptArticleRow.mockImplementation(async () => mockOutlineRow);
     mockGenerateOutline.mockImplementation(async () => ({
@@ -219,7 +206,6 @@ describe('POST /api/project/[projectId]/prompts/[promptId]/prompt-articles', () 
       { id: 'pr-1', project_id: 'project-123' },
     ]);
     mockGetSourceRows.mockImplementation(async () => []);
-    mockFlush.mockImplementation(async () => {});
   });
 
   it('generates a new outline on the happy path', async () => {
@@ -229,7 +215,6 @@ describe('POST /api/project/[projectId]/prompts/[promptId]/prompt-articles', () 
     expect(data.promptArticle).toBeDefined();
     expect(mockGenerateOutline).toHaveBeenCalledTimes(1);
     expect(mockInsertPromptArticleRow).toHaveBeenCalledTimes(1);
-    expect(mockCapture).toHaveBeenCalledTimes(1);
   });
 
   it('inserts a fresh row on every POST without checking for an existing one', async () => {

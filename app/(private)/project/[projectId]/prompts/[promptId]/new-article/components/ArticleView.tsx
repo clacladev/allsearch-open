@@ -10,7 +10,6 @@ import {
   RefreshCw02,
   XSquare,
 } from '@untitledui/icons';
-import posthog from 'posthog-js';
 import { Button } from '@/components/base/buttons/button';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { EmptyState } from '@/components/application/empty-state/empty-state';
@@ -197,11 +196,6 @@ export function ArticleView({
       setMode('editable');
     }
     if (forceRegenerate) {
-      posthog.capture('article_regenerated', {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: outlineId,
-      });
     }
   };
 

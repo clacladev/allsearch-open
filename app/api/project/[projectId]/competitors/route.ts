@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getCompetitorRowsWithProjectId,
   getCompetitorRowWithId,
@@ -14,7 +13,7 @@ import { getSafeNewUrl } from '@/libs/utils/urls';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
@@ -33,11 +32,6 @@ export async function GET(
     return NextResponse.json(competitors);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }
@@ -96,11 +90,6 @@ export async function POST(
     return NextResponse.json(competitorRow);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }
@@ -148,11 +137,6 @@ export async function PATCH(
     return NextResponse.json(updatedRow);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }
@@ -184,11 +168,6 @@ export async function DELETE(
     return NextResponse.json(archivedRow);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

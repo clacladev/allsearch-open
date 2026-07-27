@@ -14,7 +14,6 @@ import {
   RefreshCcw01,
   SearchLg,
 } from '@untitledui/icons';
-import posthog from 'posthog-js';
 import useSWRMutation from 'swr/mutation';
 import { Button } from '@/components/base/buttons/button';
 import { EmptyState } from '@/components/application/empty-state/empty-state';
@@ -191,7 +190,6 @@ export function NewArticleOutline({
     if (!opportunityType) return;
     setErrorKind(null);
     try {
-      const previousOutlineId = outline?.id ?? null;
       const response = await triggerOutlineGeneration({
         opportunityType,
         opportunityId,
@@ -215,12 +213,6 @@ export function NewArticleOutline({
       );
       router.replace(nextHref);
       if (isRegeneration) {
-        posthog.capture('article_outline_regenerated', {
-          project_id: projectId,
-          prompt_id: promptId,
-          prompt_article_id: response.promptArticle.id,
-          previous_prompt_article_id: previousOutlineId,
-        });
       }
     } catch (error) {
       setErrorKind(classifyOutlineError(error));
@@ -416,11 +408,6 @@ function OutlineEditor({
   const handleCopy = () => {
     const markdown = outlineToMarkdown(currentOutline);
     onCopy(markdown);
-    posthog.capture('article_outline_copied', {
-      project_id: projectId,
-      prompt_id: promptId,
-      prompt_article_id: outline.id,
-    });
   };
 
   const handleRestoreConfirm = async () => {

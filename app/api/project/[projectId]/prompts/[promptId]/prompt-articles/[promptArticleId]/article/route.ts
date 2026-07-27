@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 import z from 'zod';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getPromptArticleRowWithId,
   setArticleGeneratedFromStream,
@@ -114,8 +112,6 @@ async function loadPromptArticleWithOwnershipCheck(
  *   │   └─ no  → resolve opportunity → streamText → tokens to client │
  *   │                                          ↘ onFinish(stop)     │
  *   │                                            atomic UPDATE      │
- *   │                                            posthog.capture    │
- *   │                                            waitUntil(flush)   │
  *   └────────────────────────────────────────────────────────────────┘
  *
  * `consumeStream()` is intentionally NOT called: client navigation aborts via
@@ -257,7 +253,6 @@ export async function POST(
       sources: sourcesForPrompt,
     };
 
-    const startedAt = Date.now();
 
     const result = await startArticleStream(
       {
@@ -286,38 +281,14 @@ export async function POST(
           },
         },
         onFinish: async ({ text, finishReason }) => {
-          const durationMs = Date.now() - startedAt;
-          const posthog = getPostHogServer();
-
           if (finishReason !== 'stop') {
             // Length-truncated, errored, content-filtered, tool-calls, other:
             // skip persistence. The text stream may have already delivered
             // partial bytes to the client; client refetches the row to detect
             // failure (article_markdown will still be null or unchanged).
             // The 'other' finishReason on AI SDK v6 covers the abort case.
-            const event =
-              finishReason === 'error' || finishReason === 'length'
-                ? 'article_generation_failed'
-                : 'article_generation_aborted';
-            posthog.capture({
-              distinctId: userId,
-              event,
-              properties: {
-                project_id: projectId,
-                prompt_id: promptId,
-                prompt_article_id: promptArticleId,
-                opportunity_type: row.opportunity_type,
-                model_id: ARTICLE_MODEL_ID,
-                finish_reason: finishReason,
-                partial_word_count: text ? text.trim().split(/\s+/).length : 0,
-                duration_ms: durationMs,
-              },
-            });
-            waitUntil(posthog.flush());
             return;
           }
-
-          const wordCount = text.trim().split(/\s+/).length;
 
           // ATOMIC: one UPDATE writes article_markdown, sources_used,
           // outline_used, article_model_id, and resets user_edited_article_markdown
@@ -329,24 +300,6 @@ export async function POST(
             articleModelId: ARTICLE_MODEL_ID,
           });
 
-          posthog.capture({
-            distinctId: userId,
-            event: 'article_generated',
-            properties: {
-              project_id: projectId,
-              organization_id: projectRow.organization_id,
-              prompt_id: promptId,
-              prompt_article_id: promptArticleId,
-              opportunity_type: row.opportunity_type,
-              model_id: ARTICLE_MODEL_ID,
-              headings_count: outlineUsed.headings.length,
-              sources_count: sourcesForPrompt.length,
-              word_count: wordCount,
-              duration_ms: durationMs,
-              is_regeneration: forceRegenerate,
-            },
-          });
-          waitUntil(posthog.flush());
         },
       }
     );
@@ -357,11 +310,6 @@ export async function POST(
       const status = errorCodeToStatus(error.code);
       if (status >= 500) {
         console.error(error);
-        getPostHogServer().captureException(
-          error,
-          user?.id ?? (await getUserId()),
-          searchParamsToObject(req.nextUrl.searchParams)
-        );
       }
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
@@ -392,11 +340,6 @@ export async function POST(
     }
 
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      user?.id ?? (await getUserId()),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }
@@ -446,11 +389,6 @@ export async function PATCH(
     return NextResponse.json({ promptArticle: updated });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

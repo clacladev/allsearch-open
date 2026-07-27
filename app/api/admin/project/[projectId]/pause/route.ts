@@ -1,11 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getUserProfileRowWithId } from '@/libs/database/UserProfiles/queries';
 import { getProjectRowWithId, updateProjectRow } from '@/libs/database/Projects/queries';
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
@@ -32,11 +31,6 @@ export async function POST(
     return NextResponse.json(updatedProject);
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
       { status: 500 }

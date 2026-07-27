@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getPromptArticleRowWithId,
   updatePromptArticleOutlineEdits,
@@ -31,7 +30,7 @@ type RouteParams = { projectId: string; promptId: string; promptArticleId: strin
  * Same ownership-chain check as PATCH; 404 on mismatch (no info leak).
  */
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
@@ -58,11 +57,6 @@ export async function GET(
     return NextResponse.json({ promptArticle: row });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }
@@ -140,11 +134,6 @@ export async function PATCH(
     return NextResponse.json({ promptArticle: updated });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

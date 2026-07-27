@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 // @ts-expect-error pdfmake ships no type declarations for the Node entry
 import pdfMake from 'pdfmake/js/index.js';
 // @ts-expect-error pdfmake's standard fonts file is plain JS
 import standardFonts from 'pdfmake/standard-fonts/Helvetica.js';
 // @ts-expect-error pdfmake's standard fonts file is plain JS
 import courierFonts from 'pdfmake/standard-fonts/Courier.js';
-import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
-import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
+import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptArticleRowWithId } from '@/libs/database/PromptArticles/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 import { markdownToPdfmakeDoc } from '@/libs/article-export/markdownToPdfmakeDoc';
@@ -36,10 +34,10 @@ function slugify(input: string): string {
  * render as plain text rows and images render as a placeholder line. See
  * `markdownToPdfmakeDoc` for the rendering policy.
  *
- * Same ownership/fallback/posthog pattern as the .html and .docx routes.
+ * Same ownership and fallback pattern as the .html and .docx routes.
  */
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   {
     params,
   }: { params: Promise<{ projectId: string; promptId: string; promptArticleId: string }> }
@@ -80,18 +78,6 @@ export async function GET(
     const docDefinition = markdownToPdfmakeDoc(currentMarkdown, titleAttr);
     const buffer: Buffer = await pdfMake.createPdf(docDefinition).getBuffer();
 
-    const posthog = getPostHogServer();
-    posthog.capture({
-      distinctId: user.id,
-      event: 'article_downloaded',
-      properties: {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: promptArticleId,
-        format: 'pdf',
-      },
-    });
-    waitUntil(posthog.flush());
 
     const body = new Uint8Array(buffer);
     return new NextResponse(body, {
@@ -105,11 +91,6 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    getPostHogServer().captureException(
-      error,
-      await getUserId(),
-      searchParamsToObject(req.nextUrl.searchParams)
-    );
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },
       { status: 500 }

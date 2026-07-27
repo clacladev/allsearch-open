@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import posthog from 'posthog-js';
 import { useDebouncedCallback } from 'use-debounce';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
@@ -156,9 +155,6 @@ export function useOutlineAutosave({
     dispatch({ type: 'fire', valid: isValid });
     if (!isValid) return;
 
-    const kindsAtAttempt = Array.from(editKindsRef.current).sort();
-    const headingsCount = snapshot.headings.length;
-
     let result = await sendPatch({ userEditedOutline: snapshot });
     if (result === 'retryable-failure') {
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
@@ -167,26 +163,9 @@ export function useOutlineAutosave({
     }
 
     if (result === 'success') {
-      // Re-read the ref so the event reports the snapshot that actually
-      // landed in the DB on the retry attempt (if any).
-      const finalKinds = Array.from(editKindsRef.current).sort();
-      // Use the union of kinds-at-fire and kinds-still-pending in case
-      // additional edits arrived between firing and success — the next
-      // debounce will pick those up, so we only flush kinds applicable to
-      // *this* save. Practically, kindsAtAttempt is the authoritative set;
-      // we keep finalKinds in sync (they're equal unless edits arrived).
-      const reportedKinds =
-        finalKinds.length >= kindsAtAttempt.length ? kindsAtAttempt : finalKinds;
       editKindsRef.current = new Set();
       const at = new Date().toISOString();
       dispatch({ type: 'saved', at });
-      posthog.capture('article_outline_edited', {
-        project_id: projectId,
-        prompt_id: promptId,
-        prompt_article_id: outlineId,
-        headings_count: headingsCount,
-        edit_kinds: reportedKinds,
-      });
     } else {
       dispatch({ type: 'error' });
     }
@@ -238,11 +217,6 @@ export function useOutlineAutosave({
     editKindsRef.current = new Set();
     dispatch({ type: 'saved', at: new Date().toISOString() });
     if (onSavedRef.current) onSavedRef.current(result.promptArticle);
-    posthog.capture('article_outline_restored', {
-      project_id: projectId,
-      prompt_id: promptId,
-      prompt_article_id: outlineId,
-    });
     return result.promptArticle;
   }, [debouncedSave, outlineId, projectId, promptId, url]);
 
