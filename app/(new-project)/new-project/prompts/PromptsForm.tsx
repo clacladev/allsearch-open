@@ -1,0 +1,293 @@
+'use client';
+
+import { Button } from '@/components/base/buttons/button';
+import FormHeader from '../components/FormHeader';
+import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
+import {
+  routeForStep,
+  NewProjectStep,
+  useNewProjectContext,
+} from '../components/NewProjectContext';
+import { useEffect, useState } from 'react';
+import { useTransition } from 'react';
+import { RouteHelper, ROUTES } from '@/libs/routes';
+import useSWRImmutable from 'swr/immutable';
+import { InputGroup } from '@/components/base/input/input-group';
+import { InputBase } from '@/components/base/input/input';
+import { Topic, Topics } from '@/libs/ai/promptsIdeas/getPromptsIdeas';
+import { useRouter } from 'next/navigation';
+import {
+  getPartsFromPromptAndTopicId,
+  getPromptAndTopicId,
+  PromptAndTopicId,
+} from '@/libs/utils/PromptAndTopicId';
+import { NewProjectLayoutColumn } from '../../layout';
+import { CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
+import { appFetch } from '@/hooks/appFetch';
+import { ArrowLeft, ArrowRight, RefreshCcw01 } from '@untitledui/icons';
+import { OnboardingProgressSteps } from '../components/OnboardingProgressSteps';
+
+const THIS_STEP = NewProjectStep.Prompts;
+
+const DEFAULT_PRESELECTED_PROMPTS_PER_TOPIC = 2;
+const MAX_CUSTOM_PROMPTS = 5;
+
+function isDuplicatePrompt(prompt: string, topics: Topics) {
+  const lowercasePrompt = prompt.toLowerCase();
+  return (
+    topics.findIndex(
+      (topicGroup) =>
+        topicGroup.prompts.findIndex((prompt) => prompt.toLowerCase() === lowercasePrompt) !== -1
+    ) !== -1
+  );
+}
+
+const usePromptIdeas = (
+  url: string | undefined,
+  name: string | undefined,
+  categories: string[],
+  targetLocation: string | undefined,
+  onSuccess: (ideas: Topics | undefined) => void
+) =>
+  useSWRImmutable(
+    url && name && !!categories.length
+      ? ['prompt-ideas', url, name, categories, targetLocation]
+      : null,
+    async (): Promise<Topics | undefined> => {
+      if (!url || !name || !categories.length) return;
+      if (url.length <= 4) throw new Error('Invalid URL');
+      return appFetch<Topics>(
+        RouteHelper.Api.NewProject.getPromptIdeas(url, name, categories, targetLocation),
+        undefined,
+        'Failed to fetch prompt ideas'
+      );
+    },
+    { onSuccess }
+  );
+
+export default function PromptsForm() {
+  const router = useRouter();
+  const { getCorrectStep, brand, topics, prompts, setPrompts } = useNewProjectContext();
+
+  const [shouldFetchPromptIdeas, setShouldFetchPromptIdeas] = useState(!prompts?.ideas.length);
+  const [topicsIdeas, setTopicsIdeas] = useState<Topics>(prompts?.ideas ?? []);
+  const [customTopic, setCustomTopic] = useState<Topic>(
+    prompts?.custom ?? { topic: CUSTOM_TOPIC_NAME, prompts: [] }
+  );
+  const [selectedPromptAndTopicIds, setSelectedPromptAndTopicIds] = useState<PromptAndTopicId[]>(
+    prompts?.selectedIds ?? []
+  );
+  const [newCustomPrompt, setNewCustomPrompt] = useState('');
+  const [isUpdating, startTransition] = useTransition();
+
+  const {
+    isLoading: isPromptIdeasLoading,
+    isValidating: isPromptIdeasValidating,
+    error: promptIdeasError,
+    mutate: mutatePromptIdeas,
+  } = usePromptIdeas(
+    shouldFetchPromptIdeas ? brand?.url : undefined,
+    brand?.name,
+    topics?.selected ?? [],
+    brand?.targetLocation,
+    (topicGroups) => {
+      const ideas = topicGroups ?? [];
+      setTopicsIdeas(ideas);
+      const selectedIds = ideas.flatMap((topicGroup) =>
+        topicGroup.prompts
+          .slice(0, DEFAULT_PRESELECTED_PROMPTS_PER_TOPIC)
+          .map((prompt) => getPromptAndTopicId(topicGroup.topic, prompt))
+      );
+      setSelectedPromptAndTopicIds(selectedIds);
+      setPrompts({
+        selectedIds,
+        ideas: ideas,
+        custom: customTopic,
+      });
+    }
+  );
+
+  useEffect(() => {
+    const correctStep = getCorrectStep();
+    if (correctStep < THIS_STEP) router.push(routeForStep(correctStep));
+  }, []);
+
+  const toggleSelectedPromptAndTopicIds = (ids: PromptAndTopicId[], topicId: string) => {
+    const newSelected = [...selectedPromptAndTopicIds]
+      .filter((id) => {
+        const { topic: currentTopicId } = getPartsFromPromptAndTopicId(id);
+        return currentTopicId !== topicId;
+      })
+      .concat(...ids);
+
+    setSelectedPromptAndTopicIds(newSelected);
+  };
+
+  const onAddCustom = () => {
+    if (!canAddNewCustom) return;
+    if (
+      isDuplicatePrompt(newCustomPrompt, topicsIdeas) ||
+      isDuplicatePrompt(newCustomPrompt, [customTopic])
+    ) {
+      setNewCustomPrompt('');
+      return;
+    }
+
+    customTopic.prompts.push(newCustomPrompt);
+    setCustomTopic(customTopic);
+    setSelectedPromptAndTopicIds([
+      ...selectedPromptAndTopicIds,
+      getPromptAndTopicId(CUSTOM_TOPIC_NAME, newCustomPrompt),
+    ]);
+    setNewCustomPrompt('');
+  };
+
+  const onResetCustomValues = () => {
+    setCustomTopic({ topic: CUSTOM_TOPIC_NAME, prompts: [] });
+    setSelectedPromptAndTopicIds(
+      selectedPromptAndTopicIds.filter((id) => {
+        const { topic } = getPartsFromPromptAndTopicId(id);
+        return topic !== CUSTOM_TOPIC_NAME;
+      })
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !!newCustomPrompt.length) {
+      onAddCustom();
+    }
+  };
+
+  const onReload = () => {
+    setShouldFetchPromptIdeas(true);
+    mutatePromptIdeas();
+  };
+
+  const onContinue = () =>
+    startTransition(() => {
+      setPrompts({
+        selectedIds: selectedPromptAndTopicIds,
+        ideas: topicsIdeas,
+        custom: customTopic,
+      });
+      router.push(ROUTES.NEW_PROJECT.COMPETITORS);
+    });
+
+  const allTopics = [...topicsIdeas, customTopic];
+  const canAddNewCustom = customTopic.prompts.length < MAX_CUSTOM_PROMPTS;
+  const canContinue = !!selectedPromptAndTopicIds.length;
+  const isLoading = isPromptIdeasLoading || isPromptIdeasValidating;
+
+  return (
+    <NewProjectLayoutColumn>
+      <div className="flex flex-col gap-5">
+        <FormHeader
+          title="Suggested Prompts"
+          description="Choose the prompts you want to monitor for your brand visibility."
+        />
+
+        {!isPromptIdeasLoading &&
+          allTopics.map((topicGroup) => (
+            <div key={topicGroup.topic}>
+              <div className="mb-1 text-lg font-semibold">{topicGroup.topic}</div>
+
+              <CheckboxGroup
+                aria-label={`${topicGroup.topic} Prompts`}
+                items={topicGroup.prompts.map((prompt) => ({
+                  title: prompt,
+                  value: getPromptAndTopicId(topicGroup.topic, prompt),
+                }))}
+                value={selectedPromptAndTopicIds
+                  .map((id) => {
+                    const { topic } = getPartsFromPromptAndTopicId(id);
+                    return topic === topicGroup.topic ? id : undefined;
+                  })
+                  .filter((id) => !!id)}
+                onChange={(ids) =>
+                  toggleSelectedPromptAndTopicIds(ids as PromptAndTopicId[], topicGroup.topic)
+                }
+                isDisabled={isLoading}
+              />
+
+              {topicGroup.topic === CUSTOM_TOPIC_NAME && (
+                <InputGroup
+                  value={newCustomPrompt}
+                  onChange={setNewCustomPrompt}
+                  isDisabled={isLoading || !canAddNewCustom}
+                  name="customPrompt"
+                  size="md"
+                  className="mt-3"
+                  trailingAddon={
+                    <Button
+                      color="secondary"
+                      size="md"
+                      onClick={onAddCustom}
+                      isDisabled={!newCustomPrompt.length || isLoading || !canAddNewCustom}
+                    >
+                      Add
+                    </Button>
+                  }
+                >
+                  <InputBase type="text" placeholder="Custom" onKeyDown={handleKeyDown} />
+                </InputGroup>
+              )}
+            </div>
+          ))}
+
+        {!canAddNewCustom && (
+          <div className="text-error-800 -mt-4 ml-0.5 text-xs">
+            <span>You can only add {MAX_CUSTOM_PROMPTS} custom prompts.</span>{' '}
+            <Button
+              type="button"
+              color="link-destructive"
+              size="xs"
+              onClick={onResetCustomValues}
+              className="text-error-800"
+            >
+              Reset custom prompts
+            </Button>
+          </div>
+        )}
+        {promptIdeasError && (
+          <div className="text-error-800 ml-0.5 text-xs">{promptIdeasError?.message}</div>
+        )}
+
+        <div className="mt-10 flex gap-2">
+          <Button
+            type="button"
+            color="secondary"
+            size="lg"
+            onClick={() => router.back()}
+            iconLeading={ArrowLeft}
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            color={promptIdeasError ? 'primary' : 'secondary'}
+            size="lg"
+            isDisabled={isUpdating || isLoading}
+            isLoading={isLoading}
+            onClick={onReload}
+            iconLeading={RefreshCcw01}
+          >
+            Retry
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            isDisabled={!canContinue || isUpdating || isLoading}
+            isLoading={isUpdating}
+            onClick={onContinue}
+            className="flex-1"
+            iconTrailing={ArrowRight}
+          >
+            Continue
+          </Button>
+        </div>
+
+        <OnboardingProgressSteps currentStep={2} className="mt-5" />
+      </div>
+    </NewProjectLayoutColumn>
+  );
+}
