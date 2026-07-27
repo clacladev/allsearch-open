@@ -5,8 +5,12 @@ Milestone: 1 — Data layer
 Blocked by: 03
 
 Define the SQLite schema in Drizzle (`drizzle-orm/node-sqlite`) and wire up
-migrations. Reference: `supabase/migrations/` in the SaaS, flattened to the final
-state — do not replay 26 migrations, write the end state as migration one.
+migrations. Reference: `supabase/migrations/`, flattened to the final state — do
+not replay 26 migrations, write the end state as migration one.
+
+Issue 02 deliberately left `supabase/migrations/` in the tree because it is the
+only record of how the schema reached its current shape. **Delete it as the last
+step of this issue**, once the Drizzle schema reproduces it.
 
 **Tables:** `organizations`, `projects`, `competitors`, `topics`, `prompts`,
 `prompt_responses`, `sources`, `prompt_articles`, plus the new

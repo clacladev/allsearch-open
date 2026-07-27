@@ -12,7 +12,7 @@ import { Button } from '@/components/base/buttons/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import SettingsFormHeader from './SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { isValidUrl } from '@/libs/utils/urls';

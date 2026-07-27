@@ -1,7 +1,7 @@
 import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { ReactNode } from 'react';
 import { NewProjectContextProvider } from './new-project/components/NewProjectContext';
-import ClientLayout from '../(public)/components/ClientLayout';
+import ClientLayout from '@/components/ClientLayout';
 import { cx } from '@/utils/cx';
 import Image from 'next/image';
 

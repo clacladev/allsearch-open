@@ -1,6 +1,5 @@
 'use client';
 
-import { SupportButton } from '@/app/(public)/components/SupportButton';
 import { ROUTES } from '@/libs/routes';
 import { Button } from '@/components/base/buttons/button';
 import { Home02 } from '@untitledui/icons';
@@ -26,7 +25,6 @@ export default function NotFoundPage() {
             </div>
 
             <div className="z-10 flex flex-col-reverse gap-3 self-stretch md:flex-row md:self-auto">
-              <SupportButton color="secondary" size="xl" />
               <Button href={ROUTES.DASHBOARD} iconLeading={Home02} size="xl">
                 Dashboard
               </Button>

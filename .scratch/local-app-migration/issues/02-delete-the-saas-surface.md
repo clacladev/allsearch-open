@@ -15,7 +15,7 @@ product. Delete in reviewable commits, one group at a time.
 | `app/signin/`, `app/api/auth/`, `app/api/admin/magic-auth/`, `proxy.ts` | 300 |
 | `app/(private)/subscription/`, `app/api/lemonsqueezy/`, `app/api/webhook/`, `libs/lemonsqueezy.ts`, `libs/subscriptions/` | 700 |
 | `app/(private)/admin-panel/` | 400 |
-| `libs/database/UserProfiles/`, `libs/database/UserSessions/`, `supabase/` | 900 |
+| `libs/database/UserSessions/`, `supabase/config.toml` and tooling | 900 |
 | PostHog (`libs/posthog.ts`, `instrumentation-client.ts`, `@posthog/ai` tracing, `/ingest` rewrites), Crisp, Vercel Analytics, Speed Insights, GTM, OpenTelemetry | 300 |
 | `libs/seo.tsx`, `sitemap.ts`, `robots`, `app/api/opengraph-image/`, `vercel.ts`, `backup_dump.sh`, `import_project.sh` | 500 |
 | `app/(public)/ai-product-prompt-ideas/` and `app/api/tools/ai-product-prompt-ideas/` | 400 |
@@ -25,6 +25,16 @@ move into the dashboard in issue 18.
 
 **Keep** `app/(private)/account-settings/` as a shell; it becomes the settings
 screen in issue 19.
+
+**Keep `supabase/migrations/`.** It is the only record of how the schema reached
+its current shape, and issue 04 translates it into the Drizzle schema. Issue 04
+deletes it once that is done. Everything else under `supabase/` goes now.
+
+**Keep `libs/database/UserProfiles/`.** Removing the user from the application
+layer is issue 06, and `app/(private)/layout.tsx` and `PrivateLayoutContext`
+still read a profile. Strip only the *billing* fields from `UserProfileRow` here
+(`customer_id`, `price_id`, `price_key`, `scheduled_cancellation`,
+`subscribed_at`, `is_unpaid`); issue 06 deletes the rest.
 
 Every `catch` block currently calls `getPostHogServer().captureException(...)`.
 Replace with plain `console.error` — no telemetry leaves the machine.

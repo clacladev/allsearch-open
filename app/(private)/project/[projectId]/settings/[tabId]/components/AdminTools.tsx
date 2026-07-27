@@ -4,7 +4,7 @@ import { RouteHelper } from '@/libs/routes';
 import { appFetch } from '@/hooks/appFetch';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { useState, useTransition } from 'react';
-import { showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showSuccessAlertToast } from '@/components/Alerts';
 import { SectionLabel } from '@/components/application/section-headers/section-label';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { isDevEnv } from '@/libs/env';

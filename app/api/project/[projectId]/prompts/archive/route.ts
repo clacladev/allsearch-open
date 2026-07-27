@@ -3,7 +3,6 @@ import { getUserId, getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPostHogServer, searchParamsToObject } from '@/libs/posthog';
 import { getPromptRowsWithProjectId, updatePromptRowWithId } from '@/libs/database/Prompts/queries';
 import z from 'zod';
-import { MAX_PROMPTS_DURING_TRIAL } from '@/libs/subscriptions';
 
 export async function POST(
   req: NextRequest,
@@ -29,14 +28,6 @@ export async function POST(
     if (!promptRow) throw new Error('Failed to get prompt');
     if (promptRow.author_id !== user.id) {
       throw new Error('You are not authorized to archive this prompt');
-    }
-
-    // TODO: Check subscription status
-    const activePromptsCount = promptRows.filter((p) => !p.is_archived).length;
-    if (action === 'restore' && activePromptsCount >= MAX_PROMPTS_DURING_TRIAL) {
-      throw new Error(
-        `You've reached the trial limit of ${MAX_PROMPTS_DURING_TRIAL} prompts. Subscribe to unlock more.`
-      );
     }
 
     const updatedPromptRow = await updatePromptRowWithId(promptId, {

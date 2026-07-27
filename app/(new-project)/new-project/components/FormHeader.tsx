@@ -1,4 +1,4 @@
-import { AppLogo, AppLogoMinimal } from '@/app/(public)/components/AppLogo';
+import { AppLogo, AppLogoMinimal } from '@/components/AppLogo';
 
 export default function FormHeader({ title, description }: { title: string; description: string }) {
   return (

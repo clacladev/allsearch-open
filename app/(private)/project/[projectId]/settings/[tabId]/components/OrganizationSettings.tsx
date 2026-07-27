@@ -11,7 +11,7 @@ import { Input, InputBase } from '@/components/base/input/input';
 import { Button } from '@/components/base/buttons/button';
 import SettingsFormHeader from './SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { OrganizationRow, OrganizationType } from '@/libs/database/Organizations/types';
 import { ORGANIZATION_TYPES } from '@/app/(new-project)/organization/helpers';
 import { RadioGroupRadioButton } from '@/components/base/radio-groups/radio-group-radio-button';

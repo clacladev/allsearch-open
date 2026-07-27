@@ -1,6 +1,5 @@
 'use client';
 
-import { SupportButton } from '@/app/(public)/components/SupportButton';
 import { ROUTES } from '@/libs/routes';
 import { Button } from '@/components/base/buttons/button';
 import { Home02, RefreshCcw01 } from '@untitledui/icons';
@@ -34,7 +33,6 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
               <Button onClick={reset} iconLeading={RefreshCcw01} color="secondary" size="xl">
                 Refresh
               </Button>
-              <SupportButton color="secondary" size="xl" />
               <Button href={ROUTES.DASHBOARD} iconLeading={Home02} size="xl">
                 Dashboard
               </Button>

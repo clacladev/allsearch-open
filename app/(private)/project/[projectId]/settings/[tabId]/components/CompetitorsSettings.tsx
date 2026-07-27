@@ -13,7 +13,7 @@ import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayou
 import { RouteHelper } from '@/libs/routes';
 import { Check, ChevronDown, Minus, Plus } from '@untitledui/icons';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
-import { showErrorAlertToast, showSuccessAlertToast } from '@/app/(public)/components/Alerts';
+import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { isDuplicateName, isDuplicateUrl } from './helpers';
 import { appFetch } from '@/hooks/appFetch';
 import { isValidUrl } from '@/libs/utils/urls';
