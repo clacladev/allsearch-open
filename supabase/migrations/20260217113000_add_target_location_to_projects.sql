@@ -1,1 +1,0 @@
-ALTER TABLE projects ADD COLUMN target_location TEXT DEFAULT NULL;
