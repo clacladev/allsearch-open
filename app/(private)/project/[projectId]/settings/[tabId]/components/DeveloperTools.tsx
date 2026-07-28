@@ -9,7 +9,7 @@ import { SectionLabel } from '@/components/application/section-headers/section-l
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { isDevEnv } from '@/libs/env';
 
-export default function AdminTools() {
+export default function DeveloperTools() {
   const { currentProject } = usePrivateLayoutContext();
   const [isUpdating, startUpdateTransition] = useTransition();
   const [runId, setRunId] = useState<string | undefined>();
@@ -42,7 +42,7 @@ export default function AdminTools() {
           promptsCreated: number;
           responsesCreated: number;
           sourcesCreated: number;
-        }>(RouteHelper.Api.Admin.getProjectFillPromptResponses(currentProject.id), {
+        }>(RouteHelper.Api.Developer.getProjectFillPromptResponses(currentProject.id), {
           method: 'POST',
         });
         setIsFillModalOpen(false);
@@ -60,7 +60,7 @@ export default function AdminTools() {
   return (
     <div className="max-w-4xl">
       <div className="flex flex-col gap-5">
-        <SettingsFormHeader title="Admin Tools" description="Tools for admins only." />
+        <SettingsFormHeader title="Developer Tools" description="Tools for developers." />
 
         <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 

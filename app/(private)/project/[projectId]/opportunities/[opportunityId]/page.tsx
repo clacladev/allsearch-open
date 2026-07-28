@@ -9,7 +9,6 @@ import { getPromptResponseRowsWithProjectIdInDateRange } from '@/libs/database/P
 import { getSourceRowsWithProjectIdInDateRange } from '@/libs/database/Sources/queries';
 import { getPromptResponsesWorkRows } from '@/libs/utils/project-analysis/helpers';
 import { getOpportunitiesSummary } from '@/libs/utils/project-analysis/getOpportunitiesSummary';
-import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { getPromptArticleRowsForOpportunityId } from '@/libs/database/PromptArticles/queries';
 import { getUniqueId } from '@/libs/signature';
 import OpportunityDetails from './components/OpportunityDetails';
@@ -47,14 +46,11 @@ export default async function ProjectSourceDetailsPage({ params, searchParams }:
   const startDateISO = startDate ? getISODateString(startDate) : defaultDateRange.startDateISO;
   const endDateISO = endDate ? getISODateString(endDate) : defaultDateRange.endDateISO;
 
-  const user = await getUserOrRedirectToSignin();
-
   const [project, promptResponses, sourceRows, previouslyGeneratedArticles] = await Promise.all([
     getProjectRowWithId(projectId),
     getPromptResponseRowsWithProjectIdInDateRange(projectId, startDateISO, endDateISO),
     getSourceRowsWithProjectIdInDateRange(projectId, startDateISO, endDateISO),
     getPromptArticleRowsForOpportunityId({
-      authorId: user.id,
       projectId,
       opportunityId,
     }),

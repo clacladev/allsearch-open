@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
+import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   competitors,
   projects,
@@ -55,7 +56,7 @@ describe('cascade delete', () => {
       .insert(promptResponses)
       .values({
         text: 'Response text',
-        chatbot_id: 'chatgpt',
+        chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
         workflow_id: 'workflow-1',

@@ -1,14 +1,8 @@
 'use client';
 
-import type { FC, HTMLAttributes } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { Placement } from 'react-aria';
-import {
-  ChevronSelectorVertical,
-  LogOut01,
-  Plus,
-  Settings01,
-} from '@untitledui/icons';
+import { ChevronSelectorVertical, Plus } from '@untitledui/icons';
 import { useFocusManager } from 'react-aria';
 import type { DialogProps as AriaDialogProps } from 'react-aria-components';
 import {
@@ -22,18 +16,8 @@ import { RadioButtonBase } from '@/components/base/radio-buttons/radio-buttons';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { cx } from '@/utils/cx';
 import { ProjectIconLabelGroup } from './ProjectIconLabelGroup';
-import Link from 'next/link';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import { useRouter } from 'next/navigation';
-import { userSignOut } from '@/libs/database/supabase/client';
-
-const getLinksItems = () => [
-  {
-    label: 'Account settings',
-    href: ROUTES.ACCOUNT_SETTINGS,
-    icon: Settings01,
-  },
-];
 
 export type ProjectStatus = 'running' | 'paused';
 
@@ -66,8 +50,6 @@ export const NavProjectMenu = ({
   const dialogRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const linksItems = getLinksItems();
-
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
       switch (e.key) {
@@ -81,11 +63,6 @@ export const NavProjectMenu = ({
     },
     [focusManager]
   );
-
-  const onSignOut = useCallback(async () => {
-    await userSignOut();
-    router.push(ROUTES.HOME);
-  }, []);
 
   useEffect(() => {
     const element = dialogRef.current;
@@ -108,19 +85,6 @@ export const NavProjectMenu = ({
         <>
           <div className="bg-primary ring-secondary rounded-xl ring-1">
             <div className="flex flex-col gap-0.5 py-1.5">
-              {linksItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => {
-                    close();
-                  }}
-                >
-                  <NavProjectCardMenuItem label={item.label} icon={item.icon} />
-                </Link>
-              ))}
-            </div>
-            <div className="border-secondary flex flex-col gap-0.5 border-t py-1.5">
               <div className="text-tertiary px-3 pt-1.5 pb-1 text-xs font-semibold">
                 Switch project
               </div>
@@ -172,60 +136,9 @@ export const NavProjectMenu = ({
               </Button>
             </div>
           </div>
-
-          <div className="pt-1 pb-1.5">
-            <NavProjectCardMenuItem
-              label="Sign out"
-              icon={LogOut01}
-              onClick={async () => {
-                await onSignOut();
-                close();
-              }}
-              // shortcut="⌥⇧Q"
-            />
-          </div>
         </>
       )}
     </AriaDialog>
-  );
-};
-
-const NavProjectCardMenuItem = ({
-  icon: Icon,
-  label,
-  shortcut,
-  ...buttonProps
-}: {
-  icon?: FC<{ className?: string }>;
-  label: string;
-  shortcut?: string;
-} & HTMLAttributes<HTMLButtonElement>) => {
-  return (
-    <button
-      {...buttonProps}
-      className={cx(
-        'group/item w-full cursor-pointer px-1.5 focus:outline-hidden',
-        buttonProps.className
-      )}
-    >
-      <div
-        className={cx(
-          'group-hover/item:bg-primary_hover flex w-full items-center justify-between gap-3 rounded-md p-2',
-          // Focus styles.
-          'outline-focus-ring group-focus-visible/item:outline-2 group-focus-visible/item:outline-offset-2'
-        )}
-      >
-        <div className="text-secondary group-hover/item:text-secondary_hover flex gap-2 text-sm font-semibold">
-          {Icon && <Icon className="text-fg-quaternary size-5" />} {label}
-        </div>
-
-        {shortcut && (
-          <kbd className="font-body text-tertiary ring-secondary flex rounded px-1 py-px text-xs font-medium ring-1 ring-inset">
-            {shortcut}
-          </kbd>
-        )}
-      </div>
-    </button>
   );
 };
 

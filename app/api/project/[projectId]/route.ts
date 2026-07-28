@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { BrandSchema } from '../../new-project/save/types';
 import { getProjectRowWithId, updateProjectRow } from '@/libs/database/Projects/queries';
 import { getSafeNewUrl } from '@/libs/utils/urls';
@@ -15,10 +14,8 @@ export async function PATCH(
     const body = await req.json();
     const { url, name, iconUrl, targetLocation } = BrandSchema.parse(body);
 
-    const user = await getUserOrThrow();
-
     const projectRow = await getProjectRowWithId(projectId);
-    if (!projectRow || projectRow.author_id !== user.id) {
+    if (!projectRow) {
       throw new Error('Failed to get project');
     }
 

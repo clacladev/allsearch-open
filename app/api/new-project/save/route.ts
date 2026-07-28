@@ -1,8 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { z } from 'zod';
 import { BrandSchema, CompetitorSchema, PromptIdsSchema, SaveNewProjectResponse } from './types';
-import { getOrganizationRowWithOwnerId } from '@/libs/database/Organizations/queries';
+import { getOrganization } from '@/libs/database/Organizations/queries';
 import { insertProjectRow } from '@/libs/database/Projects/queries';
 
 import { insertTopicRows } from '@/libs/database/Topics/queries';
@@ -25,10 +24,8 @@ export async function POST(req: NextRequest) {
       })
       .parse(body);
 
-    const user = await getUserOrThrow();
-
     // Organization's checks
-    const organizationRow = await getOrganizationRowWithOwnerId(user.id);
+    const organizationRow = await getOrganization();
     if (!organizationRow) throw new Error('Organization not found');
 
     // Create new project
@@ -39,8 +36,6 @@ export async function POST(req: NextRequest) {
       aliases: [],
       icon_url: brand.iconUrl || null,
       target_location: brand.targetLocation || null,
-      organization_id: organizationRow.id,
-      author_id: user.id,
     });
 
     // Create topics
@@ -51,7 +46,6 @@ export async function POST(req: NextRequest) {
       .map((name) => ({
         name,
         project_id: projectRow.id,
-        author_id: user.id,
       }));
     const topicRows = await insertTopicRows(topicInputs);
     if (!topicRows.length) throw new Error('Failed to save topics');
@@ -63,8 +57,6 @@ export async function POST(req: NextRequest) {
         name: prompt,
         topic_id: topicId,
         project_id: projectRow.id,
-        organization_id: organizationRow.id,
-        author_id: user.id,
       }))
     );
     const promptRows = await insertPromptRows(promptInputs);
@@ -78,8 +70,6 @@ export async function POST(req: NextRequest) {
       aliases: [],
       icon_url: competitor.iconUrl || null,
       project_id: projectRow.id,
-      organization_id: organizationRow.id,
-      author_id: user.id,
     }));
     const competitorRows = await insertCompetitorRows(competitorInputs);
     if (!competitorRows.length) throw new Error('Failed to save competitors');

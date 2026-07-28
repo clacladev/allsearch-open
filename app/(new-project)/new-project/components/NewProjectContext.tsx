@@ -12,11 +12,11 @@ import { createContext, useContext, useState, ReactNode, useCallback, useMemo } 
 const DRAFT_VERSION = 1;
 const DRAFT_TTL_MS = 1000 * 60 * 60 * 24 * 2; // 2 days
 
-const getDraftStorageKey = (userId: string) => `new-project:draft:${userId}`;
+const DRAFT_STORAGE_KEY = 'new-project:draft';
 
-export function clearNewProjectDraft(userId: string) {
+export function clearNewProjectDraft() {
   if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(getDraftStorageKey(userId));
+  window.localStorage.removeItem(DRAFT_STORAGE_KEY);
 }
 
 type NewProjectDraftPayload = {
@@ -88,20 +88,12 @@ interface NewProjectContextType {
 
 const NewProjectContext = createContext<NewProjectContextType | undefined>(undefined);
 
-export function NewProjectContextProvider({
-  userId,
-  children,
-}: {
-  userId: string;
-  children: ReactNode;
-}) {
+export function NewProjectContextProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [brand, setBrand] = useState<NewProjectBrand>();
   const [topics, setTopics] = useState<NewProjectTopics>();
   const [prompts, setPrompts] = useState<NewProjectPrompts>();
   const [competitors, setCompetitors] = useState<NewProjectCompetitors>([]);
-
-  const storageKey = useMemo(() => getDraftStorageKey(userId), [userId]);
 
   const draftState = useMemo<NewProjectDraftPayload>(
     () => ({
@@ -124,7 +116,7 @@ export function NewProjectContextProvider({
   const resetDraftState = useCallback(() => setDraftState({}), []);
 
   usePersistedLocalStorage<NewProjectDraftPayload>({
-    storageKey,
+    storageKey: DRAFT_STORAGE_KEY,
     version: DRAFT_VERSION,
     ttlMs: DRAFT_TTL_MS,
     state: draftState,

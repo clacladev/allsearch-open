@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+import type { OrganizationType } from './Organizations/types';
 import type { ArticleOutline, ArticleSourcesUsed } from './PromptArticles/types';
+import type { ChatbotId } from './shared/ChatbotId';
 import type { PageHeading } from '@/libs/utils/urlAnalysis';
 
 // Shared column conventions (see docs/adr/0006-sqlite-with-drizzle.md):
@@ -40,7 +42,7 @@ export const organizations = sqliteTable(
     id: idColumn(),
     created_at: createdAtColumn(),
     updated_at: updatedAtColumn(),
-    type: text('type').notNull(),
+    type: text('type').$type<OrganizationType>().notNull(),
     url: text('url'),
     name: text('name'),
     icon_url: text('icon_url'),
@@ -165,7 +167,7 @@ export const promptResponses = sqliteTable(
     id: idColumn(),
     created_at: createdAtColumn(),
     text: text('text').notNull(),
-    chatbot_id: text('chatbot_id').notNull(),
+    chatbot_id: text('chatbot_id').$type<ChatbotId>().notNull(),
     prompt_id: text('prompt_id')
       .notNull()
       .references(() => prompts.id, { onDelete: 'cascade' }),
@@ -296,7 +298,7 @@ export const collectionRunItems = sqliteTable(
     prompt_id: text('prompt_id')
       .notNull()
       .references(() => prompts.id, { onDelete: 'cascade' }),
-    chatbot_id: text('chatbot_id').notNull(),
+    chatbot_id: text('chatbot_id').$type<ChatbotId>().notNull(),
     status: text('status').notNull(),
     attempts: integer('attempts').notNull().default(0),
     error: text('error'),

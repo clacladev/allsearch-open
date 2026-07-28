@@ -4,7 +4,6 @@ import { Edit05 } from '@untitledui/icons';
 import z from 'zod';
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
@@ -121,10 +120,8 @@ export default async function NewArticlePage({ params, searchParams }: Props) {
   const { opportunityId, promptArticleId, startDate, endDate, view, generate } =
     SearchParamsSchema.parse(await searchParams);
 
-  const user = await getUserOrRedirectToSignin();
-
   const [projectRow, promptRow] = await Promise.all([
-    getProjectRowWithId(projectId, user.id),
+    getProjectRowWithId(projectId),
     getPromptRowWithId(promptId),
   ]);
   if (!projectRow) notFound();
@@ -149,12 +146,7 @@ export default async function NewArticlePage({ params, searchParams }: Props) {
   let initialOutline: PromptArticleRow | null = null;
   if (promptArticleId) {
     const row = await getPromptArticleRowWithId(promptArticleId);
-    if (
-      !row ||
-      row.author_id !== user.id ||
-      row.project_id !== projectId ||
-      row.prompt_id !== promptId
-    ) {
+    if (!row || row.project_id !== projectId || row.prompt_id !== promptId) {
       notFound();
     }
     initialOutline = row;

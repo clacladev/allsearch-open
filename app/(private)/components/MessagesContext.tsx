@@ -13,11 +13,11 @@ export const HIDE_MESSAGE_ONE_DAY_MS = 1000 * 60 * 60 * 24;
 const DRAFT_VERSION = 1;
 const DRAFT_TTL_MS = HIDE_MESSAGE_ONE_DAY_MS * 180; // 6 months
 
-const getDraftStorageKey = (userId: string) => `messages:${userId}`;
+const DRAFT_STORAGE_KEY = 'messages';
 
-export function clearStorage(userId: string) {
+export function clearStorage() {
   if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(getDraftStorageKey(userId));
+  window.localStorage.removeItem(DRAFT_STORAGE_KEY);
 }
 
 // --- Types ---
@@ -35,16 +35,9 @@ interface MessagesContextType {
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
 
-export function MessagesContextProvider({
-  userId,
-  children,
-}: {
-  userId: string;
-  children: ReactNode;
-}) {
+export function MessagesContextProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [hiddenMessages, setHiddenMessages] = useState<Record<string, number>>({});
-  const storageKey = useMemo(() => getDraftStorageKey(userId), [userId]);
   const draftState = useMemo<MessagesPayload>(() => ({ hiddenMessages }), [hiddenMessages]);
 
   const setDraftState = useCallback((draft: MessagesPayload) => {
@@ -76,7 +69,7 @@ export function MessagesContextProvider({
   const resetDraftState = useCallback(() => setDraftState({ hiddenMessages: {} }), []);
 
   usePersistedLocalStorage<MessagesPayload>({
-    storageKey,
+    storageKey: DRAFT_STORAGE_KEY,
     version: DRAFT_VERSION,
     ttlMs: DRAFT_TTL_MS,
     state: draftState,

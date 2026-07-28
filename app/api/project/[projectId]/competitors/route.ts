@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getCompetitorRowsWithProjectId,
   getCompetitorRowWithId,
@@ -20,10 +19,8 @@ export async function GET(
     const { projectId } = await params;
     if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-    const user = await getUserOrThrow();
-
     const projectRow = await getProjectRowWithId(projectId);
-    if (!projectRow || projectRow.author_id !== user.id) {
+    if (!projectRow) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
@@ -49,8 +46,6 @@ export async function POST(
 
     const body = await req.json();
     const competitor = CompetitorSchema.parse(body);
-
-    const user = await getUserOrThrow();
 
     // Get all the prompts in the group
     const [projectRow, competitorRows] = await Promise.all([
@@ -82,8 +77,6 @@ export async function POST(
       aliases: [],
       icon_url: competitor.iconUrl || null,
       project_id: projectId,
-      organization_id: projectRow.organization_id,
-      author_id: user.id,
     });
     if (!competitorRow) throw new Error('Failed to save competitor');
 
@@ -109,8 +102,6 @@ export async function PATCH(
     const { competitorId, name } = z
       .object({ competitorId: z.string(), name: z.string().trim().optional() })
       .parse(body);
-
-    await getUserOrThrow();
 
     const competitorRow = await getCompetitorRowWithId(competitorId);
     if (!competitorRow || competitorRow.project_id !== projectId) {
@@ -154,8 +145,6 @@ export async function DELETE(
 
     const body = await req.json();
     const { competitorId } = z.object({ competitorId: z.string() }).parse(body);
-
-    await getUserOrThrow();
 
     const competitorRow = await getCompetitorRowWithId(competitorId);
     if (!competitorRow || competitorRow.project_id !== projectId) {

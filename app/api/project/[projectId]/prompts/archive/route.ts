@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptRowsWithProjectId, updatePromptRowWithId } from '@/libs/database/Prompts/queries';
 import z from 'zod';
 
@@ -18,16 +17,11 @@ export async function POST(
       })
       .parse(await req.json());
 
-    const user = await getUserOrThrow();
-
     const promptRows = await getPromptRowsWithProjectId(projectId, true);
     if (!promptRows.length) throw new Error('Failed to get prompts');
 
     const promptRow = promptRows.find((prompt) => prompt.id === promptId);
     if (!promptRow) throw new Error('Failed to get prompt');
-    if (promptRow.author_id !== user.id) {
-      throw new Error('You are not authorized to archive this prompt');
-    }
 
     const updatedPromptRow = await updatePromptRowWithId(promptId, {
       is_archived: action === 'archive',

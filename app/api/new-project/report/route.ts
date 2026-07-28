@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseSummaryRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
@@ -15,8 +14,6 @@ export async function GET(req: NextRequest) {
     const { projectId } = z.object({ projectId: z.string() }).parse({
       projectId: req.nextUrl.searchParams.get('projectId'),
     });
-    await getUserOrThrow();
-
     const project = await getProjectRowWithId(projectId);
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });

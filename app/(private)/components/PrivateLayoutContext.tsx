@@ -4,12 +4,9 @@ import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { OrganizationRow } from '@/libs/database/Organizations/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { PromptRow } from '@/libs/database/Prompts/types';
-import { UserProfileRow } from '@/libs/database/UserProfiles/types';
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
 interface PrivateLayoutContextType {
-  userProfile: UserProfileRow | undefined;
-
   organization: OrganizationRow | undefined;
   setOrganization: (organization: OrganizationRow | undefined) => void;
 
@@ -40,7 +37,6 @@ export function PrivateLayoutContextProvider({
   children,
 }: {
   initialValues: {
-    userProfile: UserProfileRow;
     organization: OrganizationRow;
     projects: ProjectRow[];
     competitors: CompetitorRow[];
@@ -48,7 +44,6 @@ export function PrivateLayoutContextProvider({
   };
   children: ReactNode;
 }) {
-  const [userProfile, setUserProfile] = useState<UserProfileRow>();
   const [organization, setOrganization] = useState<OrganizationRow>();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectRow | undefined>();
@@ -60,7 +55,6 @@ export function PrivateLayoutContextProvider({
   const [currentPrompts, setCurrentPrompts] = useState<PromptRow[]>([]);
 
   useEffect(() => {
-    setUserProfile(initialValues.userProfile);
     setOrganization(initialValues.organization);
     setProjects(initialValues.projects);
     setCompetitorsMap(
@@ -209,8 +203,6 @@ export function PrivateLayoutContextProvider({
   return (
     <PrivateLayoutContext.Provider
       value={{
-        userProfile,
-
         organization,
         setOrganization,
 

@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getTopicRowWithId,
   getTopicRowsWithProjectId,
@@ -22,12 +21,10 @@ export async function POST(
     const body = await req.json();
     const { name } = z.object({ name: z.string().min(1) }).parse(body);
 
-    const user = await getUserOrThrow();
-
-    const projectRow = await getProjectRowWithId(projectId, user.id);
+    const projectRow = await getProjectRowWithId(projectId);
     if (!projectRow) throw new Error('Project not found');
 
-    const existingTopics = await getTopicRowsWithProjectId(projectId, { includeArchived: true });
+    const existingTopics = await getTopicRowsWithProjectId(projectId, true);
     const isDuplicate = existingTopics.some(
       (t) => t.name.toLowerCase() === name.trim().toLowerCase()
     );
@@ -36,7 +33,6 @@ export async function POST(
     const topicRow = await insertTopicRow({
       name: name.trim(),
       project_id: projectId,
-      author_id: user.id,
     });
 
     return NextResponse.json(topicRow);
@@ -66,17 +62,15 @@ export async function PATCH(
       })
       .parse(body);
 
-    const user = await getUserOrThrow();
-
     const topicRow = await getTopicRowWithId(topicId);
     if (!topicRow || topicRow.project_id !== projectId) throw new Error('Topic not found');
 
-    const projectRow = await getProjectRowWithId(projectId, user.id);
+    const projectRow = await getProjectRowWithId(projectId);
     if (!projectRow) throw new Error('Project not found');
 
     const updates: Partial<Pick<(typeof topicRow), 'name' | 'is_archived'>> = {};
     if (name !== undefined) {
-      const existingTopics = await getTopicRowsWithProjectId(projectId, { includeArchived: true });
+      const existingTopics = await getTopicRowsWithProjectId(projectId, true);
       const isDuplicate = existingTopics.some(
         (t) => t.id !== topicId && t.name.toLowerCase() === name.trim().toLowerCase()
       );
@@ -107,16 +101,14 @@ export async function DELETE(
     const body = await req.json();
     const { topicId } = z.object({ topicId: z.string() }).parse(body);
 
-    const user = await getUserOrThrow();
-
     const topicRow = await getTopicRowWithId(topicId);
     if (!topicRow || topicRow.project_id !== projectId) throw new Error('Topic not found');
 
-    const projectRow = await getProjectRowWithId(projectId, user.id);
+    const projectRow = await getProjectRowWithId(projectId);
     if (!projectRow) throw new Error('Project not found');
 
     // Reassign all prompts in this topic to the Custom topic
-    const customTopic = await findOrCreateCustomTopic(projectId, user.id);
+    const customTopic = await findOrCreateCustomTopic(projectId);
     const prompts = await getPromptRowsWithProjectId(projectId, true);
     const affectedPrompts = prompts.filter((p) => p.topic_id === topicId);
     await Promise.all(

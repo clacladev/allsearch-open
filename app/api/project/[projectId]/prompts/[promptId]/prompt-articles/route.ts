@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
@@ -57,10 +56,8 @@ export async function POST(
     const body = BodySchema.parse(await req.json());
     const targetSourceCleanUrl = body.targetSourceCleanUrl ?? null;
 
-    const user = await getUserOrThrow();
-
     const [projectRow, promptRow] = await Promise.all([
-      getProjectRowWithId(projectId, user.id),
+      getProjectRowWithId(projectId),
       getPromptRowWithId(promptId),
     ]);
     if (!projectRow) {
@@ -154,8 +151,6 @@ export async function POST(
     };
 
     const generation = await generateOutline(generationInput, {
-      userId: user.id,
-      userEmail: user.email,
       others: { projectId, promptId, opportunityType: body.opportunityType },
     });
 
@@ -163,8 +158,6 @@ export async function POST(
 
     const inserted = await insertPromptArticleRow({
       project_id: projectId,
-      organization_id: projectRow.organization_id,
-      author_id: user.id,
       prompt_id: promptId,
       opportunity_id: body.opportunityId ?? null,
       opportunity_type: body.opportunityType,

@@ -1,11 +1,8 @@
 import { mock } from 'bun:test';
 
-const mockUser = { id: 'user-123', email: 'test@example.com' };
 const mockOutlineRow = {
   id: 'outline-123',
   project_id: 'project-123',
-  organization_id: 'org-123',
-  author_id: 'user-123',
   prompt_id: 'prompt-123',
   opportunity_id: 'opp-123',
   opportunity_type: 'ProjectSourceNotFoundOpportunity',
@@ -27,10 +24,6 @@ const mockOutlineRow = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGetUserOrThrow = mock(async () => mockUser as any);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGetUserId = mock(async () => mockUser.id);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockGetPromptArticleRowWithId = mock(async (): Promise<any> => mockOutlineRow);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockUpdateArticleOutlineUserEdits = mock(
@@ -41,11 +34,6 @@ const mockUpdateArticleOutlineUserEdits = mock(
   })
 );
 const mockCaptureException = mock(() => {});
-
-mock.module('@/libs/database/supabase/server', () => ({
-  getUserOrThrow: mockGetUserOrThrow,
-  getUserId: mockGetUserId,
-}));
 
 mock.module('@/libs/posthog', () => ({
   getPostHogServer: () => ({
@@ -171,18 +159,6 @@ describe('PATCH /api/project/[projectId]/prompts/[promptId]/prompt-articles/[pro
       makeParams()
     );
     expect(res.status).toBe(404);
-  });
-
-  it('returns 403 when the outline belongs to a different author', async () => {
-    mockGetPromptArticleRowWithId.mockImplementation(async () => ({
-      ...mockOutlineRow,
-      author_id: 'someone-else',
-    }));
-    const res = await PATCH(
-      makeRequest({ userEditedOutline: validEditedOutline }) as never,
-      makeParams()
-    );
-    expect(res.status).toBe(403);
   });
 
   it('returns 403 when the outline is for a different project', async () => {

@@ -3,6 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
+import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   collectionRunItems,
   collectionRuns,
@@ -71,7 +72,7 @@ describe('schema round trip', () => {
       .insert(promptResponses)
       .values({
         text: 'Response text',
-        chatbot_id: 'chatgpt',
+        chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
         workflow_id: 'workflow-1',
@@ -126,7 +127,7 @@ describe('schema round trip', () => {
         run_id: collectionRun.id,
         project_id: project.id,
         prompt_id: prompt.id,
-        chatbot_id: 'perplexity',
+        chatbot_id: ChatbotId.Perplexity,
         status: 'pending',
       })
       .returning();
@@ -188,7 +189,7 @@ describe('schema round trip', () => {
       .insert(promptResponses)
       .values({
         text: 'Response text',
-        chatbot_id: 'chatgpt',
+        chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
         workflow_id: 'workflow-1',

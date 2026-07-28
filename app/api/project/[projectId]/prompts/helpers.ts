@@ -1,7 +1,7 @@
 import { getTopicRowsWithProjectId, insertTopicRow } from '@/libs/database/Topics/queries';
 import { CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
 
-export async function findOrCreateCustomTopic(projectId: string, userId: string) {
+export async function findOrCreateCustomTopic(projectId: string) {
   // Find custom topic
   const topicRows = await getTopicRowsWithProjectId(projectId);
   if (!topicRows.length) throw new Error('Failed to get topics');
@@ -12,7 +12,6 @@ export async function findOrCreateCustomTopic(projectId: string, userId: string)
   const newTopicRow = await insertTopicRow({
     name: CUSTOM_TOPIC_NAME,
     project_id: projectId,
-    author_id: userId,
   });
   if (!newTopicRow) throw new Error('Failed to save topic');
 

@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { OrganizationSchema } from '../types';
 import {
   getOrganizationRowWithId,
@@ -17,10 +16,8 @@ export async function PATCH(
     const body = await req.json();
     const { type, url, name, iconUrl } = OrganizationSchema.parse(body);
 
-    const user = await getUserOrThrow();
-
     const organizationRow = await getOrganizationRowWithId(organizationId);
-    if (!organizationRow || organizationRow.owner_id !== user.id) {
+    if (!organizationRow) {
       throw new Error('Failed to get organization');
     }
 
