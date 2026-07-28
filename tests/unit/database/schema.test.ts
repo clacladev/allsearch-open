@@ -16,19 +16,6 @@ import {
 } from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from './testHelpers';
 
-const ALL_TABLE_NAMES = [
-  'organizations',
-  'projects',
-  'competitors',
-  'topics',
-  'prompts',
-  'collection_runs',
-  'prompt_responses',
-  'sources',
-  'prompt_articles',
-  'collection_run_items',
-];
-
 describe('schema round trip', () => {
   let dbPath: string;
   let db: AllSearchDatabase;
@@ -217,7 +204,13 @@ describe('schema round trip', () => {
   });
 
   it('marks id NOT NULL on every table, even though drizzle-kit does not emit it for a text() primaryKey()', async () => {
-    for (const tableName of ALL_TABLE_NAMES) {
+    // Derived from sqlite_master rather than a hardcoded list — a literal list here would
+    // duplicate `EXPECTED_TABLE_NAMES` in migrate.test.ts and could drift from it, silently
+    // skipping the NOT NULL check for any table added to one list but not the other.
+    const tables = await db.all<{ name: string }>(
+      sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != '__drizzle_migrations'`
+    );
+    for (const { name: tableName } of tables) {
       const columns = await db.all<{ name: string; notnull: number }>(
         sql.raw(`PRAGMA table_info(${tableName})`)
       );
