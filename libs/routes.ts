@@ -62,9 +62,6 @@ export const ROUTES = {
     PROJECT: {
       PROJECT: '/api/project/:projectId',
       PROJECT_ARCHIVE: '/api/project/:projectId/archive',
-      PROJECT_PAUSE: '/api/project/:projectId/pause',
-      PROJECT_CLONE: '/api/project/:projectId/clone',
-      PROJECT_DELETE: '/api/project/:projectId/delete',
       PROJECT_FILL_PROMPT_RESPONSES: '/api/project/:projectId/fill-prompt-responses',
       PROMPTS: '/api/project/:projectId/prompts',
       PROMPTS_ARCHIVE: '/api/project/:projectId/prompts/archive',
@@ -241,14 +238,6 @@ export const RouteHelper = {
     // clone and backfill are genuinely useful, so they survive ungated under the Developer tab
     // (ADR 0003).
     Developer: {
-      getProjectPause: (projectId: string) =>
-        ROUTES.API.PROJECT.PROJECT_PAUSE.replace(':projectId', projectId),
-      getProjectArchive: (projectId: string) =>
-        ROUTES.API.PROJECT.PROJECT_ARCHIVE.replace(':projectId', projectId),
-      getProjectClone: (projectId: string) =>
-        ROUTES.API.PROJECT.PROJECT_CLONE.replace(':projectId', projectId),
-      getProjectDelete: (projectId: string) =>
-        ROUTES.API.PROJECT.PROJECT_DELETE.replace(':projectId', projectId),
       getProjectFillPromptResponses: (projectId: string) =>
         ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
     },

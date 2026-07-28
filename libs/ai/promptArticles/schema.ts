@@ -104,5 +104,27 @@ export const articleSettingsSchema = z.object({
 
 export type ArticleSettings = z.infer<typeof articleSettingsSchema>;
 
-export const articleSettingsPartialSchema = articleSettingsSchema.partial();
+// Not derived from `articleSettingsSchema.partial()`: zod applies `.default()` to a field even
+// when its key is absent from the input, regardless of `.partial()`, so that approach silently
+// fills in styleGuide/pagesToLink/targetKeywords for every patch that omits them, clobbering the
+// existing row's values instead of leaving them untouched. Redeclaring without `.default()` keeps
+// genuinely-omitted fields `undefined`, which is what the route's field-presence checks require.
+export const articleSettingsPartialSchema = z
+  .object({
+    targetWordCount: z
+      .number()
+      .int()
+      .min(ARTICLE_TARGET_WORD_COUNT_MIN)
+      .max(ARTICLE_TARGET_WORD_COUNT_MAX)
+      .optional(),
+    styleGuide: z.string().max(ARTICLE_STYLE_GUIDE_MAX).optional(),
+    pagesToLink: z.array(z.url()).max(ARTICLE_PAGES_TO_LINK_MAX).optional(),
+    targetKeywords: z
+      .array(z.string().min(1).max(ARTICLE_KEYWORD_MAX))
+      .max(ARTICLE_TARGET_KEYWORDS_MAX)
+      .optional(),
+  })
+  .refine((settings) => Object.keys(settings).length > 0, {
+    message: 'settings must include at least one field to update',
+  });
 export type ArticleSettingsPartial = z.infer<typeof articleSettingsPartialSchema>;

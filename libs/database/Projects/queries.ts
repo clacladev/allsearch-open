@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { projects } from '../schema';
@@ -12,20 +12,7 @@ type InsertProjectRowInput = Omit<
 >;
 type UpdateProjectRowInput = Omit<ProjectRow, 'id' | 'created_at' | 'updated_at'>;
 
-const projectColumns = {
-  id: projects.id,
-  created_at: projects.created_at,
-  updated_at: projects.updated_at,
-  url: projects.url,
-  name: projects.name,
-  aliases: projects.aliases,
-  icon_url: projects.icon_url,
-  hostname: projects.hostname,
-  prompts_updated_at: projects.prompts_updated_at,
-  is_paused: projects.is_paused,
-  is_archived: projects.is_archived,
-  target_location: projects.target_location,
-};
+const projectColumns = getTableColumns(projects);
 
 export async function getProjectRowWithId(id: string): Promise<ProjectRow | undefined> {
   const db = await getDatabase();
@@ -35,12 +22,13 @@ export async function getProjectRowWithId(id: string): Promise<ProjectRow | unde
 
 export async function getProjectRows(includeArchived = false): Promise<ProjectRow[]> {
   const db = await getDatabase();
-  const conditions = includeArchived ? [] : [eq(projects.is_archived, false)];
+  const conditions = [];
+  if (!includeArchived) conditions.push(eq(projects.is_archived, false));
   return db
     .select()
     .from(projects)
     .where(and(...conditions))
-    .orderBy(projects.created_at);
+    .orderBy(asc(projects.created_at));
 }
 
 export async function getProjectRowsAll<K extends keyof ProjectRow>(
@@ -54,12 +42,13 @@ export async function getProjectRowsAll<K extends keyof ProjectRow>(
         K
       >)
     : (projectColumns as Pick<typeof projectColumns, K>);
-  const conditions = includeArchived ? [] : [eq(projects.is_archived, false)];
+  const conditions = [];
+  if (!includeArchived) conditions.push(eq(projects.is_archived, false));
   const rows = await db
     .select(columns)
     .from(projects)
     .where(and(...conditions))
-    .orderBy(projects.created_at);
+    .orderBy(asc(projects.created_at));
   return rows as Pick<ProjectRow, K>[];
 }
 

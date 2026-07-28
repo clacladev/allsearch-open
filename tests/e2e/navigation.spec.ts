@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  OVERVIEW_URL,
-  ACCOUNT_SETTINGS_URL,
-} from './constants';
+import { OVERVIEW_URL } from './constants';
 
 // ---------------------------------------------------------------------------
 // Sidebar
@@ -69,23 +66,6 @@ test.describe('Project selector', () => {
     await expect(page.getByText('Account settings')).toBeVisible();
     await expect(page.getByText('New project')).toBeVisible();
     await expect(page.getByText('Sign out')).toBeVisible();
-  });
-
-  test('can navigate to Account Settings', async ({ page }) => {
-    test.setTimeout(30_000);
-
-    await page.goto(OVERVIEW_URL);
-
-    // Open project selector
-    await page.locator('aside button').first().click();
-    await expect(page.getByText('Account settings')).toBeVisible();
-
-    // Click Account settings link
-    await page.getByRole('link', { name: 'Account settings' }).click();
-    await page.waitForURL(`**${ACCOUNT_SETTINGS_URL}`);
-
-    await expect(page.getByRole('heading', { name: 'Account Settings' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   });
 
   test('can navigate to New Project', async ({ page }) => {

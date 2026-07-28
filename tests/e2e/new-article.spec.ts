@@ -34,8 +34,6 @@ test.describe('New Article outline page', () => {
           promptArticle: {
             id,
             project_id: TEST_PROJECT_ID,
-            organization_id: 'org-test',
-            author_id: 'user-test',
             prompt_id: 'prompt-test',
             opportunity_id: null,
             opportunity_type: 'ProjectSourceNotFoundOpportunity',
@@ -124,8 +122,6 @@ test.describe('New Article outline page', () => {
           promptArticle: {
             id: seedOutlineId,
             project_id: TEST_PROJECT_ID,
-            organization_id: 'org-test',
-            author_id: 'user-test',
             prompt_id: 'prompt-test',
             opportunity_id: null,
             opportunity_type: 'ProjectSourceNotFoundOpportunity',
@@ -164,8 +160,6 @@ test.describe('New Article outline page', () => {
             promptArticle: {
               id: seedOutlineId,
               project_id: TEST_PROJECT_ID,
-              organization_id: 'org-test',
-              author_id: 'user-test',
               prompt_id: 'prompt-test',
               opportunity_id: null,
               opportunity_type: 'ProjectSourceNotFoundOpportunity',
