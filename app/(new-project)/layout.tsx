@@ -4,6 +4,14 @@ import ClientLayout from '@/components/ClientLayout';
 import { cx } from '@/utils/cx';
 import Image from 'next/image';
 
+// This app has no user identity, so nothing here reads a session cookie or other
+// dynamic API — the signal that used to force per-request rendering implicitly.
+// Pages in this group read the per-install SQLite database, so without this
+// export Next.js would statically prerender them at build time (against whatever
+// database exists then, or fail the build if it doesn't exist yet) and freeze that
+// snapshot into the served HTML forever.
+export const dynamic = 'force-dynamic';
+
 export function NewProjectLayoutColumn({
   size = 'md',
   children,

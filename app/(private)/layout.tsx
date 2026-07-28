@@ -11,6 +11,13 @@ import { ROUTES } from '@/libs/routes';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { MessagesContextProvider } from './components/MessagesContext';
 
+// This app has no user identity, so nothing here reads a session cookie or other
+// dynamic API — the signal that used to force per-request rendering implicitly.
+// Every page in this group reads the per-install SQLite database, so without this
+// export Next.js would statically prerender them at build time (against whatever
+// database exists then) and freeze that snapshot into the served HTML forever.
+export const dynamic = 'force-dynamic';
+
 export default async function PrivateLayout({ children }: { children: ReactNode }) {
   const organization = await getOrganization();
   if (!organization) redirect(ROUTES.ORGANIZATION);
