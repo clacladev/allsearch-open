@@ -18,4 +18,3 @@ export const SETTINGS_URL = `/project/${TEST_PROJECT_ID}/settings`;
 export const SETTINGS_COMPETITORS_URL = `/project/${TEST_PROJECT_ID}/settings/competitors`;
 export const SETTINGS_BRAND_URL = `/project/${TEST_PROJECT_ID}/settings/brand`;
 export const SETTINGS_ORGANIZATION_URL = `/project/${TEST_PROJECT_ID}/settings/organization`;
-export const ACCOUNT_SETTINGS_URL = '/account-settings';

@@ -12,7 +12,6 @@ const mockTopicRow = (name: string, id = `mock-topic-${timestamp}`) => ({
   id,
   name,
   project_id: TEST_PROJECT_ID,
-  author_id: 'mock-author-id',
   is_archived: false,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),

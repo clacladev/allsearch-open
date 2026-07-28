@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { competitors } from '../schema';
@@ -25,7 +25,7 @@ export async function getCompetitorRowsWithProjectId(project_id: string): Promis
     .select()
     .from(competitors)
     .where(eq(competitors.project_id, project_id))
-    .orderBy(competitors.updated_at);
+    .orderBy(asc(competitors.updated_at));
 }
 
 export async function getActiveCompetitorRowsWithProjectId(
@@ -36,7 +36,7 @@ export async function getActiveCompetitorRowsWithProjectId(
     .select()
     .from(competitors)
     .where(and(eq(competitors.project_id, project_id), eq(competitors.is_archived, false)))
-    .orderBy(competitors.updated_at);
+    .orderBy(asc(competitors.updated_at));
 }
 
 export async function insertCompetitorRow(input: InsertCompetitorRowInput): Promise<CompetitorRow> {

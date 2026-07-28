@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { organizations } from '../schema';
@@ -16,7 +16,7 @@ export async function getOrganizationRowWithId(id: string): Promise<Organization
 
 export async function getOrganization(): Promise<OrganizationRow | undefined> {
   const db = await getDatabase();
-  const rows = await db.select().from(organizations).limit(1);
+  const rows = await db.select().from(organizations).orderBy(asc(organizations.created_at)).limit(1);
   return rows[0];
 }
 
