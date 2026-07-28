@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
@@ -15,6 +15,19 @@ import {
   topics,
 } from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from './testHelpers';
+
+const ALL_TABLE_NAMES = [
+  'organizations',
+  'projects',
+  'competitors',
+  'topics',
+  'prompts',
+  'collection_runs',
+  'prompt_responses',
+  'sources',
+  'prompt_articles',
+  'collection_run_items',
+];
 
 describe('schema round trip', () => {
   let dbPath: string;
@@ -201,5 +214,15 @@ describe('schema round trip', () => {
       .from(promptResponses)
       .where(eq(promptResponses.id, promptResponse.id));
     expect(readPromptResponse.brand_ids_ranking).toEqual([]);
+  });
+
+  it('marks id NOT NULL on every table, even though drizzle-kit does not emit it for a text() primaryKey()', async () => {
+    for (const tableName of ALL_TABLE_NAMES) {
+      const columns = await db.all<{ name: string; notnull: number }>(
+        sql.raw(`PRAGMA table_info(${tableName})`)
+      );
+      const idColumn = columns.find((column) => column.name === 'id');
+      expect(idColumn?.notnull, `${tableName}.id should be NOT NULL`).toBe(1);
+    }
   });
 });
