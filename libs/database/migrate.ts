@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { sql } from 'drizzle-orm';
@@ -12,9 +12,15 @@ type SqliteMigrateFn = (db: AllSearchDatabase, config: { migrationsFolder: strin
 type DrizzleMigrationsRow = { id: number; hash: string; created_at: string; name: string | null };
 
 /** Forward-only migration runner. Backs up the database file before applying any migration —
- * a failed migration on a server is an outage, but here it is a stranger's irreplaceable data. */
-export async function migrateDatabase(db: AllSearchDatabase, dbPath: string): Promise<void> {
-  const migrationsFolder = resolveMigrationsFolder();
+ * a failed migration on a server is an outage, but here it is a stranger's irreplaceable data.
+ * `migrationsFolder` defaults to the real `drizzle/` folder; tests pass their own so the upgrade
+ * path (database at migration N, migrate to N+1) can be exercised without touching the app's
+ * real migrations. */
+export async function migrateDatabase(
+  db: AllSearchDatabase,
+  dbPath: string,
+  migrationsFolder: string = resolveMigrationsFolder()
+): Promise<void> {
   const pendingMigrations = getPendingMigrations(
     readMigrationFiles({ migrationsFolder }),
     await getAppliedMigrations(db)
@@ -25,11 +31,26 @@ export async function migrateDatabase(db: AllSearchDatabase, dbPath: string): Pr
 
   let backupPath: string | undefined;
   if (wasDatabasePreExisting(db)) {
-    // `VACUUM INTO` is SQLite's own atomic, consistent snapshot: unlike a checkpoint-then-copy,
-    // it can't be left half-done by a concurrent reader pinning an older WAL snapshot, and it
-    // never silently produces a corrupt file.
-    backupPath = `${dbPath}.${compactIsoTimestamp(new Date())}.backup`;
-    db.run(sql`VACUUM INTO ${backupPath}`);
+    backupPath = uniqueBackupPath(dbPath);
+    try {
+      // `VACUUM INTO` is SQLite's own atomic, consistent snapshot: unlike a checkpoint-then-copy,
+      // it can't be left half-done by a concurrent reader pinning an older WAL snapshot, and it
+      // never silently produces a corrupt file.
+      db.run(sql`VACUUM INTO ${backupPath}`);
+    } catch (err) {
+      // Disk full, a read-only directory, or (despite `uniqueBackupPath`) a collision all
+      // otherwise propagate as a raw `DrizzleQueryError` whose message is just the failed query
+      // text, with the real reason buried on `.cause` — useless to a desktop-app user who must
+      // act on it. A partially written file is deleted so it can never later be mistaken for a
+      // valid backup, since backups are never pruned.
+      if (existsSync(backupPath)) {
+        rmSync(backupPath);
+      }
+      throw new Error(
+        `Could not back up your database before migrating (${backupPath}). Migration aborted.`,
+        { cause: err }
+      );
+    }
   }
 
   try {
@@ -58,16 +79,37 @@ async function getAppliedMigrations(db: AllSearchDatabase): Promise<DrizzleMigra
       sql`SELECT id, hash, created_at, name FROM __drizzle_migrations`
     );
   } catch (err) {
-    // The driver's "no such table" reason lands on `err.cause`, not `err.message` — drizzle
-    // wraps it in a generic `DrizzleQueryError` whose own message is just the failed query text.
+    // The driver's "no such table"/"no such column" reason lands on `err.cause`, not
+    // `err.message` — drizzle wraps it in a generic `DrizzleQueryError` whose own message is
+    // just the failed query text.
     const cause = err instanceof Error ? err.cause : undefined;
     const reason = cause instanceof Error ? cause.message : undefined;
-    if (reason && /no such table/i.test(reason)) {
-      // Table doesn't exist yet: everything is pending.
+    if (reason && /no such (table|column)/i.test(reason)) {
+      // "no such table": the table doesn't exist yet, so everything is pending. "no such
+      // column": the table predates the `name` column (an older `__drizzle_migrations` layout);
+      // drizzle's own `migrate()` calls `upgradeSyncIfNeeded` first, which would migrate that
+      // layout before we ever get here in practice, but if it somehow doesn't, we deliberately
+      // treat it the same as "everything pending" rather than crashing startup.
       return [];
     }
     throw err;
   }
+}
+
+/** Backup filenames are second-precision, so two `migrateDatabase` runs within the same second
+ * (a failed migration followed by an immediate restart, or a dev-server restart loop) would
+ * otherwise collide on the same path — and the resulting `VACUUM INTO` failure surfaces from the
+ * driver as "file is not a database" on Node, which reads like corruption rather than a naming
+ * collision. Appending a counter keeps every backup path unique. */
+function uniqueBackupPath(dbPath: string): string {
+  const base = `${dbPath}.${compactIsoTimestamp(new Date())}`;
+  let candidate = `${base}.backup`;
+  let counter = 1;
+  while (existsSync(candidate)) {
+    candidate = `${base}-${counter}.backup`;
+    counter++;
+  }
+  return candidate;
 }
 
 let migrationsFolderCache: string | undefined;

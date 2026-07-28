@@ -13,7 +13,11 @@ import type { PageHeading } from '@/libs/utils/urlAnalysis';
 // for a `text().primaryKey()` column regardless — SQLite otherwise allows a non-INTEGER primary
 // key to be NULL (and repeated). The initial migration's `PRIMARY KEY` lines were hand-edited to
 // add `NOT NULL`; if that migration is ever regenerated, redo the same hand-edit or this
-// protection silently disappears.
+// protection silently disappears. This isn't only a risk for regenerating *this* migration:
+// drizzle-kit's SQLite strategy for many future alters is to recreate the table from the
+// snapshot (which still records `notNull: false` for `id`), so a later migration can drop the
+// constraint even without anyone touching this file. `tests/unit/database/schema.test.ts` asserts
+// `pragma table_info` reports `notnull = 1` for `id` on every table so a regression fails loudly.
 const idColumn = () =>
   text('id')
     .primaryKey()
