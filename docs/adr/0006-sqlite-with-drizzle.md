@@ -40,3 +40,9 @@ free to drift from the real schema. Drizzle removes that whole class of bug, and
   Projects collecting weekly produce well under a million rows in two years.
 - There is no data to migrate from the hosted Supabase, so no import path is
   built.
+- `node:sqlite` support only exists on the `drizzle-orm@1.0.0-rc.4` /
+  `drizzle-kit@1.0.0-rc.4` line (pinned exactly, no caret) — stable `0.45.2` does
+  not export `./node-sqlite` at all. Bun 1.3.14 has no `node:sqlite`, so
+  `createDatabase()` dynamically imports whichever of `drizzle-orm/node-sqlite`
+  or `drizzle-orm/bun-sqlite` matches the running runtime; the test suite runs
+  under `bun test` and therefore always exercises the `bun-sqlite` adapter.

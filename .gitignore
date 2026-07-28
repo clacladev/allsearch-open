@@ -49,7 +49,5 @@ test-results/
 
 # playwright auth state
 tests/e2e/.auth/
-supabase/seed.sql
-supabase/.temp/*
 .claude/skills/gstack/
 .gstack/
