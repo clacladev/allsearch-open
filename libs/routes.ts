@@ -234,9 +234,9 @@ export const RouteHelper = {
     getOrganization: (organizationId: string) =>
       ROUTES.API.ORGANIZATION_WITH_ID.replace(':organizationId', organizationId),
 
-    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, but
-    // clone and backfill are genuinely useful, so they survive ungated under the Developer tab
-    // (ADR 0003).
+    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, so the
+    // clone/pause/delete routes survive ungated (ADR 0003), but only the backfill action is
+    // actually wired into the Developer tab today.
     Developer: {
       getProjectFillPromptResponses: (projectId: string) =>
         ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
