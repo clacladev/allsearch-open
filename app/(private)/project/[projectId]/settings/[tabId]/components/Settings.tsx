@@ -7,26 +7,19 @@ import OrganizationSettings from './OrganizationSettings';
 import { useRouter } from 'next/navigation';
 import { SETTINGS_TABS } from './helpers';
 import CompetitorsSettings from './CompetitorsSettings';
-import { UserRole } from '@/libs/database/UserProfiles/types';
-import { useMemo } from 'react';
-import AdminTools from './AdminTools';
+import DeveloperTools from './DeveloperTools';
 import Others from './Others';
 
 export default function Settings({
   projectId,
   selectedSettingsTabId,
-  userRole,
 }: {
   projectId: string;
   selectedSettingsTabId: string;
-  userRole: UserRole;
 }) {
   const router = useRouter();
 
-  const settingsTabs = useMemo(() => {
-    if (userRole === 'admin') return SETTINGS_TABS;
-    return SETTINGS_TABS.filter((tab) => tab.userRole === 'user');
-  }, [userRole]);
+  const settingsTabs = SETTINGS_TABS;
 
   const onSelectionChange = (tabId: string) => {
     const tab = settingsTabs.find((tab) => tab.id === tabId);
@@ -62,7 +55,7 @@ export default function Settings({
         {selectedSettingsTabId === 'brand' && <BrandSettings />}
         {selectedSettingsTabId === 'organization' && <OrganizationSettings />}
         {selectedSettingsTabId === 'others' && <Others />}
-        {selectedSettingsTabId === 'admin-tools' && <AdminTools />}
+        {selectedSettingsTabId === 'developer' && <DeveloperTools />}
       </section>
     </div>
   );

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
+import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   collectionRuns,
   projects,
@@ -102,7 +103,7 @@ describe('CHECK constraints', () => {
       Promise.resolve(
         db.insert(promptResponses).values({
           text: 'Response text',
-          chatbot_id: 'not-a-real-chatbot',
+          chatbot_id: 'not-a-real-chatbot' as ChatbotId,
           prompt_id: prompt.id,
           project_id: project.id,
           workflow_id: 'workflow-1',

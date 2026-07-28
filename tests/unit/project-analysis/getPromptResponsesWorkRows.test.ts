@@ -10,7 +10,7 @@ function makeSummaryRow(
   return {
     id: 'response-1',
     brand_ids_ranking: [],
-    sentiment: undefined,
+    sentiment: null,
     chatbot_id: ChatbotId.ChatGPT,
     prompt_id: 'prompt-1',
     created_at: '2026-01-01T12:00:00.000Z',
@@ -30,10 +30,10 @@ function makeSourceRow(overrides: Partial<SourceRow> = {}): SourceRow {
     clean_url: 'example.com/page',
     url: 'https://example.com/page',
     hostname: 'example.com',
-    raw_url: undefined,
-    title: undefined,
-    description: undefined,
-    headings: undefined,
+    raw_url: null,
+    title: null,
+    description: null,
+    headings: null,
     brand_ids_ranking: [],
     ...overrides,
   };

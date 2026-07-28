@@ -1,175 +1,158 @@
 import 'server-only';
 
-import { createClient } from '../supabase/serverAsAdmin';
-import { PromptResponseRow, PromptResponseSummaryRow, TABLE_PROMPT_RESPONSES } from './types';
-import { DEFAULT_QUERY_OPTIONS, QueryOptions } from '../shared/QueryOptions';
+import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
+
+import { getDatabase } from '../client';
+import { promptResponses } from '../schema';
+import { deleteSourceRowsWithPromptIds, deleteSourceRowsWithProjectId } from '../Sources/queries';
 import { ISODateString, getISODateString } from '../shared/ISODateString';
-import {
-  deleteSourceRowsWithPromptIds,
-  deleteSourceRowsWithProjectId,
-} from '../Sources/queries';
+import { PromptResponseRow, PromptResponseSummaryRow } from './types';
 
 type InsertPromptResponseRowInput = Omit<PromptResponseRow, 'id' | 'created_at'> & {
   created_at?: string;
 };
 
 export async function getPromptResponseRowWithId(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  id: string
 ): Promise<PromptResponseRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
+  const db = await getDatabase();
+  const rows = await db
     .select()
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+    .from(promptResponses)
+    .where(eq(promptResponses.id, id))
+    .limit(1);
+  return rows[0];
 }
 
 export async function getPromptResponseRowsWithProjectIdInDateRange(
   project_id: string,
   startDateISO: ISODateString,
-  endDateISO: ISODateString,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  endDateISO: ISODateString
 ): Promise<PromptResponseRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
+  const db = await getDatabase();
+  return db
     .select()
-    .eq('project_id', project_id)
-    .gte('created_at', startDateISO)
-    .lt('created_at', getISODateString(endDateISO, 1)) // Add a day to include the full endDate day in the range
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+    .from(promptResponses)
+    .where(
+      and(
+        eq(promptResponses.project_id, project_id),
+        gte(promptResponses.created_at, startDateISO),
+        lt(promptResponses.created_at, getISODateString(endDateISO, 1)) // Add a day to include the full endDate day in the range
+      )
+    )
+    .orderBy(desc(promptResponses.created_at));
 }
 
-const SUMMARY_COLUMNS =
-  'id, brand_ids_ranking, sentiment, chatbot_id, prompt_id, created_at' as const;
+const SUMMARY_COLUMNS = {
+  id: promptResponses.id,
+  brand_ids_ranking: promptResponses.brand_ids_ranking,
+  sentiment: promptResponses.sentiment,
+  chatbot_id: promptResponses.chatbot_id,
+  prompt_id: promptResponses.prompt_id,
+  created_at: promptResponses.created_at,
+};
 
 export async function getPromptResponseSummaryRowsWithProjectIdInDateRange(
   project_id: string,
   startDateISO: ISODateString,
-  endDateISO: ISODateString,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  endDateISO: ISODateString
 ): Promise<PromptResponseSummaryRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
+  const db = await getDatabase();
+  return db
     .select(SUMMARY_COLUMNS)
-    .eq('project_id', project_id)
-    .gte('created_at', startDateISO)
-    .lt('created_at', getISODateString(endDateISO, 1))
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+    .from(promptResponses)
+    .where(
+      and(
+        eq(promptResponses.project_id, project_id),
+        gte(promptResponses.created_at, startDateISO),
+        lt(promptResponses.created_at, getISODateString(endDateISO, 1))
+      )
+    )
+    .orderBy(desc(promptResponses.created_at));
 }
 
 export async function getPromptResponseRowsWithPromptIdInDateRange(
   prompt_id: string,
   startDateISO: ISODateString,
-  endDateISO: ISODateString,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  endDateISO: ISODateString
 ): Promise<PromptResponseRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
+  const db = await getDatabase();
+  return db
     .select()
-    .eq('prompt_id', prompt_id)
-    .gte('created_at', startDateISO)
-    .lt('created_at', getISODateString(endDateISO, 1)) // Add a day to include the full endDate day in the range
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+    .from(promptResponses)
+    .where(
+      and(
+        eq(promptResponses.prompt_id, prompt_id),
+        gte(promptResponses.created_at, startDateISO),
+        lt(promptResponses.created_at, getISODateString(endDateISO, 1)) // Add a day to include the full endDate day in the range
+      )
+    )
+    .orderBy(desc(promptResponses.created_at));
 }
 
 export async function getPromptResponseRowsWithProjectId(
-  project_id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  project_id: string
 ): Promise<PromptResponseRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
+  const db = await getDatabase();
+  return db
     .select()
-    .eq('project_id', project_id)
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return data || [];
+    .from(promptResponses)
+    .where(eq(promptResponses.project_id, project_id))
+    .orderBy(asc(promptResponses.created_at));
 }
 
 export async function insertPromptResponseRow(
-  input: InsertPromptResponseRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  input: InsertPromptResponseRowInput
 ): Promise<PromptResponseRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
-    .insert(input)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db.insert(promptResponses).values(input).returning();
+  if (!row) throw new Error('Insert into prompt_responses returned no row');
+  return row;
 }
 
 export async function insertPromptResponseRows(
-  inputs: InsertPromptResponseRowInput[],
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  inputs: InsertPromptResponseRowInput[]
 ): Promise<PromptResponseRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase.from(TABLE_PROMPT_RESPONSES).insert(inputs).select();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  return db.insert(promptResponses).values(inputs).returning();
 }
 
 export async function updatePromptResponseRowWithId(
   id: string,
-  values: Partial<InsertPromptResponseRowInput>,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  values: Partial<InsertPromptResponseRowInput>
 ): Promise<PromptResponseRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
-    .update(values)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db
+    .update(promptResponses)
+    .set(values)
+    .where(eq(promptResponses.id, id))
+    .returning();
+  if (!row) throw new Error(`No prompt_responses row found for id ${id}`);
+  return row;
 }
 
 export async function deletePromptResponseRowsWithPromptIds(
   promptIds: string[],
-  projectId: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptResponseRow[] | undefined> {
+  projectId: string
+): Promise<PromptResponseRow[]> {
   // Delete from sources first (FK constraint)
-  await deleteSourceRowsWithPromptIds(promptIds, projectId, options);
+  await deleteSourceRowsWithPromptIds(promptIds, projectId);
 
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
-    .delete()
-    .in('prompt_id', promptIds)
-    .eq('project_id', projectId)
-    .select();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  return db
+    .delete(promptResponses)
+    .where(
+      and(inArray(promptResponses.prompt_id, promptIds), eq(promptResponses.project_id, projectId))
+    )
+    .returning();
 }
 
 export async function deletePromptResponseRowsWithProjectId(
-  projectId: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptResponseRow[] | undefined> {
+  projectId: string
+): Promise<PromptResponseRow[]> {
   // Delete from sources first (FK constraint)
-  await deleteSourceRowsWithProjectId(projectId, options);
+  await deleteSourceRowsWithProjectId(projectId);
 
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_RESPONSES)
-    .delete()
-    .eq('project_id', projectId)
-    .select();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  return db.delete(promptResponses).where(eq(promptResponses.project_id, projectId)).returning();
 }

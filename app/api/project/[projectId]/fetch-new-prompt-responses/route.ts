@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { fetchDailyPromptsForProjectWorkflow } from '@/libs/workflows/fetchDailyPromptsForProject';
 import { getTodayISODateString } from '@/libs/database/shared/ISODateString';
 import { start } from 'workflow/api';
@@ -12,7 +11,6 @@ export async function POST(
     const { projectId } = await params;
     if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-    await getUserOrThrow();
     const today = getTodayISODateString();
     const run = await start(fetchDailyPromptsForProjectWorkflow, [projectId, today]);
 

@@ -69,7 +69,7 @@ export default async function ProjectPromptsPage({ params, searchParams }: Props
 
   const [{ prompts, analysis, archivedPromptsCount }, topics] = await Promise.all([
     getPromptsData(projectId, startDateISO, endDateISO, shouldShowArchived, validChatbotIds.length ? validChatbotIds : undefined),
-    getTopicRowsWithProjectId(projectId, { includeArchived: true }),
+    getTopicRowsWithProjectId(projectId, true),
   ]);
 
   // Compute topic counts from full dataset before filtering

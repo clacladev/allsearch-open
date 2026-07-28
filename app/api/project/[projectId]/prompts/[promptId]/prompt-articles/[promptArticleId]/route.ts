@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getPromptArticleRowWithId,
   updatePromptArticleOutlineEdits,
@@ -40,14 +39,8 @@ export async function GET(
     if (!promptArticleId)
       return NextResponse.json({ error: 'Missing promptArticleId' }, { status: 400 });
 
-    const user = await getUserOrThrow();
     const row = await getPromptArticleRowWithId(promptArticleId);
-    if (
-      !row ||
-      row.author_id !== user.id ||
-      row.project_id !== projectId ||
-      row.prompt_id !== promptId
-    ) {
+    if (!row || row.project_id !== projectId || row.prompt_id !== promptId) {
       return NextResponse.json(
         { error: 'Prompt article not found', code: 'PROMPT_ARTICLE_NOT_FOUND' },
         { status: 404 }
@@ -87,8 +80,6 @@ export async function PATCH(
       );
     }
 
-    const user = await getUserOrThrow();
-
     const row = await getPromptArticleRowWithId(promptArticleId);
     if (!row) {
       return NextResponse.json(
@@ -96,11 +87,7 @@ export async function PATCH(
         { status: 404 }
       );
     }
-    if (
-      row.author_id !== user.id ||
-      row.project_id !== projectId ||
-      row.prompt_id !== promptId
-    ) {
+    if (row.project_id !== projectId || row.prompt_id !== promptId) {
       return NextResponse.json(
         { error: 'Forbidden', code: 'UNAUTHORIZED' },
         { status: 403 }

@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import z from 'zod';
 import { getCompetitors } from '@/libs/ai/competitors/getCompetitors';
 import { getDomainMetadata } from '@/libs/utils/urlAnalysis';
@@ -20,8 +19,6 @@ export async function GET(req: NextRequest) {
         categories: JSON.parse(req.nextUrl.searchParams.get('categories') ?? '[]'),
         targetLocation: req.nextUrl.searchParams.get('targetLocation') ?? undefined,
       });
-
-    await getUserOrThrow();
 
     const competitors = await getCompetitors(url, name, categories, targetLocation);
     if (!competitors.length) throw new Error('Failed to find competitors');

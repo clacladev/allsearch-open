@@ -25,8 +25,6 @@
     "@internationalized/date": "^3.12.1",
     "@mdxeditor/editor": "^3.55.0",
     "@react-stately/utils": "^3.12.0",
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.104.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-table": "^8.21.3",
     "@untitledui/icons": "^0.0.21",

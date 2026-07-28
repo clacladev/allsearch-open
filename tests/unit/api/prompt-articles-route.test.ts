@@ -2,22 +2,17 @@ import { mock } from 'bun:test';
 
 // Note: next/server is mocked globally in tests/setup.ts
 
-const mockUser = { id: 'user-123', email: 'test@example.com' };
 const mockProjectRow = {
   id: 'project-123',
-  organization_id: 'org-123',
   url: 'https://example.com',
   hostname: 'example.com',
   name: 'Test Project',
-  author_id: 'user-123',
   target_location: null,
 };
 const mockPromptRow = {
   id: 'prompt-123',
   name: 'best AI SEO tools',
   project_id: 'project-123',
-  organization_id: 'org-123',
-  author_id: 'user-123',
   topic_id: 'topic-123',
   is_archived: false,
   created_at: '2026-01-01T00:00:00Z',
@@ -26,8 +21,6 @@ const mockPromptRow = {
 const mockOutlineRow = {
   id: 'outline-123',
   project_id: 'project-123',
-  organization_id: 'org-123',
-  author_id: 'user-123',
   prompt_id: 'prompt-123',
   opportunity_id: 'opp-123',
   opportunity_type: 'ProjectSourceNotFoundOpportunity',
@@ -47,10 +40,6 @@ const mockOutlineRow = {
   updated_at: '2026-04-24T00:00:00Z',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGetUserOrThrow = mock(async () => mockUser as any);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGetUserId = mock(async () => mockUser.id);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockGetProjectRowWithId = mock(async (): Promise<any> => mockProjectRow);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,12 +84,6 @@ const mockGenerateOutline = mock(async (): Promise<any> => ({
     { tag: 'h2' as const, text: 'Section One', keyPoint: 'Cover basics.' },
   ],
 }));
-
-mock.module('@/libs/database/supabase/server', () => ({
-  getUserOrThrow: mockGetUserOrThrow,
-  getUserId: mockGetUserId,
-}));
-
 
 mock.module('@/libs/database/Projects/queries', () => ({
   getProjectRowWithId: mockGetProjectRowWithId,

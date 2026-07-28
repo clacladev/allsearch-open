@@ -1,121 +1,71 @@
 import 'server-only';
 
-import { createClient } from '../supabase/serverAsAdmin';
-import {
-  ArticleOutline,
-  PromptArticleRow,
-  ArticleSourcesUsed,
-  TABLE_PROMPT_ARTICLES,
-} from './types';
-import { DEFAULT_QUERY_OPTIONS, QueryOptions } from '../shared/QueryOptions';
+import { and, desc, eq } from 'drizzle-orm';
+
+import { getDatabase } from '../client';
+import { promptArticles } from '../schema';
+import { ArticleOutline, PromptArticleRow, ArticleSourcesUsed } from './types';
 
 type InsertPromptArticleRowInput = Omit<PromptArticleRow, 'id' | 'created_at' | 'updated_at'>;
 
-export async function getLatestPromptArticle(
-  input: {
-    authorId: string;
-    projectId: string;
-    promptId: string;
-    opportunityType: string;
-    targetSourceCleanUrl: string | null;
-  },
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptArticleRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .select()
-    .eq('author_id', input.authorId)
-    .eq('project_id', input.projectId)
-    .eq('prompt_id', input.promptId)
-    .eq('opportunity_type', input.opportunityType);
-
-  // Postgres treats NULL = NULL as NULL (not true), so match null vs non-null separately.
-  if (input.targetSourceCleanUrl === null) {
-    query = query.is('target_source_clean_url', null);
-  } else {
-    query = query.eq('target_source_clean_url', input.targetSourceCleanUrl);
-  }
-
-  const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data ?? undefined;
-}
-
-export async function getPromptArticleRowWithId(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptArticleRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .select()
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  return data ?? undefined;
+export async function getPromptArticleRowWithId(id: string): Promise<PromptArticleRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db.select().from(promptArticles).where(eq(promptArticles.id, id)).limit(1);
+  return rows[0];
 }
 
 /**
- * Fetch every article row this author has generated for a single opportunity,
- * newest first. Powers the "Previously generated articles" section on the
- * opportunity detail page. Scope-by-author mirrors the editor flow, which only
- * surfaces the current user's outlines via `getLatestPromptArticle`.
+ * Fetch every article row generated for a single opportunity, newest first.
+ * Powers the "Previously generated articles" section on the opportunity
+ * detail page.
  */
-export async function getPromptArticleRowsForOpportunityId(
-  input: { authorId: string; projectId: string; opportunityId: string },
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptArticleRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
+export async function getPromptArticleRowsForOpportunityId(input: {
+  projectId: string;
+  opportunityId: string;
+}): Promise<PromptArticleRow[]> {
+  const db = await getDatabase();
+  return db
     .select()
-    .eq('author_id', input.authorId)
-    .eq('project_id', input.projectId)
-    .eq('opportunity_id', input.opportunityId)
-    .order('updated_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+    .from(promptArticles)
+    .where(
+      and(
+        eq(promptArticles.project_id, input.projectId),
+        eq(promptArticles.opportunity_id, input.opportunityId)
+      )
+    )
+    .orderBy(desc(promptArticles.updated_at));
 }
 
 /**
- * Fetch every article row this author has generated for a single prompt across
- * all opportunity types. Powers the "Previously generated articles" section on
- * the prompt detail page, where multiple opportunities can produce articles for
- * the same prompt.
+ * Fetch every article row generated for a single prompt across all
+ * opportunity types. Powers the "Previously generated articles" section on
+ * the prompt detail page, where multiple opportunities can produce articles
+ * for the same prompt.
  */
-export async function getPromptArticleRowsForPromptId(
-  input: { authorId: string; projectId: string; promptId: string },
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptArticleRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
+export async function getPromptArticleRowsForPromptId(input: {
+  projectId: string;
+  promptId: string;
+}): Promise<PromptArticleRow[]> {
+  const db = await getDatabase();
+  return db
     .select()
-    .eq('author_id', input.authorId)
-    .eq('project_id', input.projectId)
-    .eq('prompt_id', input.promptId)
-    .order('updated_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+    .from(promptArticles)
+    .where(
+      and(
+        eq(promptArticles.project_id, input.projectId),
+        eq(promptArticles.prompt_id, input.promptId)
+      )
+    )
+    .orderBy(desc(promptArticles.updated_at));
 }
 
 export async function insertPromptArticleRow(
-  input: InsertPromptArticleRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  input: InsertPromptArticleRowInput
 ): Promise<PromptArticleRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .insert(input)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db.insert(promptArticles).values(input).returning();
+  if (!row) throw new Error('Insert into prompt_articles returned no row');
+  return row;
 }
 
 /**
@@ -131,39 +81,35 @@ export async function updatePromptArticleSettings(
     styleGuide?: string | null;
     pagesToLink?: string[];
     targetKeywords?: string[];
-  },
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  }
 ): Promise<PromptArticleRow> {
-  const supabase = await createClient(options.asAdmin);
+  const db = await getDatabase();
   const update: Record<string, unknown> = {};
   if (fields.targetWordCount !== undefined) update.target_word_count = fields.targetWordCount;
   if (fields.styleGuide !== undefined) update.style_guide = fields.styleGuide;
   if (fields.pagesToLink !== undefined) update.pages_to_link = fields.pagesToLink;
   if (fields.targetKeywords !== undefined) update.target_keywords = fields.targetKeywords;
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .update(update)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const [row] = await db
+    .update(promptArticles)
+    .set(update)
+    .where(eq(promptArticles.id, id))
+    .returning();
+  if (!row) throw new Error(`No prompt_articles row found for id ${id}`);
+  return row;
 }
 
 export async function updatePromptArticleOutlineEdits(
   id: string,
-  userEditedOutline: ArticleOutline | null,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  userEditedOutline: ArticleOutline | null
 ): Promise<PromptArticleRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .update({ user_edited_outline: userEditedOutline })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db
+    .update(promptArticles)
+    .set({ user_edited_outline: userEditedOutline })
+    .where(eq(promptArticles.id, id))
+    .returning();
+  if (!row) throw new Error(`No prompt_articles row found for id ${id}`);
+  return row;
 }
 
 /**
@@ -180,24 +126,22 @@ export async function setArticleGeneratedFromStream(
     sourcesUsed: ArticleSourcesUsed;
     outlineUsed: ArticleOutline;
     articleModelId: string;
-  },
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  }
 ): Promise<PromptArticleRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .update({
+  const db = await getDatabase();
+  const [row] = await db
+    .update(promptArticles)
+    .set({
       article_markdown: fields.articleMarkdown,
       user_edited_article_markdown: null,
       sources_used: fields.sourcesUsed,
       outline_used: fields.outlineUsed,
       article_model_id: fields.articleModelId,
     })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+    .where(eq(promptArticles.id, id))
+    .returning();
+  if (!row) throw new Error(`No prompt_articles row found for id ${id}`);
+  return row;
 }
 
 /**
@@ -207,16 +151,14 @@ export async function setArticleGeneratedFromStream(
  */
 export async function updatePromptArticleUserEditedMarkdown(
   id: string,
-  userEditedArticleMarkdown: string | null,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  userEditedArticleMarkdown: string | null
 ): Promise<PromptArticleRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPT_ARTICLES)
-    .update({ user_edited_article_markdown: userEditedArticleMarkdown })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db
+    .update(promptArticles)
+    .set({ user_edited_article_markdown: userEditedArticleMarkdown })
+    .where(eq(promptArticles.id, id))
+    .returning();
+  if (!row) throw new Error(`No prompt_articles row found for id ${id}`);
+  return row;
 }

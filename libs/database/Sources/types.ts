@@ -1,24 +1,8 @@
+import { sources } from '../schema';
+
 import type { PageHeading } from '@/libs/utils/urlAnalysis';
 
-export const TABLE_SOURCES = 'sources';
-
-export type SourceRow = {
-  id: string;
-  created_at: string;
-  project_id: string;
-  prompt_id: string;
-  prompt_response_id: string;
-  is_cited: boolean;
-  position: number;
-  clean_url: string;
-  url: string;
-  hostname: string;
-  raw_url: string | undefined;
-  title: string | undefined;
-  description: string | undefined;
-  headings: PageHeading[] | undefined;
-  brand_ids_ranking: string[];
-};
+export type SourceRow = typeof sources.$inferSelect;
 
 export type SourceSummaryRow = Omit<SourceRow, 'raw_url' | 'description' | 'headings'>;
 
@@ -49,10 +33,10 @@ export function sourceRowToSourceItem(row: SourceRowInput): SourceItem {
     url: row.url,
     cleanUrl: row.clean_url,
     hostname: row.hostname,
-    rawUrl: row.raw_url,
-    title: row.title,
-    description: row.description,
-    headings: row.headings,
+    rawUrl: row.raw_url ?? undefined,
+    title: row.title ?? undefined,
+    description: row.description ?? undefined,
+    headings: row.headings ?? undefined,
     brandIdsRanking: row.brand_ids_ranking.length ? row.brand_ids_ranking : undefined,
   };
 }

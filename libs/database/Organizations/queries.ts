@@ -1,61 +1,44 @@
 import 'server-only';
 
-import { createClient } from '../supabase/serverAsAdmin';
-import { OrganizationRow, TABLE_ORGANIZATIONS } from './types';
-import { DEFAULT_QUERY_OPTIONS, QueryOptions } from '../shared/QueryOptions';
+import { eq } from 'drizzle-orm';
+
+import { getDatabase } from '../client';
+import { organizations } from '../schema';
+import { OrganizationRow } from './types';
 
 type InsertOrganizationRowInput = Omit<OrganizationRow, 'id' | 'created_at' | 'updated_at'>;
 
-export async function getOrganizationRowWithId(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<OrganizationRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_ORGANIZATIONS)
-    .select()
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+export async function getOrganizationRowWithId(id: string): Promise<OrganizationRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+  return rows[0];
 }
 
-export async function getOrganizationRowWithOwnerId(
-  owner_id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<OrganizationRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_ORGANIZATIONS)
-    .select()
-    .eq('owner_id', owner_id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+export async function getOrganization(): Promise<OrganizationRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db.select().from(organizations).limit(1);
+  return rows[0];
 }
 
 export async function insertOrganizationRow(
-  input: InsertOrganizationRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  input: InsertOrganizationRowInput
 ): Promise<OrganizationRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase.from(TABLE_ORGANIZATIONS).insert(input).select().single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db.insert(organizations).values(input).returning();
+  if (!row) throw new Error('Insert into organizations returned no row');
+  return row;
 }
 
 export async function updateOrganizationRow(
   id: string,
-  values: Partial<InsertOrganizationRowInput>,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  values: Partial<InsertOrganizationRowInput>
 ): Promise<OrganizationRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_ORGANIZATIONS)
-    .update(values)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db
+    .update(organizations)
+    .set(values)
+    .where(eq(organizations.id, id))
+    .returning();
+  if (!row) throw new Error(`No organizations row found for id ${id}`);
+  return row;
 }

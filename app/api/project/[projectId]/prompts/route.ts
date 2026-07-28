@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getPromptRowsWithProjectId,
   getPromptRowWithId,
@@ -28,8 +27,6 @@ export async function POST(
       })
       .parse(body);
 
-    const user = await getUserOrThrow();
-
     // Find or create topic
     let topicRow;
     if (topicId) {
@@ -38,12 +35,12 @@ export async function POST(
         throw new Error('Failed to get topic');
       }
     } else {
-      topicRow = await findOrCreateCustomTopic(projectId, user.id);
+      topicRow = await findOrCreateCustomTopic(projectId);
     }
 
     // Get all the prompts in the topic
     const [projectRow, promptRows] = await Promise.all([
-      getProjectRowWithId(projectId, user.id),
+      getProjectRowWithId(projectId),
       getPromptRowsWithProjectId(projectId, true),
     ]);
     if (!projectRow) throw new Error('Project not found');
@@ -66,8 +63,6 @@ export async function POST(
         name,
         topic_id: topicRow.id,
         project_id: projectId,
-        organization_id: projectRow.organization_id,
-        author_id: user.id,
       });
       if (!promptRow) throw new Error('Failed to save prompt');
       results.push(promptRow);
@@ -100,10 +95,8 @@ export async function PATCH(
       })
       .parse(body);
 
-    const user = await getUserOrThrow();
-
     const promptRow = await getPromptRowWithId(promptId);
-    if (!promptRow || promptRow.project_id !== projectId || promptRow.author_id !== user.id) {
+    if (!promptRow || promptRow.project_id !== projectId) {
       throw new Error('Failed to get prompt');
     }
 

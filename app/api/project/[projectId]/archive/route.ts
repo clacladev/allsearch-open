@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getProjectRowWithId, updateProjectRow } from '@/libs/database/Projects/queries';
 import { z } from 'zod';
 
@@ -24,18 +23,12 @@ export async function POST(
     }
     const { action } = bodyResult.data;
 
-    const user = await getUserOrThrow();
-
     const projectRow = await getProjectRowWithId(projectId);
-    if (!projectRow || projectRow.author_id !== user.id) {
+    if (!projectRow) {
       throw new Error('Failed to get project');
     }
 
-    const updatedProject = await updateProjectRow(
-      projectId,
-      { is_archived: action === 'archive' },
-      { asAdmin: true }
-    );
+    const updatedProject = await updateProjectRow(projectId, { is_archived: action === 'archive' });
 
     return NextResponse.json(updatedProject);
   } catch (error) {

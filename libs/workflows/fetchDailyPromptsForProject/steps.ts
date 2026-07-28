@@ -28,7 +28,7 @@ export async function getPromptRowsToProcess(
   shouldForce?: boolean
 ) {
   'use step';
-  const prompts = await getPromptRowsWithProjectId(projectId, false, { asAdmin: true });
+  const prompts = await getPromptRowsWithProjectId(projectId, false);
 
   let filteredPrompts = prompts;
   if (!shouldForce) {
@@ -36,8 +36,7 @@ export async function getPromptRowsToProcess(
     const responses = await getPromptResponseRowsWithProjectIdInDateRange(
       projectId,
       targetDateISO,
-      targetDateISO,
-      { asAdmin: true }
+      targetDateISO
     );
     filteredPrompts = prompts.filter(
       (prompt) => !responses.some((response) => response.prompt_id === prompt.id)
@@ -69,8 +68,8 @@ export async function fetchDailyPrompt(
 async function getProjectInfo(projectId: string) {
   'use step';
   return {
-    project: await getProjectRowWithId(projectId, undefined, { asAdmin: true }),
-    competitors: await getActiveCompetitorRowsWithProjectId(projectId, { asAdmin: true }),
+    project: await getProjectRowWithId(projectId),
+    competitors: await getActiveCompetitorRowsWithProjectId(projectId),
   };
 }
 
@@ -245,19 +244,19 @@ async function storePromptResponses(
     return {
       text: response.text,
       brand_ids_ranking: brandIdsRanking[index],
-      sentiment: sentiments[index],
+      sentiment: sentiments[index] ?? null,
       chatbot_id: response.chatbotId,
       model_id: response.modelId,
       prompt_id: promptId,
       project_id: projectId,
       workflow_id: workflowId,
+      run_id: null,
       enrichedSources,
     };
   });
 
   const insertedRows = await insertPromptResponseRows(
-    enrichedResponses.map(({ enrichedSources: _, ...row }) => row),
-    { asAdmin: true }
+    enrichedResponses.map(({ enrichedSources: _, ...row }) => row)
   );
 
   // Insert into the normalized sources table
@@ -271,25 +270,25 @@ async function storePromptResponses(
       clean_url: source.cleanUrl,
       url: source.url,
       hostname: source.hostname,
-      raw_url: source.rawUrl,
-      title: source.title,
-      description: source.description,
-      headings: source.headings,
+      raw_url: source.rawUrl ?? null,
+      title: source.title ?? null,
+      description: source.description ?? null,
+      headings: source.headings ?? null,
       brand_ids_ranking: source.brandIdsRanking ?? [],
     }))
   );
   if (sourceRowInputs.length) {
-    await insertSourceRows(sourceRowInputs, { asAdmin: true });
+    await insertSourceRows(sourceRowInputs);
   }
 }
 
 export async function isProjectPaused(projectId: string): Promise<boolean> {
   'use step';
-  const project = await getProjectRowWithId(projectId, undefined, { asAdmin: true });
+  const project = await getProjectRowWithId(projectId);
   return project?.is_paused ?? true;
 }
 
 export async function updateProjectWithPromptsUpdatedAt(projectId: string, datetimeISO: string) {
   'use step';
-  await updateProjectRow(projectId, { prompts_updated_at: datetimeISO }, { asAdmin: true });
+  await updateProjectRow(projectId, { prompts_updated_at: datetimeISO });
 }

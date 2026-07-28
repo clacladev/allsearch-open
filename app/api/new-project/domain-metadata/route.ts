@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import z from 'zod';
 import { getDomainMetadata } from '@/libs/utils/urlAnalysis';
 
@@ -8,8 +7,6 @@ export async function GET(req: NextRequest) {
     const { url: inputUrl } = z.object({ url: z.string() }).parse({
       url: req.nextUrl.searchParams.get('url'),
     });
-
-    await getUserOrThrow();
 
     const metadata = await getDomainMetadata(inputUrl);
     return NextResponse.json(metadata);

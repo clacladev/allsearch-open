@@ -8,7 +8,6 @@ import { getPromptResponsesData } from './helpers';
 import PromptDetails from './components/PromptDetails';
 import { getPaginatedResult } from '@/libs/utils/PaginatedResult';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
-import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { getPromptArticleRowsForPromptId } from '@/libs/database/PromptArticles/queries';
 
 const PAGE_SIZE = 8;
@@ -45,13 +44,10 @@ export default async function ProjectPromptsPage({ params, searchParams }: Props
   const startDateISO = startDate ? getISODateString(startDate) : defaultDateRange.startDateISO;
   const endDateISO = endDate ? getISODateString(endDate) : defaultDateRange.endDateISO;
 
-  const user = await getUserOrRedirectToSignin();
-
   const [{ sourceContentsSummary, promptResponsesContents }, previouslyGeneratedArticles] =
     await Promise.all([
       getPromptResponsesData(projectId, promptId, startDateISO, endDateISO),
       getPromptArticleRowsForPromptId({
-        authorId: user.id,
         projectId,
         promptId,
       }),

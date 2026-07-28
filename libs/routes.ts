@@ -3,7 +3,6 @@ export const ROUTES = {
 
   // Private
   DASHBOARD: '/dashboard',
-  ACCOUNT_SETTINGS: '/account-settings',
 
   // Organization
   ORGANIZATION: '/organization',
@@ -59,19 +58,14 @@ export const ROUTES = {
       REPORT: '/api/new-project/report',
     },
 
-    // Admin
-    ADMIN: {
-      PROJECT_PAUSE: '/api/admin/project/:projectId/pause',
-      PROJECT_ARCHIVE: '/api/admin/project/:projectId/archive',
-      PROJECT_CLONE: '/api/admin/project/:projectId/clone',
-      PROJECT_DELETE: '/api/admin/project/:projectId/delete',
-      PROJECT_FILL_PROMPT_RESPONSES: '/api/admin/project/:projectId/fill-prompt-responses',
-    },
-
     // Project
     PROJECT: {
       PROJECT: '/api/project/:projectId',
       PROJECT_ARCHIVE: '/api/project/:projectId/archive',
+      PROJECT_PAUSE: '/api/project/:projectId/pause',
+      PROJECT_CLONE: '/api/project/:projectId/clone',
+      PROJECT_DELETE: '/api/project/:projectId/delete',
+      PROJECT_FILL_PROMPT_RESPONSES: '/api/project/:projectId/fill-prompt-responses',
       PROMPTS: '/api/project/:projectId/prompts',
       PROMPTS_ARCHIVE: '/api/project/:projectId/prompts/archive',
       TOPICS: '/api/project/:projectId/topics',
@@ -231,10 +225,10 @@ export const RouteHelper = {
         ),
       getOthers: (projectId: string) =>
         ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'others'),
-      getAdminTools: (projectId: string) =>
+      getDeveloper: (projectId: string) =>
         ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(
           ':tabId',
-          'admin-tools'
+          'developer'
         ),
     },
   },
@@ -243,17 +237,20 @@ export const RouteHelper = {
     getOrganization: (organizationId: string) =>
       ROUTES.API.ORGANIZATION_WITH_ID.replace(':organizationId', organizationId),
 
-    Admin: {
+    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, but
+    // clone and backfill are genuinely useful, so they survive ungated under the Developer tab
+    // (ADR 0003).
+    Developer: {
       getProjectPause: (projectId: string) =>
-        ROUTES.API.ADMIN.PROJECT_PAUSE.replace(':projectId', projectId),
+        ROUTES.API.PROJECT.PROJECT_PAUSE.replace(':projectId', projectId),
       getProjectArchive: (projectId: string) =>
-        ROUTES.API.ADMIN.PROJECT_ARCHIVE.replace(':projectId', projectId),
+        ROUTES.API.PROJECT.PROJECT_ARCHIVE.replace(':projectId', projectId),
       getProjectClone: (projectId: string) =>
-        ROUTES.API.ADMIN.PROJECT_CLONE.replace(':projectId', projectId),
+        ROUTES.API.PROJECT.PROJECT_CLONE.replace(':projectId', projectId),
       getProjectDelete: (projectId: string) =>
-        ROUTES.API.ADMIN.PROJECT_DELETE.replace(':projectId', projectId),
+        ROUTES.API.PROJECT.PROJECT_DELETE.replace(':projectId', projectId),
       getProjectFillPromptResponses: (projectId: string) =>
-        ROUTES.API.ADMIN.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
+        ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
     },
 
     NewProject: {

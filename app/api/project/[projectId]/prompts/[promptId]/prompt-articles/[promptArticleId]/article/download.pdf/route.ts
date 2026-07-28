@@ -5,7 +5,6 @@ import pdfMake from 'pdfmake/js/index.js';
 import standardFonts from 'pdfmake/standard-fonts/Helvetica.js';
 // @ts-expect-error pdfmake's standard fonts file is plain JS
 import courierFonts from 'pdfmake/standard-fonts/Courier.js';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptArticleRowWithId } from '@/libs/database/PromptArticles/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 import { markdownToPdfmakeDoc } from '@/libs/article-export/markdownToPdfmakeDoc';
@@ -49,14 +48,8 @@ export async function GET(
     if (!promptArticleId)
       return NextResponse.json({ error: 'Missing promptArticleId' }, { status: 400 });
 
-    const user = await getUserOrThrow();
     const row = await getPromptArticleRowWithId(promptArticleId);
-    if (
-      !row ||
-      row.author_id !== user.id ||
-      row.project_id !== projectId ||
-      row.prompt_id !== promptId
-    ) {
+    if (!row || row.project_id !== projectId || row.prompt_id !== promptId) {
       return NextResponse.json(
         { error: 'Prompt article not found', code: 'PROMPT_ARTICLE_NOT_FOUND' },
         { status: 404 }

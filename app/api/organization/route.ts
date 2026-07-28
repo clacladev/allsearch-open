@@ -1,10 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { OrganizationSchema, UpdateOrganizationResponse } from './types';
-import {
-  getOrganizationRowWithOwnerId,
-  insertOrganizationRow,
-} from '@/libs/database/Organizations/queries';
+import { getOrganization, insertOrganizationRow } from '@/libs/database/Organizations/queries';
 import { OrganizationType } from '@/libs/database/Organizations/types';
 
 export async function POST(req: NextRequest) {
@@ -12,9 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { type, url, name, iconUrl } = OrganizationSchema.parse(body);
 
-    const user = await getUserOrThrow();
-
-    let organizationRow = await getOrganizationRowWithOwnerId(user.id);
+    let organizationRow = await getOrganization();
     const isUpdate = !!organizationRow;
 
     if (!organizationRow) {
@@ -24,7 +18,6 @@ export async function POST(req: NextRequest) {
         url: isAgency ? url || null : null,
         name: isAgency ? name || null : null,
         icon_url: isAgency ? iconUrl || null : null,
-        owner_id: user.id,
       });
     }
 

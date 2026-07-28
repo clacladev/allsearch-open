@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { updateLastDayOfPromptResponsesAnalysis } from '@/libs/workflows/updateLastDayOfPromptResponsesAnalysis';
 import { start } from 'workflow/api';
 
@@ -11,8 +10,7 @@ export async function POST(
     const { projectId } = await params;
     if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-    const user = await getUserOrThrow();
-    const run = await start(updateLastDayOfPromptResponsesAnalysis, [projectId, user.id]);
+    const run = await start(updateLastDayOfPromptResponsesAnalysis, [projectId]);
 
     return Response.json({
       message: `Workflow 'updateLastDayOfPromptResponsesAnalysis' started`,

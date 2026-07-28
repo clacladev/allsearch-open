@@ -1,4 +1,3 @@
-import { getUserOrRedirectToSignin } from '@/libs/database/supabase/server';
 import { ReactNode } from 'react';
 import { NewProjectContextProvider } from './new-project/components/NewProjectContext';
 import ClientLayout from '@/components/ClientLayout';
@@ -21,12 +20,11 @@ export function NewProjectLayoutColumn({
   );
 }
 
-export default async function NewProjectLayout({ children }: { children: ReactNode }) {
-  const user = await getUserOrRedirectToSignin();
+export default function NewProjectLayout({ children }: { children: ReactNode }) {
   return (
     <body className="bg-secondary antialiased">
       <ClientLayout>
-        <NewProjectContextProvider userId={user.id}>
+        <NewProjectContextProvider>
           <main className="min-h-dvh">
             <section className="bg-primary grid min-h-screen grid-cols-1 xl:grid-cols-3">
               {/* Main column with content */}

@@ -60,8 +60,7 @@ export default function ProjectOverview({
   overviewData: OverviewData;
 }) {
   const router = useRouter();
-  const { currentProject, currentCompetitors, currentPrompts, userProfile } =
-    usePrivateLayoutContext();
+  const { currentProject, currentCompetitors, currentPrompts } = usePrivateLayoutContext();
   const [sourcesType, setSourcesType] = useState<SourcesType>('contents');
   const [chartType, setChartType] = useState<OverviewChartType>('visibility');
   const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
@@ -121,7 +120,7 @@ export default function ProjectOverview({
           description="Prompt tracking is currently disabled for this project. Get in touch with our team to subscribe or extend your trial."
           confirmLabel="Get in touch now"
           onConfirm={() => {
-            const body = `Hello AllSearch team,\n\nI'm ${userProfile?.email ?? 'a user'} and I'm writing about the project ${currentProject.name} (${currentProject.id}).\nProject URL: ${currentProject.hostname}\n\nI would like to [start my subscription / extend my trial]. How should we proceed?\n\nThank you very much.`;
+            const body = `Hello AllSearch team,\n\nI'm writing about the project ${currentProject.name} (${currentProject.id}).\nProject URL: ${currentProject.hostname}\n\nI would like to [start my subscription / extend my trial]. How should we proceed?\n\nThank you very much.`;
             window.open(
               `mailto:${config.email.supportEmail}?subject=${encodeURIComponent('Trial extension or subscription start')}&body=${encodeURIComponent(body)}`,
               '_blank'

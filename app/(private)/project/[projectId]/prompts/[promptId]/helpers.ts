@@ -61,7 +61,7 @@ function getPromptResponsesContent(
     projectIdRank: response.brand_ids_ranking.indexOf(projectId),
     brandIdsRanking: response.brand_ids_ranking,
     sources: sourceRowsToSourceItems(sourcesByResponseId.get(response.id) ?? []),
-    sentiment: response.sentiment,
+    sentiment: response.sentiment ?? undefined,
     createdAt: response.created_at,
   }));
 }

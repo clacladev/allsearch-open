@@ -1,8 +1,10 @@
 import 'server-only';
 
-import { createClient } from '../supabase/serverAsAdmin';
-import { PromptAndTopicJoinRow, PromptRow, TABLE_PROMPTS } from './types';
-import { DEFAULT_QUERY_OPTIONS, QueryOptions } from '../shared/QueryOptions';
+import { and, asc, eq, getTableColumns } from 'drizzle-orm';
+
+import { getDatabase } from '../client';
+import { prompts, topics } from '../schema';
+import { PromptAndTopicJoinRow, PromptRow } from './types';
 
 type InsertPromptRowInput = Omit<PromptRow, 'id' | 'is_archived' | 'created_at' | 'updated_at'> & {
   created_at?: string;
@@ -10,126 +12,65 @@ type InsertPromptRowInput = Omit<PromptRow, 'id' | 'is_archived' | 'created_at' 
 
 type UpdatePromptRowInput = Partial<Omit<PromptRow, 'id' | 'created_at' | 'updated_at'>>;
 
-export async function getPromptRowWithId(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const query = supabase.from(TABLE_PROMPTS).select().eq('id', id);
-  const { data, error } = await query.maybeSingle();
-  if (error) throw error;
-  return data;
+export async function getPromptRowWithId(id: string): Promise<PromptRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db.select().from(prompts).where(eq(prompts.id, id)).limit(1);
+  return rows[0];
 }
 
 export async function getPromptRowsWithProjectId(
   project_id: string,
-  includeArchived = false,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  includeArchived = false
 ): Promise<PromptRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase
-    .from(TABLE_PROMPTS)
+  const db = await getDatabase();
+  const conditions = [eq(prompts.project_id, project_id)];
+  if (!includeArchived) conditions.push(eq(prompts.is_archived, false));
+  return db
     .select()
-    .eq('project_id', project_id)
-    .order('updated_at', { ascending: true });
-  if (!includeArchived) {
-    query = query.eq('is_archived', false);
-  }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getPromptRowsWithOrganizationId(
-  organization_id: string,
-  includeArchived = false,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase
-    .from(TABLE_PROMPTS)
-    .select()
-    .eq('organization_id', organization_id)
-    .order('updated_at', { ascending: true });
-  if (!includeArchived) {
-    query = query.eq('is_archived', false);
-  }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
+    .from(prompts)
+    .where(and(...conditions))
+    .orderBy(asc(prompts.updated_at));
 }
 
 export async function getPromptAndTopicJoinWithProjectId(
   project_id: string,
-  includeArchived = false,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  includeArchived = false
 ): Promise<PromptAndTopicJoinRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase
-    .from(TABLE_PROMPTS)
-    .select('*, topics(name)')
-    .eq('project_id', project_id);
-  if (!includeArchived) {
-    query = query.eq('is_archived', false);
-  }
-  const { data, error } = await query
-    .order('created_at', { ascending: true })
-    .order('is_archived', { ascending: true });
-  if (error) throw error;
-
-  return (data ?? []).map((row) => ({
-    ...row,
-    topic_name: row.topics?.name ?? null,
-    topics: undefined,
-  })) as PromptAndTopicJoinRow[];
+  const db = await getDatabase();
+  const conditions = [eq(prompts.project_id, project_id)];
+  if (!includeArchived) conditions.push(eq(prompts.is_archived, false));
+  const rows = await db
+    .select({ ...getTableColumns(prompts), topic_name: topics.name })
+    .from(prompts)
+    .leftJoin(topics, eq(prompts.topic_id, topics.id))
+    .where(and(...conditions))
+    .orderBy(asc(prompts.created_at), asc(prompts.is_archived));
+  return rows as PromptAndTopicJoinRow[];
 }
 
-export async function insertPromptRow(
-  input: InsertPromptRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase.from(TABLE_PROMPTS).insert(input).select().single();
-  if (error) throw error;
-  return data;
+export async function insertPromptRow(input: InsertPromptRowInput): Promise<PromptRow> {
+  const db = await getDatabase();
+  const [row] = await db.insert(prompts).values(input).returning();
+  if (!row) throw new Error('Insert into prompts returned no row');
+  return row;
 }
 
-export async function insertPromptRows(
-  inputs: InsertPromptRowInput[],
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase.from(TABLE_PROMPTS).insert(inputs).select();
-  if (error) throw error;
-  return data;
+export async function insertPromptRows(inputs: InsertPromptRowInput[]): Promise<PromptRow[]> {
+  const db = await getDatabase();
+  return db.insert(prompts).values(inputs).returning();
 }
 
 export async function updatePromptRowWithId(
   id: string,
-  values: UpdatePromptRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPTS)
-    .update(values)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  values: UpdatePromptRowInput
+): Promise<PromptRow> {
+  const db = await getDatabase();
+  const [row] = await db.update(prompts).set(values).where(eq(prompts.id, id)).returning();
+  if (!row) throw new Error(`No prompts row found for id ${id}`);
+  return row;
 }
 
-export async function deletePromptRowsWithProjectId(
-  projectId: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<PromptRow[] | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROMPTS)
-    .delete()
-    .eq('project_id', projectId)
-    .select();
-  if (error) throw error;
-  return data;
+export async function deletePromptRowsWithProjectId(projectId: string): Promise<PromptRow[]> {
+  const db = await getDatabase();
+  return db.delete(prompts).where(eq(prompts.project_id, projectId)).returning();
 }

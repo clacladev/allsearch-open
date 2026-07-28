@@ -23,16 +23,16 @@ type AnalysisWorkRow = {
   sources: SourceItem[];
 };
 
-export async function fetchEntitiesForProcessing(projectId: string, userId: string) {
+export async function fetchEntitiesForProcessing(projectId: string) {
   'use step';
 
   const endDate = getTodayISODateString();
   const startDate = getISODateString(endDate, -1);
 
   const [projectRow, competitorRows, allPromptResponseRows] = await Promise.all([
-    getProjectRowWithId(projectId, userId, { asAdmin: true }),
-    getActiveCompetitorRowsWithProjectId(projectId, { asAdmin: true }),
-    getPromptResponseRowsWithProjectIdInDateRange(projectId, startDate, endDate, { asAdmin: true }),
+    getProjectRowWithId(projectId),
+    getActiveCompetitorRowsWithProjectId(projectId),
+    getPromptResponseRowsWithProjectIdInDateRange(projectId, startDate, endDate),
   ]);
   if (!projectRow || !competitorRows || !allPromptResponseRows) {
     throw new Error('Failed to fetch entities for processing');
@@ -65,11 +65,7 @@ export async function processEntitiesAndSaveAnalysis(
 
   await Promise.allSettled(
     workRows.map((row) =>
-      updatePromptResponseRowWithId(
-        row.id,
-        { brand_ids_ranking: row.brand_ids_ranking },
-        { asAdmin: true }
-      )
+      updatePromptResponseRowWithId(row.id, { brand_ids_ranking: row.brand_ids_ranking })
     )
   );
 
@@ -80,7 +76,7 @@ export async function processEntitiesAndSaveAnalysis(
   const responseIdsWithSources = workRowsWithSources.map((row) => row.id);
 
   if (responseIdsWithSources.length) {
-    await deleteSourceRowsWithPromptResponseIds(responseIdsWithSources, { asAdmin: true });
+    await deleteSourceRowsWithPromptResponseIds(responseIdsWithSources);
 
     const sourceRowInputs = workRowsWithSources.flatMap((row) => {
       const originalRow = promptResponseRows.find((pr) => pr.id === row.id);
@@ -93,14 +89,14 @@ export async function processEntitiesAndSaveAnalysis(
         clean_url: source.cleanUrl,
         url: source.url,
         hostname: source.hostname,
-        raw_url: source.rawUrl,
-        title: source.title,
-        description: source.description,
-        headings: source.headings,
+        raw_url: source.rawUrl ?? null,
+        title: source.title ?? null,
+        description: source.description ?? null,
+        headings: source.headings ?? null,
         brand_ids_ranking: source.brandIdsRanking ?? [],
       }));
     });
-    await insertSourceRows(sourceRowInputs, { asAdmin: true });
+    await insertSourceRows(sourceRowInputs);
   }
 }
 
@@ -111,7 +107,7 @@ async function processEntities(
 ): Promise<AnalysisWorkRow[]> {
   // Fetch source rows from the sources table
   const responseIds = promptResponseRows.map((row) => row.id);
-  const sourceRows = await getSourceRowsWithPromptResponseIds(responseIds, { asAdmin: true });
+  const sourceRows = await getSourceRowsWithPromptResponseIds(responseIds);
 
   // Group source items by prompt_response_id
   const sourcesByResponseId = new Map<string, SourceItem[]>();

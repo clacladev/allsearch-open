@@ -1,8 +1,10 @@
 import 'server-only';
 
-import { createClient } from '../supabase/serverAsAdmin';
-import { ProjectRow, TABLE_PROJECTS } from './types';
-import { QueryOptions, DEFAULT_QUERY_OPTIONS } from '../shared/QueryOptions';
+import { and, eq } from 'drizzle-orm';
+
+import { getDatabase } from '../client';
+import { projects } from '../schema';
+import { ProjectRow } from './types';
 
 type InsertProjectRowInput = Omit<
   ProjectRow,
@@ -10,92 +12,75 @@ type InsertProjectRowInput = Omit<
 >;
 type UpdateProjectRowInput = Omit<ProjectRow, 'id' | 'created_at' | 'updated_at'>;
 
-export async function getProjectRowWithId(
-  id: string,
-  author_id?: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<ProjectRow | undefined> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase.from(TABLE_PROJECTS).select().eq('id', id);
-  if (author_id) {
-    query = query.eq('author_id', author_id);
-  }
-  const { data, error } = await query.maybeSingle();
-  if (error) throw error;
-  return data;
+const projectColumns = {
+  id: projects.id,
+  created_at: projects.created_at,
+  updated_at: projects.updated_at,
+  url: projects.url,
+  name: projects.name,
+  aliases: projects.aliases,
+  icon_url: projects.icon_url,
+  hostname: projects.hostname,
+  prompts_updated_at: projects.prompts_updated_at,
+  is_paused: projects.is_paused,
+  is_archived: projects.is_archived,
+  target_location: projects.target_location,
+};
+
+export async function getProjectRowWithId(id: string): Promise<ProjectRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+  return rows[0];
 }
 
-export async function getProjectsRowsWithOrganizationId(
-  organization_id: string,
-  includeArchived = false,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<ProjectRow[]> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase.from(TABLE_PROJECTS).select().eq('organization_id', organization_id);
-  if (!includeArchived) {
-    query = query.eq('is_archived', false);
-  }
-  const { data, error } = await query.order('created_at');
-  if (error) throw error;
-  return data ?? [];
+export async function getProjectRows(includeArchived = false): Promise<ProjectRow[]> {
+  const db = await getDatabase();
+  const conditions = includeArchived ? [] : [eq(projects.is_archived, false)];
+  return db
+    .select()
+    .from(projects)
+    .where(and(...conditions))
+    .orderBy(projects.created_at);
 }
 
 export async function getProjectRowsAll<K extends keyof ProjectRow>(
   includeArchived = false,
-  options: QueryOptions & { fields?: K[] } = DEFAULT_QUERY_OPTIONS
+  fields?: K[]
 ): Promise<Pick<ProjectRow, K>[]> {
-  const supabase = await createClient(options.asAdmin);
-  let query = supabase.from(TABLE_PROJECTS).select();
-  if (!includeArchived) {
-    query = query.eq('is_archived', false);
-  }
-  const { data, error } = await query
-    .select(options.fields ? options.fields.join(', ') : '*')
-    .order('created_at');
-  if (error) throw error;
-  return (data ?? []) as unknown as Pick<ProjectRow, K>[];
+  const db = await getDatabase();
+  const columns = fields
+    ? (Object.fromEntries(fields.map((field) => [field, projectColumns[field]])) as Pick<
+        typeof projectColumns,
+        K
+      >)
+    : (projectColumns as Pick<typeof projectColumns, K>);
+  const conditions = includeArchived ? [] : [eq(projects.is_archived, false)];
+  const rows = await db
+    .select(columns)
+    .from(projects)
+    .where(and(...conditions))
+    .orderBy(projects.created_at);
+  return rows as Pick<ProjectRow, K>[];
 }
 
-export async function insertProjectRow(
-  input: InsertProjectRowInput,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<ProjectRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase.from(TABLE_PROJECTS).insert(input).select().single();
-  if (error) throw error;
-  return data;
+export async function insertProjectRow(input: InsertProjectRowInput): Promise<ProjectRow> {
+  const db = await getDatabase();
+  const [row] = await db.insert(projects).values(input).returning();
+  if (!row) throw new Error('Insert into projects returned no row');
+  return row;
 }
 
 export async function updateProjectRow(
   id: string,
-  values: Partial<UpdateProjectRowInput>,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
+  values: Partial<UpdateProjectRowInput>
 ): Promise<ProjectRow> {
-  const supabase = await createClient(options.asAdmin);
-  const { data, error } = await supabase
-    .from(TABLE_PROJECTS)
-    .update(values)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  const db = await getDatabase();
+  const [row] = await db.update(projects).set(values).where(eq(projects.id, id)).returning();
+  if (!row) throw new Error(`No projects row found for id ${id}`);
+  return row;
 }
 
-export async function deleteProjectRow(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<void> {
-  const supabase = await createClient(options.asAdmin);
-  const { error } = await supabase.from(TABLE_PROJECTS).delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteProjectRowCascade(
-  id: string,
-  options: QueryOptions = DEFAULT_QUERY_OPTIONS
-): Promise<void> {
-  const supabase = await createClient(options.asAdmin);
-  const { error } = await supabase.rpc('delete_project_cascade', { target_project_id: id });
-  if (error) throw error;
+export async function deleteProjectRow(id: string): Promise<void> {
+  const db = await getDatabase();
+  await db.delete(projects).where(eq(projects.id, id));
 }

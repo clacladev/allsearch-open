@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import z from 'zod';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import {
   getPromptArticleRowWithId,
   setArticleGeneratedFromStream,
@@ -62,14 +61,13 @@ const PatchBodySchema = z.object({
 type RouteParams = { projectId: string; promptId: string; promptArticleId: string };
 
 type OwnershipResult =
-  | { ok: true; row: PromptArticleRow; userId: string }
+  | { ok: true; row: PromptArticleRow }
   | { ok: false; response: NextResponse };
 
 /**
- * Verify caller owns the prompt article AND the row matches the URL's
- * project + prompt. Returns the row on success, or a NextResponse on
- * auth/not-found. Uses 404 on ownership mismatch to avoid leaking which row
- * IDs exist.
+ * Verify the prompt article row matches the URL's project + prompt. Returns
+ * the row on success, or a NextResponse on not-found. Uses 404 on mismatch to
+ * avoid leaking which row IDs exist.
  *
  * The ok-flag discriminator (rather than `instanceof NextResponse`) keeps the
  * branch reliable in test environments where module boundaries can put
@@ -80,14 +78,8 @@ async function loadPromptArticleWithOwnershipCheck(
   projectId: string,
   promptId: string
 ): Promise<OwnershipResult> {
-  const user = await getUserOrThrow();
   const row = await getPromptArticleRowWithId(promptArticleId);
-  if (
-    !row ||
-    row.author_id !== user.id ||
-    row.project_id !== projectId ||
-    row.prompt_id !== promptId
-  ) {
+  if (!row || row.project_id !== projectId || row.prompt_id !== promptId) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -96,7 +88,7 @@ async function loadPromptArticleWithOwnershipCheck(
       ),
     };
   }
-  return { ok: true, row, userId: user.id };
+  return { ok: true, row };
 }
 
 /**
@@ -122,7 +114,6 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<RouteParams> }
 ) {
-  let user: { id: string; email?: string } | null = null;
   try {
     const { projectId, promptId, promptArticleId } = await params;
     if (!projectId) return NextResponse.json({ error: 'Missing projectId' }, { status: 400 });
@@ -145,8 +136,7 @@ export async function POST(
       promptId
     );
     if (!ownership.ok) return ownership.response;
-    const { row, userId } = ownership;
-    user = { id: userId };
+    const { row } = ownership;
 
     // Cache-on-read: if an article already exists and the caller didn't ask for
     // a regenerate, return both columns + sources snapshot as JSON. Client
@@ -165,7 +155,7 @@ export async function POST(
     // date-range opportunity state; this matches what the user is currently
     // looking at on the page. The snapshot we persist (sources_used) freezes
     // these sources to this article, even if competitor ranks shift later.
-    const projectRow = await getProjectRowWithId(projectId, userId);
+    const projectRow = await getProjectRowWithId(projectId);
     if (!projectRow) {
       throw new PromptArticleError('UNAUTHORIZED', 'Project not found or unauthorized.');
     }
@@ -271,8 +261,6 @@ export async function POST(
       {
         abortSignal: req.signal,
         aiAnalyticsProps: {
-          userId,
-          userEmail: user.email,
           others: {
             projectId,
             promptId,

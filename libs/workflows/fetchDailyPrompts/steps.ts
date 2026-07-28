@@ -18,10 +18,7 @@ export async function startFetchDailyPromptsForProjects(date: ISODateString) {
 
 async function getProjectIdsBatchesToProcess() {
   'use step';
-  const projects = await getProjectRowsAll(false, {
-    fields: ['id', 'is_paused'],
-    asAdmin: true,
-  });
+  const projects = await getProjectRowsAll(false, ['id', 'is_paused']);
   const projectsIds = projects.filter((project) => !project.is_paused).map((project) => project.id);
   return chunk(projectsIds, PROJECTS_BATCH_SIZE);
 }

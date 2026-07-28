@@ -2,10 +2,8 @@ import { mock } from 'bun:test';
 
 // Note: next/server is mocked globally in tests/setup.ts
 
-const mockUser = { id: 'user-123' };
 const mockProjectRow = {
   id: 'project-123',
-  organization_id: 'org-123',
   url: 'https://example.com',
   name: 'Test Project',
   target_location: null,
@@ -16,8 +14,6 @@ const mockPromptRow = {
   name: 'Test prompt',
   topic_id: 'topic-123',
   project_id: 'project-123',
-  organization_id: 'org-123',
-  author_id: 'user-123',
   is_archived: false,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -31,11 +27,6 @@ const mockUpdatePromptRowWithId = mock(async () => mockPromptRow);
 const mockGetTopicRowWithId = mock(async () => mockTopicRow);
 const mockFindOrCreateCustomTopic = mock(async () => mockTopicRow);
 const mockGetProjectRowWithId = mock(async () => mockProjectRow);
-
-mock.module('@/libs/database/supabase/server', () => ({
-  getUserId: async () => mockUser.id,
-  getUserOrThrow: async () => mockUser,
-}));
 
 mock.module('@/libs/posthog', () => ({
   getPostHogServer: () => ({ captureException: () => {} }),

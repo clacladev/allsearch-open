@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
-import { getUserProfileRowWithId } from '@/libs/database/UserProfiles/queries';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getTopicRowsWithProjectId, insertTopicRows } from '@/libs/database/Topics/queries';
 import {
@@ -49,32 +47,23 @@ export async function POST(
     const { projectId } = await params;
     if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-    const user = await getUserOrThrow();
-    const userProfile = await getUserProfileRowWithId(user.id, { asAdmin: true });
-    if (!userProfile || userProfile.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    const project = await getProjectRowWithId(projectId, undefined, { asAdmin: true });
+    const project = await getProjectRowWithId(projectId);
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     // 1. Get or create a topic
-    const topics = await getTopicRowsWithProjectId(projectId, { asAdmin: true });
+    const topics = await getTopicRowsWithProjectId(projectId);
     let topicId: string;
     if (topics.length > 0) {
       topicId = topics[0].id;
     } else {
-      const [newTopic] = await insertTopicRows(
-        [{ name: 'Backfill', project_id: projectId, author_id: user.id }],
-        { asAdmin: true }
-      );
+      const [newTopic] = await insertTopicRows([{ name: 'Backfill', project_id: projectId }]);
       topicId = newTopic.id;
     }
 
     // 2. Max out prompts
-    const existingPrompts = await getPromptRowsWithProjectId(projectId, false, { asAdmin: true });
+    const existingPrompts = await getPromptRowsWithProjectId(projectId, false);
     let promptsCreated = 0;
     const promptsToCreate = DEMO_PROMPTS_TARGET - existingPrompts.length;
 
@@ -84,10 +73,7 @@ export async function POST(
           name: `Demo prompt ${existingPrompts.length + i + 1}`,
           topic_id: topicId,
           project_id: projectId,
-          organization_id: project.organization_id,
-          author_id: user.id,
-        })),
-        { asAdmin: true }
+        }))
       );
       promptsCreated = newPrompts.length;
       existingPrompts.push(...newPrompts);
@@ -96,10 +82,8 @@ export async function POST(
     const allPromptIds = existingPrompts.map((p) => p.id);
 
     // 3. Get existing responses and sources as templates
-    const existingResponses = await getPromptResponseRowsWithProjectId(projectId, {
-      asAdmin: true,
-    });
-    const existingSourceRows = await getSourceRowsWithProjectId(projectId, { asAdmin: true });
+    const existingResponses = await getPromptResponseRowsWithProjectId(projectId);
+    const existingSourceRows = await getSourceRowsWithProjectId(projectId);
 
     // Group responses by prompt_id+chatbot_id
     const responsesByPromptChatbot = new Map<string, PromptResponseRow[]>();
@@ -144,6 +128,7 @@ export async function POST(
       prompt_id: string;
       project_id: string;
       workflow_id: string;
+      run_id: PromptResponseRow['run_id'];
       created_at: string;
       _templateSources: SourceRow[];
     }> = [];
@@ -178,6 +163,7 @@ export async function POST(
             prompt_id: promptId,
             project_id: projectId,
             workflow_id: 'backfill',
+            run_id: null,
             created_at: createdAt,
             _templateSources: templateSources,
           });
@@ -192,8 +178,7 @@ export async function POST(
     for (let i = 0; i < responsesToInsert.length; i += BATCH_SIZE) {
       const batch = responsesToInsert.slice(i, i + BATCH_SIZE);
       const insertedRows = await insertPromptResponseRows(
-        batch.map(({ _templateSources: _, ...r }) => r),
-        { asAdmin: true }
+        batch.map(({ _templateSources: _, ...r }) => r)
       );
       responsesCreated += insertedRows.length;
 
@@ -231,7 +216,7 @@ export async function POST(
       if (sourceRowsToInsert.length > 0) {
         for (let k = 0; k < sourceRowsToInsert.length; k += BATCH_SIZE) {
           const srcBatch = sourceRowsToInsert.slice(k, k + BATCH_SIZE);
-          const inserted = await insertSourceRows(srcBatch, { asAdmin: true });
+          const inserted = await insertSourceRows(srcBatch);
           sourcesCreated += inserted.length;
         }
       }

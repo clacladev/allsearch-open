@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import { getUserOrThrow } from '@/libs/database/supabase/server';
 import { getPromptArticleRowWithId } from '@/libs/database/PromptArticles/queries';
 import { getPromptRowWithId } from '@/libs/database/Prompts/queries';
 
@@ -88,14 +87,8 @@ export async function GET(
     if (!promptArticleId)
       return NextResponse.json({ error: 'Missing promptArticleId' }, { status: 400 });
 
-    const user = await getUserOrThrow();
     const row = await getPromptArticleRowWithId(promptArticleId);
-    if (
-      !row ||
-      row.author_id !== user.id ||
-      row.project_id !== projectId ||
-      row.prompt_id !== promptId
-    ) {
+    if (!row || row.project_id !== projectId || row.prompt_id !== promptId) {
       return NextResponse.json(
         { error: 'Prompt article not found', code: 'PROMPT_ARTICLE_NOT_FOUND' },
         { status: 404 }
