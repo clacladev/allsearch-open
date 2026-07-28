@@ -38,16 +38,29 @@ export async function migrateDatabase(
       // never silently produces a corrupt file.
       db.run(sql`VACUUM INTO ${backupPath}`);
     } catch (err) {
-      // Disk full, a read-only directory, or (despite `uniqueBackupPath`) a collision all
-      // otherwise propagate as a raw `DrizzleQueryError` whose message is just the failed query
-      // text, with the real reason buried on `.cause` — useless to a desktop-app user who must
-      // act on it. A partially written file is deleted so it can never later be mistaken for a
-      // valid backup, since backups are never pruned.
-      if (existsSync(backupPath)) {
-        rmSync(backupPath);
+      // Disk full or a read-only directory otherwise propagate as a raw `DrizzleQueryError` whose
+      // message is just the failed query text, with the real reason buried on `.cause` — useless
+      // to a desktop-app user who must act on it.
+      const cause = err instanceof Error ? err.cause : undefined;
+      const reason =
+        cause instanceof Error ? cause.message : err instanceof Error ? err.message : String(err);
+
+      // `uniqueBackupPath` makes a collision at this exact path practically impossible (pid +
+      // millisecond timestamp). If SQLite still reports "file already exists", `VACUUM INTO`
+      // left the file at `backupPath` completely untouched — by definition it wasn't written by
+      // us, so it may be another process's valid, complete backup. Never delete it. In every
+      // other failure, any bytes SQLite did write are useless and are removed so they can never
+      // later be mistaken for a valid backup — this can't undo a process killed mid-`VACUUM`;
+      // nothing here runs in that case.
+      if (!/already exists/i.test(reason)) {
+        try {
+          rmSync(backupPath, { force: true });
+        } catch {
+          // Best-effort cleanup only — must not replace the error thrown below.
+        }
       }
       throw new Error(
-        `Could not back up your database before migrating (${backupPath}). Migration aborted.`,
+        `Could not back up your database before migrating (${backupPath}): ${reason}. Migration aborted.`,
         { cause: err }
       );
     }
@@ -96,18 +109,17 @@ async function getAppliedMigrations(db: AllSearchDatabase): Promise<DrizzleMigra
   }
 }
 
-/** Backup filenames are second-precision, so two `migrateDatabase` runs within the same second
- * (a failed migration followed by an immediate restart, or a dev-server restart loop) would
- * otherwise collide on the same path — and the resulting `VACUUM INTO` failure surfaces from the
- * driver as "file is not a database" on Node, which reads like corruption rather than a naming
- * collision. Appending a counter keeps every backup path unique. */
+/** `<dbPath>.<millisecond-precision compact ISO timestamp>.<pid>.backup`. The millisecond
+ * precision plus the pid make a collision at this exact path practically impossible: two
+ * `migrateDatabase` calls in the same process can't land in the same millisecond (a `VACUUM INTO`
+ * takes far longer than that), and two different processes never share a pid. The `existsSync`
+ * check is a last-resort sanity check, not a mechanism this code relies on for uniqueness — if it
+ * ever fires, something stranger than an ordinary naming collision is going on, so this fails
+ * loudly instead of silently deleting or overwriting anything. */
 function uniqueBackupPath(dbPath: string): string {
-  const base = `${dbPath}.${compactIsoTimestamp(new Date())}`;
-  let candidate = `${base}.backup`;
-  let counter = 1;
-  while (existsSync(candidate)) {
-    candidate = `${base}-${counter}.backup`;
-    counter++;
+  const candidate = `${dbPath}.${compactIsoTimestamp(new Date())}.${process.pid}.backup`;
+  if (existsSync(candidate)) {
+    throw new Error(`Refusing to back up your database: a file already exists at ${candidate}.`);
   }
   return candidate;
 }
@@ -142,10 +154,7 @@ function resolveMigrationsFolder(): string {
 }
 
 function compactIsoTimestamp(date: Date): string {
-  return date
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.\d{3}Z$/, 'Z');
+  return date.toISOString().replace(/[-:.]/g, '');
 }
 
 // `drizzle-orm/node-sqlite` must be loaded via dynamic `await import()`: under Bun, `node:sqlite`

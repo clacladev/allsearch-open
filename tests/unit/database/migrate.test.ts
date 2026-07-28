@@ -99,17 +99,20 @@ describe('migrateDatabase', () => {
       .returning();
     closeDatabase(db);
 
-    // Build a migrations folder holding a copy of the real initial migration plus a second
-    // migration this test invents, so the upgrade path can be exercised without touching the
-    // app's real `drizzle/` folder.
+    // Build a migrations folder holding a copy of every real migration plus a second migration
+    // this test invents, so the upgrade path can be exercised without touching the app's real
+    // `drizzle/` folder. Sorted so this keeps working once there's more than one real migration —
+    // directory order isn't guaranteed, and `[0]` alone would silently copy just one of them.
     const realMigrationsFolder = join(process.cwd(), 'drizzle');
-    const initialMigrationName = readdirSync(realMigrationsFolder)[0];
+    const realMigrationNames = readdirSync(realMigrationsFolder).sort();
     const upgradeMigrationsFolder = mkdtempSync(join(tmpdir(), 'allsearch-migrate-upgrade-'));
-    cpSync(
-      join(realMigrationsFolder, initialMigrationName),
-      join(upgradeMigrationsFolder, initialMigrationName),
-      { recursive: true }
-    );
+    for (const migrationName of realMigrationNames) {
+      cpSync(
+        join(realMigrationsFolder, migrationName),
+        join(upgradeMigrationsFolder, migrationName),
+        { recursive: true }
+      );
+    }
     const secondMigrationName = '20991231235959_add_test_col';
     mkdirSync(join(upgradeMigrationsFolder, secondMigrationName));
     writeFileSync(
@@ -142,7 +145,7 @@ describe('migrateDatabase', () => {
         sql`SELECT name FROM __drizzle_migrations`
       );
       expect(appliedMigrations.map((migration) => migration.name).sort()).toEqual(
-        [initialMigrationName, secondMigrationName].sort()
+        [...realMigrationNames, secondMigrationName].sort()
       );
     } finally {
       rmSync(upgradeMigrationsFolder, { recursive: true, force: true });
