@@ -4,7 +4,7 @@ import { asc, eq } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { settings } from '../schema';
-import type { ChatbotId } from '../shared/ChatbotId';
+import { CHATBOT_PROVIDER, SUPPORTED_CHATBOTS_IDS, type ChatbotId } from '../shared/ChatbotId';
 import type { ProviderId } from '../shared/ProviderId';
 import type { ProviderKeyStatus, RedactedProviderKey, StoredProviderKey } from './types';
 
@@ -61,14 +61,34 @@ export async function removeProviderKey(provider: ProviderId): Promise<void> {
   await db.update(settings).set({ provider_keys }).where(eq(settings.id, row.id));
 }
 
-/** The stored selection only — not intersected with which providers currently have a key. */
-export async function getEnabledChatbotIds(): Promise<ChatbotId[]> {
+/** The stored selection only, exactly as the user last saved it — `null` if they never have (a
+ * fresh install), `[]` if they deliberately turned every Chatbot off. Not intersected with which
+ * providers currently have a key; for that, use `getEffectiveEnabledChatbotIds()`. Only the
+ * settings UI, which renders raw toggle state, should call this. */
+export async function getStoredEnabledChatbotIds(): Promise<ChatbotId[] | null> {
   const row = await getOrCreateSettingsRow();
   return row.enabled_chatbots;
 }
 
-export async function setEnabledChatbotIds(ids: ChatbotId[]): Promise<void> {
+export async function setStoredEnabledChatbotIds(ids: ChatbotId[]): Promise<void> {
   const db = await getDatabase();
   const row = await getOrCreateSettingsRow();
   await db.update(settings).set({ enabled_chatbots: ids }).where(eq(settings.id, row.id));
+}
+
+/** The set of Chatbots a Collection Run (or any other AI-dependent feature) should actually use:
+ * the stored selection intersected with providers that currently have a key, so a removed key
+ * silently drops its Chatbot without touching the stored selection — re-adding the key restores
+ * it. A never-touched selection (`null`, every fresh install) defaults to every Chatbot with a
+ * key present, per issue 09; a deliberate all-off selection (`[]`) stays off. A Chatbot with no
+ * key is never included, regardless of the stored selection. */
+export async function getEffectiveEnabledChatbotIds(): Promise<ChatbotId[]> {
+  const row = await getOrCreateSettingsRow();
+  const hasKey = (chatbotId: ChatbotId) =>
+    row.provider_keys[CHATBOT_PROVIDER[chatbotId]] !== undefined;
+  const stored = row.enabled_chatbots;
+  if (stored === null) return SUPPORTED_CHATBOTS_IDS.filter(hasKey);
+  return SUPPORTED_CHATBOTS_IDS.filter(
+    (chatbotId) => stored.includes(chatbotId) && hasKey(chatbotId)
+  );
 }

@@ -3,6 +3,7 @@ export const ROUTES = {
 
   // Private
   DASHBOARD: '/dashboard',
+  SETTINGS: '/settings',
 
   // Organization
   ORGANIZATION: '/organization',
@@ -47,6 +48,12 @@ export const ROUTES = {
     // Organization
     ORGANIZATION: '/api/organization',
     ORGANIZATION_WITH_ID: '/api/organization/:organizationId',
+
+    // Settings
+    SETTINGS: {
+      PROVIDER_KEYS: '/api/settings/provider-keys',
+      CHATBOTS: '/api/settings/chatbots',
+    },
 
     // New Project
     NEW_PROJECT: {

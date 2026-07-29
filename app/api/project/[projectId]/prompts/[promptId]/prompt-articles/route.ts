@@ -23,6 +23,7 @@ import {
   OutlineGenerationInput,
 } from '@/libs/ai/promptArticles/generateOutline';
 import { PromptArticleError, errorCodeToStatus } from '@/libs/ai/promptArticles/errors';
+import { aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
 import {
   articleSettingsSchema,
   ARTICLE_SETTINGS_DEFAULTS,
@@ -181,6 +182,16 @@ export async function POST(
       promptArticle: inserted,
     });
   } catch (error) {
+    // Credential problems (missing/invalid/rate-limited key) are checked first and layered in
+    // front of PromptArticleError's own taxonomy below — a missing key never reaches
+    // generateOutline as a PromptArticleError, but should still be reported distinctly rather
+    // than falling through to the generic 500 at the bottom.
+    const aiError = toAiError(error, 'google');
+    if (aiError) {
+      const { body, status } = aiErrorToResponseInit(aiError);
+      return NextResponse.json(body, { status });
+    }
+
     if (error instanceof PromptArticleError) {
       const status = errorCodeToStatus(error.code);
       if (status >= 500) {

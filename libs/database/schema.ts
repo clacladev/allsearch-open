@@ -65,10 +65,11 @@ export const settings = sqliteTable('settings', {
     .$type<Partial<Record<ProviderId, StoredProviderKey>>>()
     .notNull()
     .default({}),
-  enabled_chatbots: text('enabled_chatbots', { mode: 'json' })
-    .$type<ChatbotId[]>()
-    .notNull()
-    .default([]),
+  // `null` means "the user has never touched this toggle" (every fresh install), distinct from
+  // `[]`, a deliberate "turn everything off" — see libs/database/Settings/queries.ts, whose
+  // `getEffectiveEnabledChatbotIds()` treats `null` as "default to every Chatbot with a key" and
+  // `[]` as "none", rather than collapsing both to the same empty array.
+  enabled_chatbots: text('enabled_chatbots', { mode: 'json' }).$type<ChatbotId[]>(),
 });
 
 export const projects = sqliteTable(
