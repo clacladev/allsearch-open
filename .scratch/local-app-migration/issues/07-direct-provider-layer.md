@@ -45,3 +45,27 @@ that returns non-empty `sources` before closing this.
 - Nothing imports `createGateway` or `@posthog/ai`.
 - A live call per Chatbot returns text plus at least one source.
 - The 4 `tests/unit/ai/` tests pass again.
+
+## Comments
+
+**2026-07-29 — live verification, `bun run verify:providers`.**
+
+ChatGPT passes: `gpt-5.4-nano-2026-03-17`, 6 cited Sources and 15
+used-but-not-cited. Both Source paths survive the move off the gateway, which
+was the thing most at risk. The `target_location` mapping also proved out — a
+London/GB location returned `morningfold.co.uk`, so it is steering the search
+rather than merely being accepted. The Gemini structured-output path passes too.
+
+Two Chatbots did not clear the source check, neither for a reason this issue
+introduced:
+
+- **Google AI Overview** returned Sources on 1 of 3 identical calls. The model
+  chooses whether to search and there is no way to force it. Split out as
+  issue 25; it predates the port and would have affected the SaaS equally.
+- **Perplexity** could not be exercised at all — the account is over quota.
+  Still unverified.
+
+Closed on the strength of the port being proven rather than the letter of the
+source check, since the two failures are a provider-behaviour problem and a
+billing problem respectively. Nothing here imports `createGateway` or
+`@posthog/ai`, and the unit tests pass.
