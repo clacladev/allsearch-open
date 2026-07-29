@@ -51,3 +51,6 @@ test-results/
 tests/e2e/.auth/
 .claude/skills/gstack/
 .gstack/
+
+# conductor personal settings (shared ones live in .conductor/settings.toml)
+.conductor/settings.local.toml
