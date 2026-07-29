@@ -1,13 +1,12 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai';
-import { createAiGatewayModel, AIAnalyticsProps } from '../models';
+import { googleModel } from '../models';
 import { getPrompt, logNoObjectGeneratedError } from '../utils';
 import { OutlineGenerationSchema, OutlineGenerationResult } from './schema';
 import { PromptArticleError } from './errors';
 import type { SourceItem } from '@/libs/database/Sources/types';
 import type { PageHeading } from '@/libs/utils/urlAnalysis';
 
-// Verify against https://vercel.com/ai-gateway/models when bumping.
-export const OUTLINE_MODEL_ID = 'google/gemini-3-flash';
+export const OUTLINE_MODEL_ID = 'gemini-3-flash';
 const SYSTEM_PROMPT_PATH = 'libs/ai/promptArticles/outlineSystemPrompt.md';
 
 export type OutlineGenerationMode = 'create-new' | 'improve-existing';
@@ -114,20 +113,14 @@ function buildUserPrompt(input: OutlineGenerationInput): string {
 }
 
 export async function generateOutline(
-  input: OutlineGenerationInput,
-  aiAnalyticsProps?: AIAnalyticsProps
+  input: OutlineGenerationInput
 ): Promise<OutlineGenerationResult> {
   const systemPrompt = await getPrompt(SYSTEM_PROMPT_PATH);
   const userPrompt = buildUserPrompt(input);
 
-  const analyticsProps: AIAnalyticsProps = {
-    ...aiAnalyticsProps,
-    operationId: 'article-outline',
-  };
-
   try {
     const { output } = await generateText({
-      model: createAiGatewayModel(OUTLINE_MODEL_ID, analyticsProps),
+      model: await googleModel(OUTLINE_MODEL_ID),
       output: Output.object({ schema: OutlineGenerationSchema }),
       system: systemPrompt,
       prompt: userPrompt,

@@ -150,9 +150,7 @@ export async function POST(
       },
     };
 
-    const generation = await generateOutline(generationInput, {
-      others: { projectId, promptId, opportunityType: body.opportunityType },
-    });
+    const generation = await generateOutline(generationInput);
 
     const persisted = toPersistedOutline(generation);
 

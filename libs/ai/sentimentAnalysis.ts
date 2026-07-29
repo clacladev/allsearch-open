@@ -1,10 +1,10 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai';
-import { createAiGatewayModel, AIAnalyticsProps } from './models';
+import { googleModel } from './models';
 import z from 'zod';
 import { logNoObjectGeneratedError } from './utils';
 import { BrandsSentiment, SentimentLevel } from '@/libs/database/PromptResponses/types';
 
-const MODEL_ID = 'google/gemini-3.1-flash-lite';
+const MODEL_ID = 'gemini-3.1-flash-lite';
 
 const VALID_SENTIMENT_VALUES = ['-2', '-1', '0', '1', '2'] as const;
 
@@ -35,19 +35,14 @@ Rules:
 
 export async function analyzeResponseSentiment(
   responseText: string,
-  brands: Array<{ id: string; name: string }>,
-  aiAnalyticsProps?: AIAnalyticsProps
+  brands: Array<{ id: string; name: string }>
 ): Promise<BrandsSentiment> {
   const brandListLines = brands.map((b) => `- ID: ${b.id}, Name: ${b.name}`).join('\n');
   const prompt = `## Brands\n${brandListLines}\n\n## Text to analyze\n${responseText}`;
 
-  const analyticsProps: AIAnalyticsProps = {
-    ...aiAnalyticsProps,
-    operationId: 'sentiment-analysis',
-  };
   try {
     const { output } = await generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       output: Output.object({ schema: Schema }),
       system: SYSTEM_PROMPT,
       prompt,

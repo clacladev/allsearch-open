@@ -31,8 +31,10 @@ mock.module('ai', () => ({
   },
 }));
 
+// Partial stub (no openaiModel/perplexityModel/getProviderKey) that leaks process-wide via
+// Bun's mock.module() — see tests/unit/ai/models.test.ts for the full explanation.
 mock.module('@/libs/ai/models', () => ({
-  createAiGatewayModel: (modelId: string) => `mock-model-${modelId}`,
+  googleModel: async (modelId: string) => `mock-model-${modelId}`,
 }));
 
 mock.module('@/libs/ai/utils', () => ({

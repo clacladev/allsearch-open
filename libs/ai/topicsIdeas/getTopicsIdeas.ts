@@ -1,11 +1,11 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai';
-import { createAiGatewayModel, AIAnalyticsProps } from '../models';
+import { googleModel } from '../models';
 import { getPrompt, logNoObjectGeneratedError } from '../utils';
 import z from 'zod';
 import { google } from '@ai-sdk/google';
 
 // Models: https://ai.google.dev/gemini-api/docs/models
-const MODEL_ID = 'google/gemini-3.1-flash-lite';
+const MODEL_ID = 'gemini-3.1-flash-lite';
 const RESEARCH_PROMPT_FILE_PATH = 'libs/ai/topicsIdeas/researchSystemPrompt.md';
 const OBJECT_PROMPT_FILE_PATH = 'libs/ai/topicsIdeas/objectSystemPrompt.md';
 const MAX_TOPICS = 5;
@@ -16,18 +16,13 @@ const Schema = z
 
 export type TopicsNames = string[];
 
-export async function getTopicsIdeas(
-  url: string,
-  name: string,
-  aiAnalyticsProps?: AIAnalyticsProps
-): Promise<TopicsNames> {
+export async function getTopicsIdeas(url: string, name: string): Promise<TopicsNames> {
   const researchSystemPrompt = await getPrompt(RESEARCH_PROMPT_FILE_PATH);
   const objectSystemPrompt = await getPrompt(OBJECT_PROMPT_FILE_PATH);
 
-  const analyticsProps: AIAnalyticsProps = { ...aiAnalyticsProps, operationId: 'topics-ideas' };
   try {
     const { text } = await generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       tools: {
         url_context: google.tools.urlContext({}),
         google_search: google.tools.googleSearch({}),
@@ -39,7 +34,7 @@ export async function getTopicsIdeas(
     });
 
     const { output } = await generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       output: Output.object({ schema: Schema }),
       system: objectSystemPrompt,
       prompt: text,

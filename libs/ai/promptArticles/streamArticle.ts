@@ -1,17 +1,16 @@
 import 'server-only';
 
 import { streamText } from 'ai';
-import { createAiGatewayModel, AIAnalyticsProps } from '../models';
+import { googleModel } from '../models';
 import { getPrompt } from '../utils';
 import type {
   ArticleOutline,
   ArticleOutlineHeadingTag,
 } from '@/libs/database/PromptArticles/types';
 
-// Verify against https://vercel.com/ai-gateway/models when bumping. Same model
-// the outline generator uses; keeping symmetry until we have eval evidence to
-// justify a different one.
-export const ARTICLE_MODEL_ID = 'google/gemini-3-flash';
+// Same model the outline generator uses; keeping symmetry until we have eval
+// evidence to justify a different one.
+export const ARTICLE_MODEL_ID = 'gemini-3-flash';
 const SYSTEM_PROMPT_PATH = 'libs/ai/promptArticles/articleSystemPrompt.md';
 
 // Soft cap. Most outlines produce ~2000 words. Going higher than 8000 tokens
@@ -153,19 +152,13 @@ export async function startArticleStream(
   options: {
     abortSignal?: AbortSignal;
     onFinish: Parameters<typeof streamText>[0]['onFinish'];
-    aiAnalyticsProps?: AIAnalyticsProps;
   }
 ) {
   const systemPrompt = await getPrompt(SYSTEM_PROMPT_PATH);
   const userPrompt = buildUserPrompt(input);
 
-  const analyticsProps: AIAnalyticsProps = {
-    ...options.aiAnalyticsProps,
-    operationId: 'article-from-outline',
-  };
-
   return streamText({
-    model: createAiGatewayModel(ARTICLE_MODEL_ID, analyticsProps),
+    model: await googleModel(ARTICLE_MODEL_ID),
     system: systemPrompt,
     prompt: userPrompt,
     abortSignal: options.abortSignal,

@@ -115,7 +115,7 @@ mock.module('@/libs/utils/project-analysis/getOpportunitiesSummary', () => ({
 
 mock.module('@/libs/ai/promptArticles/generateOutline', () => ({
   generateOutline: mockGenerateOutline,
-  OUTLINE_MODEL_ID: 'google/gemini-3-flash',
+  OUTLINE_MODEL_ID: 'gemini-3-flash',
 }));
 
 import { describe, expect, it, beforeEach } from 'bun:test';

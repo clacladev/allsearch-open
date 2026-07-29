@@ -84,7 +84,7 @@ async function processPromptForAllChatbots(
   // Get responses from all chatbots
   const responses = (
     await Promise.allSettled([
-      processPromptForChatGPT(promptName),
+      processPromptForChatGPT(promptName, project.target_location),
       processPromptForGoogleAIMode(promptName),
       processPromptForPerplexity(promptName),
     ])
@@ -114,10 +114,13 @@ async function processPromptForAllChatbots(
   );
 }
 
-async function processPromptForChatGPT(promptName: string): Promise<ProcessPromptResponse> {
+async function processPromptForChatGPT(
+  promptName: string,
+  targetLocation: string | null
+): Promise<ProcessPromptResponse> {
   'use step';
   try {
-    const response = await getPromptResponseWithChatGPT(promptName);
+    const response = await getPromptResponseWithChatGPT(promptName, targetLocation);
     return {
       chatbotId: ChatbotId.ChatGPT,
       modelId: response.response.modelId,

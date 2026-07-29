@@ -260,14 +260,6 @@ export async function POST(
       },
       {
         abortSignal: req.signal,
-        aiAnalyticsProps: {
-          others: {
-            projectId,
-            promptId,
-            promptArticleId,
-            opportunityType: row.opportunity_type,
-          },
-        },
         onFinish: async ({ text, finishReason }) => {
           if (finishReason !== 'stop') {
             // Length-truncated, errored, content-filtered, tool-calls, other:

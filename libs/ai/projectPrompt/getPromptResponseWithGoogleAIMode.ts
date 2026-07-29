@@ -1,6 +1,6 @@
 import { generateText, NoObjectGeneratedError } from 'ai';
 import { google } from '@ai-sdk/google';
-import { AIAnalyticsProps, createAiGatewayModel } from '../models';
+import { googleModel } from '../models';
 import { logNoObjectGeneratedError } from '../utils';
 
 // Models: https://ai.google.dev/gemini-api/docs/models
@@ -12,20 +12,12 @@ import { logNoObjectGeneratedError } from '../utils';
 // price includes search). If this line item gets too expensive, the levers are: drop the
 // model from the daily fan-out, halve cron frequency, or replace google_search with
 // urlContext + a curated URL list.
-// Vercel AI Gateway https://vercel.com/ai-gateway/models
-const MODEL_ID = 'google/gemini-3.1-flash-lite';
+const MODEL_ID = 'gemini-3.1-flash-lite';
 
-export async function getPromptResponseWithGoogleAIMode(
-  prompt: string,
-  aiAnalyticsProps?: AIAnalyticsProps
-) {
-  const analyticsProps: AIAnalyticsProps = {
-    ...aiAnalyticsProps,
-    operationId: 'prompt-response:google-ai',
-  };
+export async function getPromptResponseWithGoogleAIMode(prompt: string) {
   try {
     return generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       prompt,
       temperature: 1.0, // Recommended by Google for optimal grounding results
       tools: {
