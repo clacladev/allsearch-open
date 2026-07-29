@@ -21,11 +21,15 @@ export async function getPromptResponseWithGoogleAIMode(prompt: string) {
       prompt,
       temperature: 1.0, // Recommended by Google for optimal grounding results
       tools: {
-        // Grounded retrieval is effectively always-on for Gemini 2.0+/3.x when this
-        // tool is enabled, mirroring AI Overviews behavior. Dynamic retrieval (where
-        // the model chose whether to search) was a Gemini 1.5 feature and is not
-        // available in @ai-sdk/google v3 — the only knobs here are searchTypes and
-        // timeRangeFilter.
+        // Enabling this tool permits grounding, it does not guarantee it: the model
+        // still decides per call whether to search, and measurably often does not
+        // (issue 25 — 2 of 3 identical calls came back with no Sources at all). There
+        // is no way to force it. Dynamic retrieval, where a threshold controlled the
+        // decision, was a Gemini 1.5 feature and is gone; the only knobs left here are
+        // searchTypes and timeRangeFilter, and OpenAI's toolChoice has no equivalent.
+        // An ungrounded answer comes from training data and must not be stored as a
+        // Prompt Response — providerMetadata.google.groundingMetadata.webSearchQueries
+        // is how you tell the difference.
         google_search: google.tools.googleSearch({}),
       },
     });
