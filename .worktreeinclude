@@ -1,0 +1,9 @@
+# Gitignored files Conductor copies from the repository root into each new
+# workspace. Listing anything here replaces Conductor's default `.env*`, so the
+# env pattern has to be repeated.
+#
+# certificates/ holds the self-signed pair `next dev --experimental-https` uses.
+# Without it every workspace regenerates its own and macOS asks you to trust a
+# new certificate each time.
+.env*
+certificates/

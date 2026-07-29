@@ -1,0 +1,29 @@
+import { NextResponse, NextRequest } from 'next/server';
+import { getProjectRowWithId, updateProjectRow } from '@/libs/database/Projects/queries';
+
+export async function POST(
+  _req: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> }
+) {
+  try {
+    const { projectId } = await params;
+    if (!projectId) return new Response('Missing projectId', { status: 400 });
+
+    const projectRow = await getProjectRowWithId(projectId);
+    if (!projectRow) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const updatedProject = await updateProjectRow(projectId, {
+      is_paused: !projectRow.is_paused,
+    });
+
+    return NextResponse.json(updatedProject);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : error },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,79 @@
+/*
+ * MDXEditor theme overrides. The library ships a self-contained CSS file
+ * (imported in MarkdownArticleEditor.tsx) targeting `[class*="_rootContentEditableWrapper"]`
+ * and CSS variables prefixed with `--`. We override the variables that
+ * surface in our toolbar + content area so the editor inherits AllSearch's
+ * semantic tokens instead of the default light-grey palette.
+ */
+
+.mdx-editor-allsearch {
+    --baseBg: var(--color-bg-primary);
+    --baseBgSubtle: var(--color-bg-secondary);
+    --baseBgHover: var(--color-bg-secondary_hover);
+    --baseBgActive: var(--color-bg-tertiary);
+    --baseBorder: var(--color-border-secondary);
+    --baseBorderHover: var(--color-border-primary);
+    --baseLine: var(--color-border-secondary);
+    --baseText: var(--color-text-primary);
+    --baseTextContrast: var(--color-text-primary);
+    --accentBase: var(--color-bg-brand-primary);
+    --accentBgSubtle: var(--color-bg-brand-secondary);
+    --accentBgHover: var(--color-bg-brand-secondary);
+    --accentBorder: var(--color-border-brand);
+    --accentSolid: var(--color-bg-brand-solid);
+    --accentText: var(--color-text-brand-secondary);
+    --accentTextContrast: var(--color-text-primary_on-brand);
+
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+}
+
+/*
+ * Sticky formatting toolbar. MDXEditor's own CSS already sets
+ * `position: sticky; top: 0; background-color: var(--baseBg)` (the variable we
+ * point at `bg-primary` above). The remaining job is to make the toolbar read
+ * as part of our card surface: round the top corners to match the card's
+ * `rounded-xl` (we deliberately do NOT use `overflow: hidden` on the card —
+ * that turns the card into a containing block and would break the sticky), and
+ * keep a thin bottom hairline so the editor body has a clean separator.
+ */
+.mdx-editor-allsearch-toolbar {
+    z-index: 10 !important;
+
+    border: none !important;
+    border-bottom: 1px solid var(--color-border-secondary) !important;
+    border-top-left-radius: var(--radius-xl) !important;
+    border-top-right-radius: var(--radius-xl) !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+
+    margin: 0 !important;
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3) !important;
+}
+
+/* Soften the toolbar buttons so they read as quiet UI controls, not the
+ * boxy light-grey buttons MDXEditor ships by default. */
+.mdx-editor-allsearch-toolbar button[data-state],
+.mdx-editor-allsearch-toolbar button[role="combobox"],
+.mdx-editor-allsearch-toolbar button:not([data-state]) {
+    color: var(--color-text-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.mdx-editor-allsearch-toolbar button:hover {
+    background: var(--color-bg-secondary_hover) !important;
+    color: var(--color-text-primary);
+}
+
+.mdx-editor-allsearch-toolbar button[data-state="on"] {
+    background: var(--color-bg-tertiary) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* MDXEditor wraps the contenteditable in its own container that adds extra
+ * padding by default. Zero it so our `contentEditableClassName` padding is
+ * the only thing controlling content insets. */
+.mdx-editor-allsearch-host [class*="_rootContentEditableWrapper_"] {
+    padding: 0 !important;
+}
