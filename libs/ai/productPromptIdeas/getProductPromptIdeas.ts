@@ -1,10 +1,10 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai';
-import { createAiGatewayModel, AIAnalyticsProps } from '../models';
+import { googleModel } from '../models';
 import z from 'zod';
 import { getPrompt, logNoObjectGeneratedError } from '../utils';
 import { google } from '@ai-sdk/google';
 
-const MODEL_ID = 'google/gemini-3.1-flash-lite';
+const MODEL_ID = 'gemini-3.1-flash-lite';
 const RESEARCH_PROMPT_FILE_PATH = 'libs/ai/productPromptIdeas/researchSystemPrompt.md';
 const OBJECT_PROMPT_FILE_PATH = 'libs/ai/productPromptIdeas/objectSystemPrompt.md';
 
@@ -24,21 +24,13 @@ const PromptGroupsSchema = z
 export type PromptGroup = z.infer<typeof PromptGroupSchema>;
 export type PromptGroups = z.infer<typeof PromptGroupsSchema>;
 
-export async function getProductPromptIdeas(
-  url: string,
-  aiAnalyticsProps?: AIAnalyticsProps
-): Promise<PromptGroups> {
+export async function getProductPromptIdeas(url: string): Promise<PromptGroups> {
   const researchSystemPrompt = await getPrompt(RESEARCH_PROMPT_FILE_PATH);
   const objectSystemPrompt = await getPrompt(OBJECT_PROMPT_FILE_PATH);
 
-  const analyticsProps: AIAnalyticsProps = {
-    ...aiAnalyticsProps,
-    operationId: 'product-prompt-ideas',
-  };
-
   try {
     const { text } = await generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       tools: {
         url_context: google.tools.urlContext({}),
       },
@@ -47,7 +39,7 @@ export async function getProductPromptIdeas(
     });
 
     const { output } = await generateText({
-      model: createAiGatewayModel(MODEL_ID, analyticsProps),
+      model: await googleModel(MODEL_ID),
       output: Output.object({ schema: PromptGroupsSchema }),
       system: objectSystemPrompt,
       prompt: text,
