@@ -46,11 +46,11 @@ beforeEach(async () => {
 
 describe('Settings queries', () => {
   it('creates the singleton row on first read and reuses it afterwards', async () => {
-    expect(await queries.getEnabledChatbotIds()).toEqual([]);
+    expect(await queries.getStoredEnabledChatbotIds()).toBeNull();
     expect(await db.select().from(settings)).toHaveLength(1);
 
     // A second read must not insert a second row.
-    await queries.getEnabledChatbotIds();
+    await queries.getStoredEnabledChatbotIds();
     expect(await db.select().from(settings)).toHaveLength(1);
   });
 
@@ -86,8 +86,84 @@ describe('Settings queries', () => {
   });
 
   it('round-trips the enabled chatbot id selection', async () => {
-    await queries.setEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.Perplexity]);
+    await queries.setStoredEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.Perplexity]);
 
-    expect(await queries.getEnabledChatbotIds()).toEqual([ChatbotId.ChatGPT, ChatbotId.Perplexity]);
+    expect(await queries.getStoredEnabledChatbotIds()).toEqual([
+      ChatbotId.ChatGPT,
+      ChatbotId.Perplexity,
+    ]);
+  });
+
+  describe('getEffectiveEnabledChatbotIds', () => {
+    it('defaults to every chatbot with a key when the stored selection is untouched', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([ChatbotId.ChatGPT]);
+    });
+
+    it('defaults to all chatbots with keys present when two keys are set and none chosen', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+      await queries.setProviderKey('perplexity', 'perplexity-key', 'valid');
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([
+        ChatbotId.ChatGPT,
+        ChatbotId.Perplexity,
+      ]);
+    });
+
+    it('defaults to all three chatbots when all three keys are set and none chosen', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+      await queries.setProviderKey('google', 'google-key', 'valid');
+      await queries.setProviderKey('perplexity', 'perplexity-key', 'valid');
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([
+        ChatbotId.ChatGPT,
+        ChatbotId.GoogleAIOverview,
+        ChatbotId.Perplexity,
+      ]);
+    });
+
+    it('stays empty when the stored selection is untouched and no key is present', async () => {
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([]);
+    });
+
+    it('respects a deliberate all-off selection even when keys are present', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+      await queries.setProviderKey('google', 'google-key', 'valid');
+      await queries.setStoredEnabledChatbotIds([]);
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([]);
+    });
+
+    it('drops a stored chatbot whose key was since removed', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+      await queries.setProviderKey('google', 'google-key', 'valid');
+      await queries.setStoredEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview]);
+
+      await queries.removeProviderKey('google');
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([ChatbotId.ChatGPT]);
+    });
+
+    it('restores a chatbot to the effective set when its removed key is re-added', async () => {
+      await queries.setProviderKey('openai', 'openai-key', 'valid');
+      await queries.setProviderKey('google', 'google-key', 'valid');
+      await queries.setStoredEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview]);
+      await queries.removeProviderKey('google');
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([ChatbotId.ChatGPT]);
+
+      await queries.setProviderKey('google', 'google-key-2', 'valid');
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([
+        ChatbotId.ChatGPT,
+        ChatbotId.GoogleAIOverview,
+      ]);
+    });
+
+    it('never includes a chatbot with no key, even if named in the stored selection', async () => {
+      await queries.setStoredEnabledChatbotIds([ChatbotId.ChatGPT]);
+
+      expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([]);
+    });
   });
 });

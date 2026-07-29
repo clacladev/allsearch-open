@@ -58,12 +58,6 @@ export const PerplexityIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const supportedChatbotIds: ChatbotId[] = [
-  ChatbotId.ChatGPT,
-  ChatbotId.Perplexity,
-  ChatbotId.GoogleAIOverview,
-];
-
 const CHATBOT_ICONS: Record<
   ChatbotId,
   ({ className }: { className?: string }) => React.ReactElement

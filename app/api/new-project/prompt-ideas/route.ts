@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import z from 'zod';
 import { getPromptsIdeas } from '@/libs/ai/promptsIdeas/getPromptsIdeas';
+import { aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,6 +23,12 @@ export async function GET(req: NextRequest) {
     if (!ideas.length) throw new Error('Failed to create prompt groups ideas');
     return NextResponse.json(ideas);
   } catch (error) {
+    const aiError = toAiError(error, 'google');
+    if (aiError) {
+      const { body, status } = aiErrorToResponseInit(aiError);
+      return NextResponse.json(body, { status });
+    }
+
     console.error(error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },
