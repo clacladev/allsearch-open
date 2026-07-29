@@ -20,6 +20,7 @@ const EXPECTED_TABLE_NAMES = [
   'prompt_articles',
   'prompt_responses',
   'prompts',
+  'settings',
   'sources',
   'topics',
 ].sort();
@@ -40,7 +41,7 @@ describe('migrateDatabase', () => {
     dbPath = undefined;
   });
 
-  it('migrating a fresh path creates the file and all 10 tables', async () => {
+  it('migrating a fresh path creates the file and all 11 tables', async () => {
     dbPath = createTempDbPath('migrate-fresh');
     db = await createDatabase(dbPath);
     await migrateDatabase(db, dbPath);

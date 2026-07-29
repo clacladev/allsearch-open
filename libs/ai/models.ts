@@ -2,7 +2,13 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createPerplexity } from '@ai-sdk/perplexity';
 
-export type ProviderId = 'openai' | 'google' | 'perplexity';
+import { getProviderKeyFromStorage } from '@/libs/database/Settings/queries';
+import type { ProviderId } from '@/libs/database/shared/ProviderId';
+
+// Re-exported so existing importers of `ProviderId` from this module keep working — the type
+// itself now lives in libs/database/shared/ProviderId.ts, since this file needs to depend on
+// libs/database/Settings/queries.ts and a database-owned type can't depend back on libs/ai/.
+export type { ProviderId };
 
 const PROVIDER_ENV_VAR: Record<ProviderId, string> = {
   openai: 'OPENAI_API_KEY',
@@ -12,24 +18,27 @@ const PROVIDER_ENV_VAR: Record<ProviderId, string> = {
 
 export class MissingProviderKeyError extends Error {
   constructor(public readonly provider: ProviderId) {
-    super(`Missing API key for ${provider}: set ${PROVIDER_ENV_VAR[provider]}.`);
+    super(`No API key configured for ${provider}. Add one in Settings.`);
     this.name = 'MissingProviderKeyError';
   }
 }
 
 /**
- * Async deliberately: issue 08 swaps this body for a database read without
- * changing a single signature. Every call site already awaits it.
+ * Storage-first: the database (libs/database/Settings) is the supported home for provider keys,
+ * editable at runtime from Settings. The environment variable is a dev-only fallback — useful for
+ * `bun run verify:providers` and local development — used only when storage has no key at all.
  */
 export async function getProviderKey(provider: ProviderId): Promise<string> {
-  const key = process.env[PROVIDER_ENV_VAR[provider]]?.trim();
-  if (!key) throw new MissingProviderKeyError(provider);
-  return key;
+  const storedKey = await getProviderKeyFromStorage(provider);
+  if (storedKey) return storedKey;
+
+  const envKey = process.env[PROVIDER_ENV_VAR[provider]]?.trim();
+  if (!envKey) throw new MissingProviderKeyError(provider);
+  return envKey;
 }
 
-// Provider instances are not cached across calls — issue 08 makes keys
-// mutable at runtime, and a cached client would hold a stale key after the
-// user edits it.
+// Provider instances are still not cached across calls: keys are mutable at runtime (editable in
+// Settings), and a cached client would hold a stale key after the user edits or removes it.
 
 export async function openaiModel(modelId: string) {
   const apiKey = await getProviderKey('openai');
