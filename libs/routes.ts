@@ -1,0 +1,354 @@
+export const ROUTES = {
+  HOME: '/',
+
+  // Private
+  DASHBOARD: '/dashboard',
+
+  // Organization
+  ORGANIZATION: '/organization',
+
+  // New Project
+  NEW_PROJECT: {
+    INDEX: '/new-project',
+    BRAND: '/new-project/brand',
+    TOPICS: '/new-project/topics',
+    PROMPTS: '/new-project/prompts',
+    COMPETITORS: '/new-project/competitors',
+    SAVE: '/new-project/save',
+    REPORT: '/new-project/report/:projectId',
+  },
+
+  // Project
+  PROJECT: {
+    OVERVIEW: '/project/:projectId',
+    SOURCES_CONTENTS: '/project/:projectId/sources/contents',
+    SOURCES_DOMAINS: '/project/:projectId/sources/domains',
+    SOURCE_DETAILS: '/project/:projectId/sources/:sourceId',
+    OPPORTUNITIES: '/project/:projectId/opportunities',
+    OPPORTUNITY_DETAILS: '/project/:projectId/opportunities/:opportunityId',
+    PROMPTS: '/project/:projectId/prompts',
+    PROMPT_DETAILS: '/project/:projectId/prompts/:promptId',
+    PROMPT_NEW_ARTICLE: '/project/:projectId/prompts/:promptId/new-article',
+    BRANDS: '/project/:projectId/brands',
+    SETTINGS: '/project/:projectId/settings',
+    SETTINGS_TAB: '/project/:projectId/settings/:tabId',
+  },
+
+  // APIs
+  API: {
+    // Main
+    AUTH_CALLBACK: '/api/auth/callback',
+    OPENGRAPH_IMAGE: '/api/opengraph-image',
+
+    // Tools
+    AI_CRAWL_CHECKER: '/api/tools/ai-crawl-checker',
+    AI_PRODUCT_PROMPT_IDEAS: '/api/tools/ai-product-prompt-ideas',
+
+    // Organization
+    ORGANIZATION: '/api/organization',
+    ORGANIZATION_WITH_ID: '/api/organization/:organizationId',
+
+    // New Project
+    NEW_PROJECT: {
+      DOMAIN_METADATA: '/api/new-project/domain-metadata',
+      TOPICS_IDEAS: '/api/new-project/topics-ideas',
+      PROMPT_IDEAS: '/api/new-project/prompt-ideas',
+      COMPETITORS: '/api/new-project/competitors',
+      SAVE: '/api/new-project/save',
+      REPORT: '/api/new-project/report',
+    },
+
+    // Project
+    PROJECT: {
+      PROJECT: '/api/project/:projectId',
+      PROJECT_ARCHIVE: '/api/project/:projectId/archive',
+      PROJECT_FILL_PROMPT_RESPONSES: '/api/project/:projectId/fill-prompt-responses',
+      PROMPTS: '/api/project/:projectId/prompts',
+      PROMPTS_ARCHIVE: '/api/project/:projectId/prompts/archive',
+      TOPICS: '/api/project/:projectId/topics',
+      COMPETITORS: '/api/project/:projectId/competitors',
+      SOURCES: '/api/project/:projectId/sources',
+      PROCESS_PROMPTS: '/api/process-prompts/:projectId',
+      UPDATE_SOURCES_ANALYSIS:
+        '/api/project/:projectId/update-last-day-of-prompt-responses-analysis',
+      FETCH_NEW_PROMPT_RESPONSES: '/api/project/:projectId/fetch-new-prompt-responses',
+      PROMPT_ARTICLES: '/api/project/:projectId/prompts/:promptId/prompt-articles',
+      PROMPT_ARTICLE:
+        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId',
+      PROMPT_ARTICLE_BODY:
+        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId/article',
+      PROMPT_ARTICLE_BODY_DOWNLOAD_HTML:
+        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId/article/download.html',
+      PROMPT_ARTICLE_BODY_DOWNLOAD_DOCX:
+        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId/article/download.docx',
+      PROMPT_ARTICLE_BODY_DOWNLOAD_PDF:
+        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId/article/download.pdf',
+    },
+  },
+} as const;
+
+export const RouteHelper = {
+  NewProject: {
+    getReport: (projectId: string) => ROUTES.NEW_PROJECT.REPORT.replace(':projectId', projectId),
+  },
+
+  Project: {
+    getOverview: (projectId: string, startDate?: string, endDate?: string) =>
+      ROUTES.PROJECT.OVERVIEW.replace(':projectId', projectId) +
+      getUrlParamsString({ startDate, endDate }),
+    getSourcesContents: (
+      projectId: string,
+      startDate?: string,
+      endDate?: string,
+      pageNo?: number,
+      sortBy?: string,
+      sortDir?: string,
+      filters?: Record<string, string | undefined>
+    ) =>
+      ROUTES.PROJECT.SOURCES_CONTENTS.replace(':projectId', projectId) +
+      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+    getSourcesDomains: (
+      projectId: string,
+      startDate?: string,
+      endDate?: string,
+      pageNo?: number,
+      sortBy?: string,
+      sortDir?: string,
+      filters?: Record<string, string | undefined>
+    ) =>
+      ROUTES.PROJECT.SOURCES_DOMAINS.replace(':projectId', projectId) +
+      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+    getSourceDetails: (
+      projectId: string,
+      sourceId: string,
+      startDate?: string,
+      endDate?: string,
+      title?: string
+    ) =>
+      ROUTES.PROJECT.SOURCE_DETAILS.replace(':projectId', projectId).replace(
+        ':sourceId',
+        sourceId
+      ) + getUrlParamsString({ startDate, endDate, title }),
+    getOpportunities: (
+      projectId: string,
+      startDate?: string,
+      endDate?: string,
+      pageNo?: number,
+      sortBy?: string,
+      sortDir?: string,
+      filters?: Record<string, string | undefined>
+    ) =>
+      ROUTES.PROJECT.OPPORTUNITIES.replace(':projectId', projectId) +
+      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+    getOpportunityDetails: (
+      projectId: string,
+      opportunityId: string,
+      startDate?: string,
+      endDate?: string,
+      title?: string
+    ) =>
+      ROUTES.PROJECT.OPPORTUNITY_DETAILS.replace(':projectId', projectId).replace(
+        ':opportunityId',
+        opportunityId
+      ) + getUrlParamsString({ startDate, endDate, title }),
+    getPromptNewArticle: (
+      projectId: string,
+      promptId: string,
+      opportunityId?: string,
+      promptArticleId?: string,
+      startDate?: string,
+      endDate?: string
+    ) =>
+      ROUTES.PROJECT.PROMPT_NEW_ARTICLE.replace(':projectId', projectId).replace(
+        ':promptId',
+        promptId
+      ) + getUrlParamsString({ opportunityId, promptArticleId, startDate, endDate }),
+    getPrompts: (
+      projectId: string,
+      startDate?: string,
+      endDate?: string,
+      showArchived?: string,
+      sortBy?: string,
+      sortDir?: string,
+      filters?: Record<string, string | undefined>
+    ) =>
+      ROUTES.PROJECT.PROMPTS.replace(':projectId', projectId) +
+      getUrlParamsString({ startDate, endDate, showArchived, sortBy, sortDir, ...filters }),
+    getPromptDetails: (
+      projectId: string,
+      promptId: string,
+      startDate?: string,
+      endDate?: string,
+      pageNo?: number
+    ) =>
+      ROUTES.PROJECT.PROMPT_DETAILS.replace(':projectId', projectId).replace(
+        ':promptId',
+        promptId
+      ) + getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString() }),
+    getBrands: (
+      projectId: string,
+      startDate?: string,
+      endDate?: string,
+      brandIds?: string[],
+      pageNo?: number,
+      sortBy?: string,
+      sortDir?: string,
+      filters?: Record<string, string | undefined>
+    ) =>
+      ROUTES.PROJECT.BRANDS.replace(':projectId', projectId) +
+      getUrlParamsString({
+        startDate,
+        endDate,
+        brandIds: brandIds?.length ? brandIds.join(',') : undefined,
+        pageNo: pageNo?.toString(),
+        sortBy,
+        sortDir,
+        ...filters,
+      }),
+    getSettings: (projectId: string) => ROUTES.PROJECT.SETTINGS.replace(':projectId', projectId),
+
+    Settings: {
+      getCompetitors: (projectId: string) =>
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(
+          ':tabId',
+          'competitors'
+        ),
+      getBrand: (projectId: string) =>
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'brand'),
+      getOrganization: (projectId: string) =>
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(
+          ':tabId',
+          'organization'
+        ),
+      getOthers: (projectId: string) =>
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'others'),
+      getDeveloper: (projectId: string) =>
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(
+          ':tabId',
+          'developer'
+        ),
+    },
+  },
+
+  Api: {
+    getOrganization: (organizationId: string) =>
+      ROUTES.API.ORGANIZATION_WITH_ID.replace(':organizationId', organizationId),
+
+    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, so the
+    // clone/pause/delete routes survive ungated (ADR 0003), but only the backfill action is
+    // actually wired into the Developer tab today.
+    Developer: {
+      getProjectFillPromptResponses: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
+    },
+
+    NewProject: {
+      getDomainMetadata: (url: string) =>
+        ROUTES.API.NEW_PROJECT.DOMAIN_METADATA + getUrlParamsString({ url }),
+      getTopicsIdeas: (url: string, name: string) =>
+        ROUTES.API.NEW_PROJECT.TOPICS_IDEAS + getUrlParamsString({ url, name }),
+      getPromptIdeas: (url: string, name: string, categories: string[], targetLocation?: string) =>
+        ROUTES.API.NEW_PROJECT.PROMPT_IDEAS +
+        getUrlParamsString({
+          url,
+          name,
+          categories: JSON.stringify(categories),
+          targetLocation,
+        }),
+      getCompetitors: (url: string, name: string, categories: string[], targetLocation?: string) =>
+        ROUTES.API.NEW_PROJECT.COMPETITORS +
+        getUrlParamsString({
+          url,
+          name,
+          categories: JSON.stringify(categories),
+          targetLocation,
+        }),
+      getReport: (projectId: string) =>
+        ROUTES.API.NEW_PROJECT.REPORT + getUrlParamsString({ projectId }),
+    },
+
+    Project: {
+      getProject: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT.replace(':projectId', projectId),
+      getProjectArchive: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT_ARCHIVE.replace(':projectId', projectId),
+      getPrompts: (
+        projectId: string,
+        startDate?: string,
+        endDate?: string,
+        showArchived?: string
+      ) =>
+        ROUTES.API.PROJECT.PROMPTS.replace(':projectId', projectId) +
+        getUrlParamsString({ startDate, endDate, showArchived }),
+      getPromptsArchive: (projectId: string) =>
+        ROUTES.API.PROJECT.PROMPTS_ARCHIVE.replace(':projectId', projectId),
+      getTopics: (projectId: string) =>
+        ROUTES.API.PROJECT.TOPICS.replace(':projectId', projectId),
+      getCompetitors: (projectId: string) =>
+        ROUTES.API.PROJECT.COMPETITORS.replace(':projectId', projectId),
+      getSources: (
+        projectId: string,
+        type: string,
+        startDate: string,
+        endDate: string,
+        page: number
+      ) =>
+        ROUTES.API.PROJECT.SOURCES.replace(':projectId', projectId) +
+        getUrlParamsString({ type, startDate, endDate, page: page.toString() }),
+      getProcessPrompts: (projectId: string, shouldForce?: boolean) =>
+        ROUTES.API.PROJECT.PROCESS_PROMPTS.replace(':projectId', projectId) +
+        getUrlParamsString({ shouldForce: shouldForce ? 'true' : undefined }),
+      getUpdateSourcesAnalysis: (projectId: string) =>
+        ROUTES.API.PROJECT.UPDATE_SOURCES_ANALYSIS.replace(':projectId', projectId),
+      getFetchNewPromptResponses: (projectId: string) =>
+        ROUTES.API.PROJECT.FETCH_NEW_PROMPT_RESPONSES.replace(':projectId', projectId),
+      getPromptArticles: (projectId: string, promptId: string) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLES.replace(':projectId', projectId).replace(
+          ':promptId',
+          promptId
+        ),
+      getPromptArticle: (projectId: string, promptId: string, promptArticleId: string) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLE.replace(':projectId', projectId)
+          .replace(':promptId', promptId)
+          .replace(':promptArticleId', promptArticleId),
+      getPromptArticleBody: (projectId: string, promptId: string, promptArticleId: string) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLE_BODY.replace(':projectId', projectId)
+          .replace(':promptId', promptId)
+          .replace(':promptArticleId', promptArticleId),
+      getPromptArticleBodyDownloadHtml: (
+        projectId: string,
+        promptId: string,
+        promptArticleId: string
+      ) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLE_BODY_DOWNLOAD_HTML.replace(':projectId', projectId)
+          .replace(':promptId', promptId)
+          .replace(':promptArticleId', promptArticleId),
+      getPromptArticleBodyDownloadDocx: (
+        projectId: string,
+        promptId: string,
+        promptArticleId: string
+      ) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLE_BODY_DOWNLOAD_DOCX.replace(':projectId', projectId)
+          .replace(':promptId', promptId)
+          .replace(':promptArticleId', promptArticleId),
+      getPromptArticleBodyDownloadPdf: (
+        projectId: string,
+        promptId: string,
+        promptArticleId: string
+      ) =>
+        ROUTES.API.PROJECT.PROMPT_ARTICLE_BODY_DOWNLOAD_PDF.replace(':projectId', projectId)
+          .replace(':promptId', promptId)
+          .replace(':promptArticleId', promptArticleId),
+    },
+  },
+};
+
+// --- Helpers ---
+
+function getUrlParamsString(params: Record<string, string | undefined>) {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  ) as Record<string, string>;
+  if (!Object.keys(filteredParams).length) return '';
+  return '?' + new URLSearchParams(filteredParams).toString();
+}

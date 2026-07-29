@@ -1,0 +1,22 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+# Static gitignored files (.env*, certificates/) are copied per workspace by
+# .worktreeinclude, not by the setup script.
+
+[scripts]
+setup = "bun install"
+run_mode = "concurrent"
+
+# ALLSEARCH_DB_PATH gives each workspace its own SQLite file. Without it every
+# workspace opens the one shared database in ~/Library/Application Support, and
+# because instrumentation.ts migrates on boot, a workspace running newer code
+# would silently upgrade the schema under the root checkout and every other
+# workspace. Drop the override if you deliberately want to see your real data.
+[scripts.run.dev]
+command = 'ALLSEARCH_DB_PATH="$CONDUCTOR_WORKSPACE_PATH/.context/allsearch.db" bun dev --port $CONDUCTOR_PORT'
+default = true
+icon = "play"
+
+[scripts.run.test]
+command = "bun test"
+icon = "test-tube"
