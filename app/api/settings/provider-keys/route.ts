@@ -12,6 +12,14 @@ import {
   type SetProviderKeyResponse,
 } from './types';
 
+/** Logs an operation failure without ever printing the error itself: `setProviderKey` binds the
+ * plaintext key as a query parameter, so even after `libs/database/Settings/queries.ts` guarantees
+ * its own thrown errors are sanitized, this stays safe on its own rather than depending on that —
+ * only a fixed label and the error's constructor name (never its message or stack) are logged. */
+function logSettingsRouteError(operation: string, error: unknown): void {
+  console.error(`${operation} failed:`, error instanceof Error ? error.name : typeof error);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -32,11 +40,11 @@ export async function POST(req: NextRequest) {
     };
     return NextResponse.json(response);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    // Never echo `error.message` here: it may be a raw query failure carrying the key the caller
+    // just tried to save as a bound parameter (see libs/database/Settings/queries.ts). A generic
+    // message is safe by construction regardless of what threw.
+    logSettingsRouteError('POST /api/settings/provider-keys', error);
+    return NextResponse.json({ error: 'Failed to save the provider key.' }, { status: 500 });
   }
 }
 
@@ -50,10 +58,8 @@ export async function DELETE(req: NextRequest) {
     const response: RemoveProviderKeyResponse = { providerKeys: await getRedactedProviderKeys() };
     return NextResponse.json(response);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    // See the POST handler above — never echo `error.message` to the client here either.
+    logSettingsRouteError('DELETE /api/settings/provider-keys', error);
+    return NextResponse.json({ error: 'Failed to remove the provider key.' }, { status: 500 });
   }
 }

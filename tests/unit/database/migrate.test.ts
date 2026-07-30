@@ -8,7 +8,7 @@ import { sql } from 'drizzle-orm';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
-import { projects } from '@/libs/database/schema';
+import { projects, settings } from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from './testHelpers';
 
 const EXPECTED_TABLE_NAMES = [
@@ -150,6 +150,63 @@ describe('migrateDatabase', () => {
       );
     } finally {
       rmSync(upgradeMigrationsFolder, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves settings data through the real migration sequence, including the table rebuild', async () => {
+    dbPath = createTempDbPath('migrate-settings-data');
+
+    // Migrate only as far as the app's real migration that *creates* `settings`
+    // (20260729160709_dazzling_sue_storm, the second migration overall) — deliberately not as far
+    // as the migration after it that rebuilds the table. This reproduces the exact gap that let
+    // `enabled_chatbots = '[]'` survive that rebuild uncaught: the previous upgrade test only ever
+    // exercises the rebuild against an empty `settings` table, because it applies every real
+    // `settings` migration during its own "fresh" setup step before upgrading.
+    const realMigrationsFolder = join(process.cwd(), 'drizzle');
+    const realMigrationNames = readdirSync(realMigrationsFolder).sort();
+    const migrationsBeforeRebuild = realMigrationNames.slice(0, 2);
+    const beforeRebuildFolder = mkdtempSync(join(tmpdir(), 'allsearch-migrate-settings-'));
+    for (const migrationName of migrationsBeforeRebuild) {
+      cpSync(
+        join(realMigrationsFolder, migrationName),
+        join(beforeRebuildFolder, migrationName),
+        { recursive: true }
+      );
+    }
+
+    try {
+      db = await createDatabase(dbPath);
+      await migrateDatabase(db, dbPath, beforeRebuildFolder);
+
+      // Seed a row via raw SQL, not the drizzle `settings` insert builder: the builder reflects
+      // today's schema (nullable `enabled_chatbots`, no default) and would bind an explicit NULL,
+      // which the table at this migration state rejects — it still has the first `settings`
+      // migration's `NOT NULL DEFAULT '[]'`. Omitting the column, as a real install on this old
+      // schema would, lets SQLite apply that default itself.
+      await db.run(sql`
+        INSERT INTO settings (id, created_at, updated_at, provider_keys)
+        VALUES ('seed-id', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z',
+                '{"google":{"key":"g-seed-key","status":"valid","validatedAt":"now"}}')
+      `);
+      const [seeded] = await db.select().from(settings);
+      expect(seeded.enabled_chatbots).toEqual([]);
+      closeDatabase(db);
+
+      // Now apply the app's real, full migration sequence — the table rebuild and any migration
+      // after it (currently, the backfill/consolidation migration).
+      db = await createDatabase(dbPath);
+      await migrateDatabase(db, dbPath);
+
+      const rows = await db.select().from(settings);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].id).toBe('singleton');
+      expect(rows[0].created_at).toBe(seeded.created_at);
+      expect(rows[0].provider_keys).toEqual({
+        google: { key: 'g-seed-key', status: 'valid', validatedAt: 'now' },
+      });
+      expect(rows[0].enabled_chatbots).toBeNull();
+    } finally {
+      rmSync(beforeRebuildFolder, { recursive: true, force: true });
     }
   });
 });

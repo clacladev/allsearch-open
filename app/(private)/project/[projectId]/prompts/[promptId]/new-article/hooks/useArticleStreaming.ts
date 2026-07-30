@@ -124,7 +124,12 @@ export function useArticleStreaming({
 
   const flushDisplay = useCallback(() => {
     rafScheduledRef.current = false;
-    const text = accumulatorRef.current;
+    // Strip a mid-stream error sentinel before it ever reaches the screen: the chunk carrying it
+    // still goes through the accumulator and gets rAF-flushed like any other, and that flush can
+    // land before the `while` loop below reaches `done` and runs this same extraction to decide
+    // whether to report an error — without stripping it here too, `AI_STREAM_ERROR:INVALID_KEY`
+    // can flash on screen for a frame first.
+    const { text } = extractStreamError(accumulatorRef.current);
     setDisplayedMarkdown(text);
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   }, []);
