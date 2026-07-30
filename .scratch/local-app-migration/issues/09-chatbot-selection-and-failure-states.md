@@ -45,3 +45,42 @@ that gets missed until beta. Do it as one pass with a shared component.
 - Every metric that aggregates across Chatbots says which ones it covers.
 - Revoking a key mid-session produces the right message on every affected screen,
   not a stack trace.
+
+## Comments
+
+**2026-07-30 — implemented alongside issue 08.**
+
+Enablement is app-wide: the effective set is the user's stored selection
+intersected with the providers that currently have a key. So adding a key
+enables its Chatbot, and removing a key drops it without rewriting the
+selection — re-adding the key restores the prior choice. The storage
+distinguishes `null` ("never chosen", every fresh install, defaults to every
+Chatbot with a key) from `[]` ("deliberately turned everything off"), which
+needed the column to be nullable.
+
+`SUPPORTED_CHATBOTS_IDS` deliberately stays the full universe for the
+`filter_chatbot` dropdowns on the five list pages. Narrowing those to the
+enabled set would make historical Prompt Responses from a since-disabled
+Chatbot unfilterable and effectively invisible.
+
+The three failure states share one component keyed by `AiErrorCode` +
+provider, fed by a taxonomy that generalises the existing
+`PromptArticleErrorCode` pattern and rides the `code` field `appFetch`
+already parses. Applied to the onboarding forms, outline generation and
+article streaming. The five dashboard pages were judged not to need it: they
+render stored data and make no live AI call, so the honest state there is
+"no data for this Chatbot", which the coverage caption already says.
+
+Article streaming needed more than plumbing. `toTextStreamResponse()`
+silently drops `'error'` stream parts, so an invalid or rate-limited key
+arriving *after* the 200 headers were on the wire was invisible; it is now a
+manual `ReadableStream` over `result.fullStream` with a sentinel the client
+strips back out. A latent bug turned up next to it: `ArticleView` never read
+`stream.status`, so the hook's error state never left streaming mode.
+
+Two things this issue asked for are **not** done. The clause about not
+inviting comparison across periods where the enabled set changed is deferred
+to milestone 4, which reworks the charts anyway. And "revoking a key
+mid-session produces the right message on every affected screen" has not been
+exercised against a genuinely revoked key — the plumbing is there and unit
+tested, but that acceptance criterion is unverified.
