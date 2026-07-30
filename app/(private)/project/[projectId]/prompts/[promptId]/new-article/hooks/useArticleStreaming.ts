@@ -3,6 +3,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { RouteHelper } from '@/libs/routes';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
+import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
+import { extractStreamError } from '@/libs/ai/promptArticles/streamErrorSentinel';
 
 export type ArticleStreamStatus = 'idle' | 'streaming' | 'complete' | 'error';
 
@@ -44,6 +46,11 @@ export type UseArticleStreamingResult = {
   wordCount: number;
   /** Set to a string when an error has occurred (mid-stream or pre-stream). */
   error: string | null;
+  /** Set alongside `error` when it's one of the three AI-credential failure states (issue 09) —
+   * `undefined` for every other failure (network drop, aborted, etc.), which keeps its generic
+   * `error` message. Narrowed from the pre-stream JSON error body's `code`, or from the in-stream
+   * sentinel `libs/ai/promptArticles/streamErrorSentinel.ts` encodes for a mid-stream failure. */
+  errorCode: AiErrorCode | undefined;
   /** Begin the stream. Returns a JSON payload if the cache-on-read path fires. */
   start: (args?: StartArgs) => Promise<{ cached: ArticleCacheHit | null }>;
   /** Abort the in-flight stream. AbortSignal cancels the server's LLM call. */
@@ -97,6 +104,7 @@ export function useArticleStreaming({
   const [displayedMarkdown, setDisplayedMarkdown] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<AiErrorCode | undefined>(undefined);
 
   // Accumulator buffer holds the live string; we flush its current value to
   // displayedMarkdown on a single rAF per chunk batch. Stops react-markdown
@@ -133,6 +141,7 @@ export function useArticleStreaming({
     setDisplayedMarkdown('');
     setWordCount(0);
     setError(null);
+    setErrorCode(undefined);
     setStatus('idle');
   }, []);
 
@@ -179,6 +188,7 @@ export function useArticleStreaming({
         try {
           const body = await response.json();
           setError(body.error ?? 'Could not generate the article.');
+          setErrorCode(isAiErrorCode(body.code) ? body.code : undefined);
         } catch {
           setError('Could not generate the article.');
         }
@@ -217,6 +227,24 @@ export function useArticleStreaming({
         }
         // Final decoder flush (in case of trailing multi-byte bytes).
         accumulatorRef.current += decoder.decode();
+
+        // The route appends this sentinel instead of a clean JSON error when the credential/
+        // rate-limit failure only becomes known mid-stream, after the 200 response has already
+        // been sent (see streamErrorSentinel.ts). Strip it and report the same as a pre-stream
+        // failure rather than a successful completion with truncated content.
+        const { text: articleText, code: streamErrorCode } = extractStreamError(
+          accumulatorRef.current
+        );
+        if (streamErrorCode) {
+          accumulatorRef.current = '';
+          setDisplayedMarkdown('');
+          setWordCount(0);
+          setStatus('error');
+          setError('Could not generate the article.');
+          setErrorCode(streamErrorCode);
+          return { cached: null };
+        }
+        accumulatorRef.current = articleText;
         scheduleFlush();
         setStatus('complete');
         onStreamCompleteRef.current();
@@ -255,6 +283,7 @@ export function useArticleStreaming({
     displayedMarkdown,
     wordCount,
     error,
+    errorCode,
     start,
     stop,
     reset,

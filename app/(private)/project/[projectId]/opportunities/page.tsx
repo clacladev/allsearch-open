@@ -9,6 +9,7 @@ import { getPaginatedResult, SortParams } from '@/libs/utils/PaginatedResult';
 import { DIFFICULTY_ORDER, Opportunity } from '@/libs/utils/project-analysis/types';
 import z from 'zod';
 import { getOpportunitiesData } from './helpers';
+import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { ChatbotId, SUPPORTED_CHATBOTS_IDS } from '@/libs/database/shared/ChatbotId';
 import {
   parseMultiSelectFilter,
@@ -60,7 +61,10 @@ export default async function ProjectOpportunitiesPage({ params, searchParams }:
     SUPPORTED_CHATBOTS_IDS.includes(id as ChatbotId)
   );
 
-  const opportunitiesSummary = await getOpportunitiesData(projectId, startDateISO, endDateISO, validChatbotIds.length ? validChatbotIds : undefined);
+  const [opportunitiesSummary, enabledChatbotIds] = await Promise.all([
+    getOpportunitiesData(projectId, startDateISO, endDateISO, validChatbotIds.length ? validChatbotIds : undefined),
+    getEffectiveEnabledChatbotIds(),
+  ]);
 
   // Compute type counts from full dataset
   const typeCounts: Record<string, number> = {};
@@ -156,6 +160,7 @@ export default async function ProjectOpportunitiesPage({ params, searchParams }:
         typeOptions={typeOptions}
         priorityCounts={priorityCounts}
         difficultyCounts={difficultyCounts}
+        enabledChatbotIds={enabledChatbotIds}
         filters={{
           filter_type: typeFilter.length ? typeFilter.join(',') : undefined,
           filter_difficulty: difficultyFilter.length ? difficultyFilter.join(',') : undefined,

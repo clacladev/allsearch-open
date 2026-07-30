@@ -23,7 +23,9 @@ import {
 } from '@/libs/utils/PromptAndTopicId';
 import { NewProjectLayoutColumn } from '../../layout';
 import { CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
-import { appFetch } from '@/hooks/appFetch';
+import { appFetch, AppFetchError } from '@/hooks/appFetch';
+import { isAiErrorCode } from '@/libs/ai/errors';
+import { AiFailureState } from '@/app/components/AiFailureState';
 import { ArrowLeft, ArrowRight, RefreshCcw01 } from '@untitledui/icons';
 import { OnboardingProgressSteps } from '../components/OnboardingProgressSteps';
 
@@ -177,6 +179,12 @@ export default function PromptsForm() {
   const canAddNewCustom = customTopic.prompts.length < MAX_CUSTOM_PROMPTS;
   const canContinue = !!selectedPromptAndTopicIds.length;
   const isLoading = isPromptIdeasLoading || isPromptIdeasValidating;
+  // All three onboarding suggestion calls (topics/prompts/competitors) run on Gemini — the
+  // provider is fixed, not something the response carries back to the client.
+  const promptIdeasAiErrorCode =
+    promptIdeasError instanceof AppFetchError && isAiErrorCode(promptIdeasError.code)
+      ? promptIdeasError.code
+      : undefined;
 
   return (
     <NewProjectLayoutColumn>
@@ -248,8 +256,12 @@ export default function PromptsForm() {
             </Button>
           </div>
         )}
-        {promptIdeasError && (
-          <div className="text-error-800 ml-0.5 text-xs">{promptIdeasError?.message}</div>
+        {promptIdeasAiErrorCode ? (
+          <AiFailureState code={promptIdeasAiErrorCode} provider="google" variant="compact" />
+        ) : (
+          promptIdeasError && (
+            <div className="text-error-800 ml-0.5 text-xs">{promptIdeasError?.message}</div>
+          )
         )}
 
         <div className="mt-10 flex gap-2">

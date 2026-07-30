@@ -31,6 +31,8 @@ import { getBrandColor, PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
 import OverviewChartTypeGroup, {
   OverviewChartType,
 } from './components/OverviewChartTypeGroup';
+import { ChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
+import type { ChatbotId } from '@/libs/database/shared/ChatbotId';
 
 function getProjectVisibilityScore(overviewData: OverviewData) {
   const projectId = overviewData.brands.find((brand) => brand.isProject)?.brandId;
@@ -53,11 +55,13 @@ export default function ProjectOverview({
   startDate,
   endDate,
   overviewData,
+  enabledChatbotIds,
 }: {
   projectId: string;
   startDate: ISODateString;
   endDate: ISODateString;
   overviewData: OverviewData;
+  enabledChatbotIds: ChatbotId[];
 }) {
   const router = useRouter();
   const { currentProject, currentCompetitors, currentPrompts } = usePrivateLayoutContext();
@@ -175,6 +179,7 @@ export default function ProjectOverview({
               <VisualContainer
                 title={`Visibility score: ${projectVisibilityScore}%`}
                 info="How often you appear in the tracked prompts' responses."
+                caption={<ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />}
                 icon={Eye}
                 className="grow"
                 contentClassName="h-70"

@@ -92,6 +92,11 @@ export const Sidebar = () => {
         href: ROUTES.DASHBOARD,
         icon: ArrowLeft,
       },
+      {
+        label: 'Settings',
+        href: ROUTES.SETTINGS,
+        icon: Settings02,
+      },
     ];
   }, [currentProject, pathname, startDate, endDate]);
 

@@ -14,6 +14,7 @@ import { Button } from '@/components/base/buttons/button';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { EmptyState } from '@/components/application/empty-state/empty-state';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { AiFailureState } from '@/app/components/AiFailureState';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
@@ -256,6 +257,16 @@ export function ArticleView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStartStreaming]);
 
+  // The hook's own 'error' status (pre-stream fetch failure, mid-stream sentinel, or a dropped
+  // connection) has no other effect on its own — it never calls onStreamComplete, so nothing else
+  // here would otherwise leave 'streaming' mode. Drop back to 'pre-generate' so the error branch
+  // below (which only renders when isPreGenerate) actually gets a chance to show.
+  useEffect(() => {
+    if (mode === 'streaming' && stream.status === 'error') {
+      setMode('pre-generate');
+    }
+  }, [mode, stream.status]);
+
   // Smart pin-to-bottom: keep auto-scrolling unless the user manually scrolls
   // up. The streaming view lets the page scroll naturally (no inner overflow
   // box), so we listen on the window rather than a fixed-height container.
@@ -385,7 +396,11 @@ export function ArticleView({
         </div>
       )}
 
-      {isPreGenerate && stream.error && (
+      {isPreGenerate && stream.error && stream.errorCode && (
+        <AiFailureState code={stream.errorCode} provider="google" className="py-12" />
+      )}
+
+      {isPreGenerate && stream.error && !stream.errorCode && (
         <EmptyState className="py-12">
           <EmptyState.Header>
             <EmptyState.FeaturedIcon icon={AlertCircle} color="gray" />

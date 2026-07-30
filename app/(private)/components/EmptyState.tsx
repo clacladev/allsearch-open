@@ -16,6 +16,7 @@ export const EmptyState = ({
   customActionTitle,
   customAction,
   className,
+  iconColor = 'gray',
 }: {
   title: string;
   description?: string | React.ReactNode;
@@ -24,6 +25,9 @@ export const EmptyState = ({
   customActionTitle?: string;
   customAction?: () => void;
   className?: string;
+  /** Lets callers (e.g. AI credential-failure states) signal severity through the icon's color
+   * instead of always rendering the neutral default. */
+  iconColor?: 'gray' | 'warning' | 'error';
 }) => {
   const router = useRouter();
   return (
@@ -37,7 +41,7 @@ export const EmptyState = ({
       )}
     >
       <EmptyStateBase.Header>
-        <EmptyStateBase.FeaturedIcon color="gray" />
+        <EmptyStateBase.FeaturedIcon color={iconColor} />
       </EmptyStateBase.Header>
 
       <EmptyStateBase.Content>
