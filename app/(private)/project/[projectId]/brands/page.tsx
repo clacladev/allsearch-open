@@ -12,6 +12,7 @@ import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSum
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getActiveCompetitorRowsWithProjectId } from '@/libs/database/Competitors/queries';
 import { getSourcesContentData } from '../sources/helpers';
+import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { ChatbotId, SUPPORTED_CHATBOTS_IDS } from '@/libs/database/shared/ChatbotId';
 import {
   parseTextFilter,
@@ -72,10 +73,11 @@ export default async function ProjectBrandsPage({ params, searchParams }: Props)
     SUPPORTED_CHATBOTS_IDS.includes(id as ChatbotId)
   );
 
-  const [project, competitors, sourceContentSummary] = await Promise.all([
+  const [project, competitors, sourceContentSummary, enabledChatbotIds] = await Promise.all([
     getProjectRowWithId(projectId),
     getActiveCompetitorRowsWithProjectId(projectId),
     getSourcesContentData(projectId, startDateISO, endDateISO, undefined, validChatbotIds.length ? validChatbotIds : undefined),
+    getEffectiveEnabledChatbotIds(),
   ]);
 
   if (!project) return null;
@@ -141,6 +143,7 @@ export default async function ProjectBrandsPage({ params, searchParams }: Props)
         sortBy={sortBy}
         sortDir={sortDir}
         categoryCounts={categoryCounts}
+        enabledChatbotIds={enabledChatbotIds}
         filters={{
           filter_title: titleFilter,
           filter_domainCategory: domainCategoryFilter.length ? domainCategoryFilter.join(',') : undefined,

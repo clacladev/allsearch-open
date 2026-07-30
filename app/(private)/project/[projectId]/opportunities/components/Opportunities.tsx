@@ -25,7 +25,12 @@ import {
   encodeMultiSelectFilter,
 } from '@/app/(private)/components/ColumnFilters';
 import type { FilterOption } from '@/app/(private)/components/ColumnFilters';
-import { SUPPORTED_CHATBOTS_IDS, CHATBOT_DISPLAY_LABELS } from '@/libs/database/shared/ChatbotId';
+import {
+  SUPPORTED_CHATBOTS_IDS,
+  CHATBOT_DISPLAY_LABELS,
+  type ChatbotId,
+} from '@/libs/database/shared/ChatbotId';
+import { ChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
 
 const PRIORITY_OPTIONS: FilterOption[] = [
   { id: 'High', label: 'High' },
@@ -50,6 +55,7 @@ export function Opportunities({
   priorityCounts,
   difficultyCounts,
   filters = {},
+  enabledChatbotIds,
 }: {
   projectId: string;
   startDate: ISODateString;
@@ -61,6 +67,7 @@ export function Opportunities({
   priorityCounts: Record<string, number>;
   difficultyCounts: Record<string, number>;
   filters?: Record<string, string | undefined>;
+  enabledChatbotIds: ChatbotId[];
 }) {
   const router = useRouter();
   const { currentPrompts } = usePrivateLayoutContext();
@@ -215,9 +222,12 @@ export function Opportunities({
             />
           </div>
 
-          <Badge type="pill-color" size="sm" color="brand">
-            {opportunitiesData.totalItems} opportunities
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge type="pill-color" size="sm" color="brand">
+              {opportunitiesData.totalItems} opportunities
+            </Badge>
+            <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
+          </div>
         </div>
 
         <FilterBar isExpanded={isFiltersExpanded} hasActiveFilters={hasActiveFilters} onClearAll={onClearAllFilters}>

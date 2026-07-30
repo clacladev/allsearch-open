@@ -28,7 +28,12 @@ import {
   encodeNumberRangeFilter,
 } from '@/app/(private)/components/ColumnFilters';
 import type { DomainCategory } from '@/libs/utils/project-analysis/domain-categories';
-import { SUPPORTED_CHATBOTS_IDS, CHATBOT_DISPLAY_LABELS } from '@/libs/database/shared/ChatbotId';
+import {
+  SUPPORTED_CHATBOTS_IDS,
+  CHATBOT_DISPLAY_LABELS,
+  type ChatbotId,
+} from '@/libs/database/shared/ChatbotId';
+import { ChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
 
 const BRANDS_SORT_FIELDS = ['title', 'domainCategory', 'usedPercentage', 'citedPercentage'];
 
@@ -45,6 +50,7 @@ export default function Brands({
   sortDir,
   categoryCounts = {},
   filters = {},
+  enabledChatbotIds,
 }: {
   projectId: string;
   startDate: ISODateString;
@@ -56,6 +62,7 @@ export default function Brands({
   sortDir?: string;
   categoryCounts?: Record<string, number>;
   filters?: Record<string, string | undefined>;
+  enabledChatbotIds: ChatbotId[];
 }) {
   const router = useRouter();
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
@@ -234,9 +241,12 @@ export default function Brands({
           </div>
 
           {sourcesData.totalItems > 0 && (
-            <Badge type="pill-color" size="sm" color="brand">
-              {sourcesData.totalItems} sources
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge type="pill-color" size="sm" color="brand">
+                {sourcesData.totalItems} sources
+              </Badge>
+              <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
+            </div>
           )}
         </div>
 

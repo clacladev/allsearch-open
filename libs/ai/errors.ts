@@ -12,6 +12,16 @@ import type { MissingProviderKeyError } from '@/libs/ai/models';
 
 export type AiErrorCode = 'NO_KEY' | 'INVALID_KEY' | 'RATE_LIMITED';
 
+const AI_ERROR_CODES: readonly AiErrorCode[] = ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'];
+
+/** Narrows an arbitrary string (e.g. `AppFetchError.code`, which is typed loosely since it comes
+ * off a parsed JSON response body) down to `AiErrorCode` — the seam every client surface uses to
+ * decide whether to render the shared credential-failure UI or fall back to its own generic
+ * error handling. */
+export function isAiErrorCode(code: string | undefined): code is AiErrorCode {
+  return !!code && (AI_ERROR_CODES as readonly string[]).includes(code);
+}
+
 export class AiError extends Error {
   code: AiErrorCode;
   provider: ProviderId;

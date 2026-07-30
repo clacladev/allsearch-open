@@ -30,6 +30,8 @@ import {
   type ArticleSourceForPrompt,
 } from '@/libs/ai/promptArticles/streamArticle';
 import { PromptArticleError, errorCodeToStatus } from '@/libs/ai/promptArticles/errors';
+import { aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
+import { encodeStreamError } from '@/libs/ai/promptArticles/streamErrorSentinel';
 import type {
   ArticleSourcesUsed,
   PromptArticleRow,
@@ -284,8 +286,51 @@ export async function POST(
       }
     );
 
-    return result.toTextStreamResponse();
+    // Not `result.toTextStreamResponse()`: the Google API call happens lazily as the stream is
+    // consumed, after these 200 headers are already on the wire, so a credential/rate-limit error
+    // here is fundamentally a mid-stream event — there's no status code or JSON body left to carry
+    // it. `toTextStreamResponse()`'s `textStream` also silently drops 'error' parts entirely. This
+    // walks `fullStream` instead so an 'error' part can be classified via `toAiError` and appended
+    // as the sentinel `useArticleStreaming.ts` looks for, rather than the stream just going quiet.
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        try {
+          for await (const part of result.fullStream) {
+            if (part.type === 'text-delta') {
+              controller.enqueue(encoder.encode(part.text));
+            } else if (part.type === 'error') {
+              const streamAiError = toAiError(part.error, 'google');
+              if (streamAiError) {
+                controller.enqueue(encoder.encode(encodeStreamError(streamAiError.code)));
+              } else {
+                console.error(part.error);
+              }
+            }
+          }
+        } catch (streamError) {
+          if (!req.signal.aborted) console.error(streamError);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   } catch (error) {
+    // Credential problems (missing/invalid/rate-limited key) are checked first, mirroring the
+    // outline POST route (prompt-articles/route.ts) — a missing key never reaches
+    // PromptArticleError's own taxonomy below, but should still be reported distinctly rather than
+    // falling through to the generic 500 at the bottom. This only ever catches NO_KEY in practice
+    // (thrown synchronously from `startArticleStream` before any response is returned); an
+    // invalid/rate-limited key surfaces later, once the model call actually runs, via the
+    // in-stream sentinel above.
+    const aiError = toAiError(error, 'google');
+    if (aiError) {
+      const { body, status } = aiErrorToResponseInit(aiError);
+      return NextResponse.json(body, { status });
+    }
+
     if (error instanceof PromptArticleError) {
       const status = errorCodeToStatus(error.code);
       if (status >= 500) {

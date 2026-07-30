@@ -8,6 +8,9 @@ export const ROUTES = {
   // Organization
   ORGANIZATION: '/organization',
 
+  // Keys
+  KEYS: '/keys',
+
   // New Project
   NEW_PROJECT: {
     INDEX: '/new-project',

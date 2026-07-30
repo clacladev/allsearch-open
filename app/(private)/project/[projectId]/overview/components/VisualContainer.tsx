@@ -6,6 +6,7 @@ export const VisualContainer = ({
   className,
   title,
   info,
+  caption,
   icon,
   isSquare = true,
   contentClassName,
@@ -15,6 +16,9 @@ export const VisualContainer = ({
   className?: string;
   title: string;
   info?: string;
+  /** Small line under the title — used for the issue-09 Chatbot-coverage caption on figures that
+   * aggregate across Chatbots (e.g. `ChatbotCoverageCaption`). */
+  caption?: React.ReactNode;
   icon?: ComponentType<{ className?: string }>;
   isSquare?: boolean;
   contentClassName?: string;
@@ -30,13 +34,16 @@ export const VisualContainer = ({
       )}
     >
       <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {Icon && <Icon className="text-tertiary size-4" />}
-            <span className="text-primary text-sm font-semibold">{title}</span>
-            {info && <TooltipIcon title={title} description={info} />}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {Icon && <Icon className="text-tertiary size-4" />}
+              <span className="text-primary text-sm font-semibold">{title}</span>
+              {info && <TooltipIcon title={title} description={info} />}
+            </div>
+            {headerTrailing}
           </div>
-          {headerTrailing}
+          {caption}
         </div>
         <div className={cx(isSquare ? 'min-h-50' : '', contentClassName)}>{children}</div>
       </div>
