@@ -6,6 +6,7 @@ import ProjectOverview from './overview/Overview';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
 import { getOverviewPageData } from './overview/helpers';
+import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import z from 'zod';
 
 type Props = {
@@ -35,7 +36,10 @@ export default async function ProjectOverviewPage({ params, searchParams }: Prop
   const startDateISO = startDate ? getISODateString(startDate) : defaultDateRange.startDateISO;
   const endDateISO = endDate ? getISODateString(endDate) : defaultDateRange.endDateISO;
 
-  const overviewData = await getOverviewPageData(projectId, startDateISO, endDateISO);
+  const [overviewData, enabledChatbotIds] = await Promise.all([
+    getOverviewPageData(projectId, startDateISO, endDateISO),
+    getEffectiveEnabledChatbotIds(),
+  ]);
 
   return (
     <MainContainer>
@@ -49,6 +53,7 @@ export default async function ProjectOverviewPage({ params, searchParams }: Prop
         startDate={startDateISO}
         endDate={endDateISO}
         overviewData={overviewData}
+        enabledChatbotIds={enabledChatbotIds}
       />
     </MainContainer>
   );

@@ -32,7 +32,12 @@ import {
   encodeNumberRangeFilter,
 } from '@/app/(private)/components/ColumnFilters';
 import type { DomainCategory } from '@/libs/utils/project-analysis/domain-categories';
-import { SUPPORTED_CHATBOTS_IDS, CHATBOT_DISPLAY_LABELS } from '@/libs/database/shared/ChatbotId';
+import {
+  SUPPORTED_CHATBOTS_IDS,
+  CHATBOT_DISPLAY_LABELS,
+  type ChatbotId,
+} from '@/libs/database/shared/ChatbotId';
+import { ChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
 
 const DOMAIN_CATEGORIES: DomainCategory[] = ['You', 'UGC', 'Institutional', 'Editorial', 'Other'];
 
@@ -48,6 +53,7 @@ export default function Sources({
   categoryCounts = {},
   mentionedCounts,
   filters = {},
+  enabledChatbotIds,
 }: {
   projectId: string;
   sourceType: SourcesType;
@@ -60,6 +66,7 @@ export default function Sources({
   categoryCounts?: Record<string, number>;
   mentionedCounts?: { mentioned: number; notMentioned: number };
   filters?: Record<string, string | undefined>;
+  enabledChatbotIds: ChatbotId[];
 }) {
   const router = useRouter();
   const { currentProject, currentCompetitors } = usePrivateLayoutContext();
@@ -262,9 +269,12 @@ export default function Sources({
             />
           </div>
 
-          <Badge type="pill-color" size="sm" color="brand">
-            {sourceContentsData?.totalItems ?? sourceDomainsData?.totalItems ?? 0} sources
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge type="pill-color" size="sm" color="brand">
+              {sourceContentsData?.totalItems ?? sourceDomainsData?.totalItems ?? 0} sources
+            </Badge>
+            <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
+          </div>
         </div>
 
         <FilterBar isExpanded={isFiltersExpanded} hasActiveFilters={hasActiveFilters} onClearAll={onClearAllFilters}>

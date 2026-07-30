@@ -7,6 +7,7 @@ import { getISODateString } from '@/libs/database/shared/ISODateString';
 import { getPaginatedResult, SortParams } from '@/libs/utils/PaginatedResult';
 import z from 'zod';
 import { getSourcesDomainsData } from '../helpers';
+import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
 import { ChatbotId, SUPPORTED_CHATBOTS_IDS } from '@/libs/database/shared/ChatbotId';
@@ -66,7 +67,10 @@ export default async function ProjectSourcesDomainsPage({ params, searchParams }
     SUPPORTED_CHATBOTS_IDS.includes(id as ChatbotId)
   );
 
-  const sourceDomainsSummary = await getSourcesDomainsData(projectId, startDateISO, endDateISO, validChatbotIds.length ? validChatbotIds : undefined);
+  const [sourceDomainsSummary, enabledChatbotIds] = await Promise.all([
+    getSourcesDomainsData(projectId, startDateISO, endDateISO, validChatbotIds.length ? validChatbotIds : undefined),
+    getEffectiveEnabledChatbotIds(),
+  ]);
 
   // Compute category counts from full dataset before filtering
   const categoryCounts: Record<string, number> = {};
@@ -115,6 +119,7 @@ export default async function ProjectSourcesDomainsPage({ params, searchParams }
         sortBy={sortBy}
         sortDir={sortDir}
         categoryCounts={categoryCounts}
+        enabledChatbotIds={enabledChatbotIds}
         filters={{
           filter_hostname: hostnameFilter,
           filter_domainCategory: domainCategoryFilter.length ? domainCategoryFilter.join(',') : undefined,

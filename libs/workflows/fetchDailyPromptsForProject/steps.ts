@@ -1,5 +1,6 @@
 import { getPromptResponseWithChatGPT } from '@/libs/ai/projectPrompt/getPromptResponseWithChatGPT';
 import { analyzeResponseSentiment } from '@/libs/ai/sentimentAnalysis';
+import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import { ProcessPromptResponse } from '../shared/types';
 import { getSourcesFromResponse } from '../shared/responseSources';
@@ -81,13 +82,15 @@ async function processPromptForAllChatbots(
   workflowId: string
 ) {
   'use step';
-  // Get responses from all chatbots
+  // Get responses from every enabled chatbot (issue 09: a disabled chatbot must not be called)
+  const chatbotProcessors: Record<ChatbotId, () => Promise<ProcessPromptResponse>> = {
+    [ChatbotId.ChatGPT]: () => processPromptForChatGPT(promptName, project.target_location),
+    [ChatbotId.GoogleAIOverview]: () => processPromptForGoogleAIMode(promptName),
+    [ChatbotId.Perplexity]: () => processPromptForPerplexity(promptName),
+  };
+  const enabledChatbotIds = await getEffectiveEnabledChatbotIds();
   const responses = (
-    await Promise.allSettled([
-      processPromptForChatGPT(promptName, project.target_location),
-      processPromptForGoogleAIMode(promptName),
-      processPromptForPerplexity(promptName),
-    ])
+    await Promise.allSettled(enabledChatbotIds.map((chatbotId) => chatbotProcessors[chatbotId]()))
   )
     .filter((response) => response.status === 'fulfilled')
     .map((response) => response.value);

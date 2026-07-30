@@ -3,7 +3,9 @@ import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-cor
 
 import type { OrganizationType } from './Organizations/types';
 import type { ArticleOutline, ArticleSourcesUsed } from './PromptArticles/types';
+import type { StoredProviderKey } from './Settings/types';
 import type { ChatbotId } from './shared/ChatbotId';
+import type { ProviderId } from './shared/ProviderId';
 import type { PageHeading } from '@/libs/utils/urlAnalysis';
 
 // Shared column conventions (see docs/adr/0006-sqlite-with-drizzle.md):
@@ -49,6 +51,26 @@ export const organizations = sqliteTable(
   },
   (table) => [check('organizations_type_check', sql`${table.type} in ('agency', 'in-house')`)]
 );
+
+// Singleton settings row (see docs/agents/domain.md and .scratch/local-app-migration/issues/08 —
+// provider keys and enabled Chatbots for this single-user install). One JSON column per concern
+// rather than 13 enumerated columns (3 providers x key/status/validatedAt, plus per-Chatbot
+// flags): matches this file's existing JSON-column convention, and adding a fourth provider or
+// Chatbot becomes a value change here rather than a migration.
+export const settings = sqliteTable('settings', {
+  id: idColumn(),
+  created_at: createdAtColumn(),
+  updated_at: updatedAtColumn(),
+  provider_keys: text('provider_keys', { mode: 'json' })
+    .$type<Partial<Record<ProviderId, StoredProviderKey>>>()
+    .notNull()
+    .default({}),
+  // `null` means "the user has never touched this toggle" (every fresh install), distinct from
+  // `[]`, a deliberate "turn everything off" — see libs/database/Settings/queries.ts, whose
+  // `getEffectiveEnabledChatbotIds()` treats `null` as "default to every Chatbot with a key" and
+  // `[]` as "none", rather than collapsing both to the same empty array.
+  enabled_chatbots: text('enabled_chatbots', { mode: 'json' }).$type<ChatbotId[]>(),
+});
 
 export const projects = sqliteTable(
   'projects',
