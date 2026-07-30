@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, spyOn } from 'bun:test';
+import { sql } from 'drizzle-orm';
 
 import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
@@ -164,6 +165,67 @@ describe('Settings queries', () => {
       await queries.setStoredEnabledChatbotIds([ChatbotId.ChatGPT]);
 
       expect(await queries.getEffectiveEnabledChatbotIds()).toEqual([]);
+    });
+  });
+
+  describe('write safety', () => {
+    it('never lets a failed write leak the plaintext key via its thrown error or console.error', async () => {
+      const key = 'AIzaSy-SUPER-SECRET-KEY-9999';
+
+      // Ensure the singleton row exists, then corrupt its `provider_keys` column directly so the
+      // atomic `json_set` write inside `setProviderKey` fails with a real SQLite error —
+      // reproducing the class of failure (disk full, SQLITE_BUSY) the reviewer forced, without
+      // needing either. Before the fix, the resulting `DrizzleQueryError.message` was exactly
+      // `"Failed query: ...\nparams: ...,{"google":{"key":"<key>",...}},..."`.
+      await queries.getStoredEnabledChatbotIds();
+      await db.run(sql`UPDATE settings SET provider_keys = 'not-json'`);
+
+      const errorSpy = spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        let thrown: unknown;
+        try {
+          await queries.setProviderKey('google', key, 'valid');
+        } catch (err) {
+          thrown = err;
+        }
+
+        expect(thrown).toBeInstanceOf(Error);
+        expect((thrown as Error).message).not.toContain(key);
+        expect(String(thrown)).not.toContain(key);
+
+        const loggedText = errorSpy.mock.calls
+          .flat()
+          .map((value) => (value instanceof Error ? (value.stack ?? value.message) : String(value)))
+          .join('\n');
+        expect(loggedText).not.toContain(key);
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+
+    it('does not create a duplicate singleton row when two callers race the very first read', async () => {
+      // Mirrors app/(private)/settings/page.tsx's `Promise.all` of two independent reads on a
+      // fresh install, which measurably created two rows before `getOrCreateSettingsRow()` used a
+      // single atomic `INSERT ... ON CONFLICT DO NOTHING` against a fixed id.
+      await Promise.all([queries.getRedactedProviderKeys(), queries.getStoredEnabledChatbotIds()]);
+
+      expect(await db.select().from(settings)).toHaveLength(1);
+    });
+
+    it('does not lose a key when two setProviderKey calls race each other', async () => {
+      await queries.setProviderKey('perplexity', 'pplx-seed-key', 'valid');
+
+      // Every real save makes a live validation call first (up to 5s), so two saves overlapping
+      // is the routine case, not an edge case — reproduced here as two concurrent calls that both
+      // read the row before either had written back, under the old read-modify-write.
+      await Promise.all([
+        queries.setProviderKey('google', 'google-concurrent-key', 'valid'),
+        queries.setProviderKey('openai', 'openai-concurrent-key', 'valid'),
+      ]);
+
+      const redacted = await queries.getRedactedProviderKeys();
+      expect(redacted.map((r) => r.provider).sort()).toEqual(['google', 'openai', 'perplexity']);
+      expect(await db.select().from(settings)).toHaveLength(1);
     });
   });
 });

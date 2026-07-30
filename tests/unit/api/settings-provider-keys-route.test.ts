@@ -125,6 +125,28 @@ describe('POST /api/settings/provider-keys', () => {
     const text = await res.text();
     expect(text).not.toContain(RAW_TEST_KEY);
   });
+
+  it('returns a generic message instead of echoing a storage failure, even one that names the key', async () => {
+    mockValidateProviderKey.mockImplementation(async () => ({
+      status: 'valid',
+      isRejected: false,
+      message: 'Key verified.',
+    }));
+    // Simulates the leak the reviewer forced: a raw DrizzleQueryError-shaped message with the
+    // plaintext key bound as a query parameter.
+    mockSetProviderKey.mockImplementation(async () => {
+      throw new Error(`Failed query: ...\nparams: ...,{"google":{"key":"${RAW_TEST_KEY}"}},id-1`);
+    });
+
+    const req = makeRequest({ provider: 'google', key: RAW_TEST_KEY });
+    const res = await POST(req as never);
+    expect(res.status).toBe(500);
+
+    const text = await res.text();
+    expect(text).not.toContain(RAW_TEST_KEY);
+    const body = JSON.parse(text);
+    expect(body.error).toBe('Failed to save the provider key.');
+  });
 });
 
 describe('DELETE /api/settings/provider-keys', () => {
