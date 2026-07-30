@@ -21,7 +21,9 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { useClipboard } from '@/hooks/use-clipboard';
-import { RouteHelper } from '@/libs/routes';
+import { RouteHelper, ROUTES } from '@/libs/routes';
+import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
+import { AiFailureState, getAiFailureStateCopy } from '@/app/components/AiFailureState';
 import { cx } from '@/utils/cx';
 import type { ArticleSettings } from '@/libs/ai/promptArticles/schema';
 import type {
@@ -78,6 +80,13 @@ type GenerateArticleOutlineArgs = {
 type GeneratePromptArticleResponse = {
   promptArticle: PromptArticleRow;
 };
+
+/** Narrows to one of the three AI-credential codes (issue 09) when the outline POST's `toAiError`
+ * layer classified the failure that way; `undefined` for every other `OutlineErrorKind`, which
+ * keeps its existing copy below. */
+function classifyAiErrorCode(error: unknown): AiErrorCode | undefined {
+  return error instanceof AppFetchError && isAiErrorCode(error.code) ? error.code : undefined;
+}
 
 function classifyOutlineError(error: unknown): OutlineErrorKind {
   if (error instanceof AppFetchError) {
@@ -174,6 +183,7 @@ export function NewArticleOutline({
   const router = useRouter();
   const [outline, setOutline] = useState<PromptArticleRow | null>(initialOutline);
   const [errorKind, setErrorKind] = useState<OutlineErrorKind | null>(null);
+  const [aiErrorCode, setAiErrorCode] = useState<AiErrorCode | undefined>(undefined);
   // Settings the user picked for the next regenerate. Initialized to the
   // current row's persisted settings so Regenerate uses the latest panel state.
   const [pendingRegenerateSettings, setPendingRegenerateSettings] =
@@ -189,6 +199,7 @@ export function NewArticleOutline({
   ) => {
     if (!opportunityType) return;
     setErrorKind(null);
+    setAiErrorCode(undefined);
     try {
       const response = await triggerOutlineGeneration({
         opportunityType,
@@ -215,6 +226,7 @@ export function NewArticleOutline({
       if (isRegeneration) {
       }
     } catch (error) {
+      setAiErrorCode(classifyAiErrorCode(error));
       setErrorKind(classifyOutlineError(error));
     }
   };
@@ -264,6 +276,8 @@ export function NewArticleOutline({
           <div className="flex min-h-96 w-full items-center justify-center py-12">
             <LoadingIndicator label="Generating your outline..." />
           </div>
+        ) : aiErrorCode ? (
+          <AiFailureState code={aiErrorCode} provider="google" className="min-h-[400px] py-16" />
         ) : errorKind ? (
           (() => {
             const errorCopy = OUTLINE_ERROR_COPY[errorKind];
@@ -318,6 +332,7 @@ export function NewArticleOutline({
       inspirationSources={inspirationSources}
       isMutatingOutline={isMutatingOutline}
       errorKind={errorKind}
+      aiErrorCode={aiErrorCode}
       onCopy={copy}
       copied={copied}
       pendingRegenerateSettings={pendingRegenerateSettings}
@@ -343,6 +358,7 @@ type EditorProps = {
   inspirationSources: ArticleSourcesUsed | null;
   isMutatingOutline: boolean;
   errorKind: OutlineErrorKind | null;
+  aiErrorCode: AiErrorCode | undefined;
   onCopy: (text: string) => void;
   copied: string | boolean;
   /** Settings buffered for the *next* outline regenerate. Stored at the parent
@@ -368,6 +384,7 @@ function OutlineEditor({
   inspirationSources,
   isMutatingOutline,
   errorKind,
+  aiErrorCode,
   onCopy,
   copied,
   pendingRegenerateSettings,
@@ -481,10 +498,19 @@ function OutlineEditor({
         endDate={endDate}
       />
 
-      {errorKind && (
-        <div className="border-error_subtle bg-error-primary text-error-primary rounded-lg border p-3 text-sm">
-          {OUTLINE_REGEN_ERROR_COPY[errorKind]}
+      {aiErrorCode ? (
+        <div className="border-error_subtle bg-error-primary text-error-primary flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+          <span>{getAiFailureStateCopy(aiErrorCode, 'google').description}</span>
+          <Link href={ROUTES.SETTINGS} className="font-medium underline">
+            Go to Settings
+          </Link>
         </div>
+      ) : (
+        errorKind && (
+          <div className="border-error_subtle bg-error-primary text-error-primary rounded-lg border p-3 text-sm">
+            {OUTLINE_REGEN_ERROR_COPY[errorKind]}
+          </div>
+        )
       )}
 
       {/* Top action bar: nav left, document actions right. Mirrors the article

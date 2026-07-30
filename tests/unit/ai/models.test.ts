@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll, beforeEach, afterEach } from 'bun:test';
+import { describe, expect, it, beforeAll, beforeEach, afterEach, mock } from 'bun:test';
 import type * as ModelsModule from '@/libs/ai/models';
 
 const ENV_VARS = {
@@ -6,6 +6,16 @@ const ENV_VARS = {
   google: 'GOOGLE_GENERATIVE_AI_API_KEY',
   perplexity: 'PERPLEXITY_API_KEY',
 } as const;
+
+// `getProviderKey` reads storage before the env var (see libs/ai/models.ts). Stubbed here rather
+// than exercised against a real database: this file already works around mock.module's
+// process-wide, irreversible pollution (below) via the fresh import above, so
+// tests/unit/database/settings.test.ts — which needs the REAL implementation — takes the same
+// defensive fresh-import precaution against the stub this line installs.
+let storedProviderKey: string | undefined;
+mock.module('@/libs/database/Settings/queries', () => ({
+  getProviderKeyFromStorage: async () => storedProviderKey,
+}));
 
 // Other test files in this suite call mock.module('@/libs/ai/models', ...) at
 // file scope (e.g. to stub `googleModel`) and never restore it — Bun's
@@ -29,6 +39,7 @@ beforeAll(async () => {
 const originalEnv: Record<string, string | undefined> = {};
 
 beforeEach(() => {
+  storedProviderKey = undefined;
   for (const envVar of Object.values(ENV_VARS)) {
     originalEnv[envVar] = process.env[envVar];
     delete process.env[envVar];
@@ -43,7 +54,14 @@ afterEach(() => {
 });
 
 describe('getProviderKey', () => {
-  it('reads the env var for each provider', async () => {
+  it('returns the stored key without consulting the env var at all', async () => {
+    storedProviderKey = 'stored-openai-key';
+    process.env[ENV_VARS.openai] = 'env-openai-key';
+
+    expect(await models.getProviderKey('openai')).toBe('stored-openai-key');
+  });
+
+  it('falls back to the env var for each provider when storage has no key', async () => {
     process.env[ENV_VARS.openai] = 'openai-key';
     process.env[ENV_VARS.google] = 'google-key';
     process.env[ENV_VARS.perplexity] = 'perplexity-key';
@@ -53,11 +71,11 @@ describe('getProviderKey', () => {
     expect(await models.getProviderKey('perplexity')).toBe('perplexity-key');
   });
 
-  it('throws MissingProviderKeyError with the right provider when the var is unset', async () => {
+  it('throws MissingProviderKeyError with the right provider when storage and the var are both unset', async () => {
     await expect(models.getProviderKey('openai')).rejects.toMatchObject({ provider: 'openai' });
   });
 
-  it('throws MissingProviderKeyError when the var is blank / whitespace', async () => {
+  it('throws MissingProviderKeyError when storage is empty and the var is blank / whitespace', async () => {
     process.env[ENV_VARS.google] = '   ';
     await expect(models.getProviderKey('google')).rejects.toMatchObject({ provider: 'google' });
   });

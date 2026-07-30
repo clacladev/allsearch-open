@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import z from 'zod';
 import { getCompetitors } from '@/libs/ai/competitors/getCompetitors';
 import { getDomainMetadata } from '@/libs/utils/urlAnalysis';
+import { aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
 import { Competitor } from './types';
 
 export async function GET(req: NextRequest) {
@@ -39,6 +40,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(competitorsWithIcons);
   } catch (error) {
+    const aiError = toAiError(error, 'google');
+    if (aiError) {
+      const { body, status } = aiErrorToResponseInit(aiError);
+      return NextResponse.json(body, { status });
+    }
+
     console.error(error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : error },

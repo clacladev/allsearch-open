@@ -20,7 +20,9 @@ import { useRouter } from 'next/navigation';
 import { NewProjectLayoutColumn } from '../../layout';
 import { Favicon } from '@/app/(private)/components/Favicon';
 import { Competitor } from '@/app/api/new-project/competitors/types';
-import { appFetch } from '@/hooks/appFetch';
+import { appFetch, AppFetchError } from '@/hooks/appFetch';
+import { isAiErrorCode } from '@/libs/ai/errors';
+import { AiFailureState } from '@/app/components/AiFailureState';
 import {
   isDuplicateName,
   isDuplicateUrl,
@@ -164,6 +166,12 @@ export default function CompetitorsForm() {
     (isUrlDuplicate && 'URL already used') ||
     (isNameInvalid && 'Name already used') ||
     undefined;
+  // Onboarding's competitor suggestion call runs on Gemini — the provider is fixed, not something
+  // the response carries back to the client.
+  const competitorsAiErrorCode =
+    competitorsError instanceof AppFetchError && isAiErrorCode(competitorsError.code)
+      ? competitorsError.code
+      : undefined;
 
   const canAdd =
     !!customUrlDebounced.length &&
@@ -283,7 +291,11 @@ export default function CompetitorsForm() {
           )}
         </div>
 
-        {error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>}
+        {competitorsAiErrorCode ? (
+          <AiFailureState code={competitorsAiErrorCode} provider="google" variant="compact" />
+        ) : (
+          error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>
+        )}
 
         <div className="mt-10 flex gap-2">
           <Button
