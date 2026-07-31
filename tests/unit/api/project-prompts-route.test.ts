@@ -56,7 +56,7 @@ mock.module('@/libs/subscriptions', () => ({
   MAX_PROMPTS_DURING_TRIAL: 25,
 }));
 
-import { describe, expect, it, beforeEach } from 'bun:test';
+import { describe, expect, it, afterAll, beforeEach } from 'bun:test';
 import { POST, PATCH } from '@/app/api/project/[projectId]/prompts/route';
 
 // Extend Request with nextUrl so the route's error handler can access searchParams
@@ -282,4 +282,10 @@ describe('PATCH /api/project/[projectId]/prompts', () => {
     const body = await res.json();
     expect(body.error).toContain('prompt');
   });
+});
+
+// `mock.module` is process-wide in Bun and is not undone when this file finishes, so without this
+// the query-layer mocks above leak into every test file that runs later.
+afterAll(() => {
+  mock.restore();
 });
