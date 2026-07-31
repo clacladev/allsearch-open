@@ -72,12 +72,24 @@ async function hasAnyTable(db: AllSearchDatabase): Promise<boolean> {
   return rows.length > 0;
 }
 
-let databasePromise: Promise<AllSearchDatabase> | undefined;
+// Keyed on `getDatabasePath()` rather than a single promise: in production the path is constant
+// for the life of the process, so this behaves identically to one memoised connection. It exists
+// so `tests/unit/collection/collectionRunQueries.test.ts` can call `getDatabase()` against its own
+// temp `ALLSEARCH_DB_PATH` without colliding with `tests/unit/database/settings.test.ts`, the only
+// other suite that calls `getDatabase()` (see that file's comment) — Bun does not give each test
+// file a fresh module registry, so a single unkeyed promise is shared, and process-wide. This is
+// only safe paired with `tests/setup.ts` defaulting `ALLSEARCH_DB_PATH` to a temp file: without
+// that default, a suite that deletes the env var in `afterAll` would let a later `getDatabase()`
+// resolve to the user's real database.
+const databasePromises = new Map<string, Promise<AllSearchDatabase>>();
 
-/** Memoised database connection for app use. */
+/** Memoised database connection for app use, one per distinct `getDatabasePath()`. */
 export function getDatabase(): Promise<AllSearchDatabase> {
-  if (!databasePromise) {
-    databasePromise = createDatabase();
+  const path = getDatabasePath();
+  let promise = databasePromises.get(path);
+  if (!promise) {
+    promise = createDatabase(path);
+    databasePromises.set(path, promise);
   }
-  return databasePromise;
+  return promise;
 }
