@@ -12,6 +12,23 @@ export async function register() {
   await migrateDatabase(db, dbPath);
 
   await restrictDatabaseFilePermissions(dbPath);
+
+  await resumeAndStartCollectionRunLoop();
+}
+
+// A resume failure must not stop the server booting (same posture as
+// `restrictDatabaseFilePermissions` above) — the loop can still pick up any Run that is genuinely
+// `pending`, it would just miss recovering one orphaned `running` by a previous kill until the
+// next boot.
+async function resumeAndStartCollectionRunLoop(): Promise<void> {
+  try {
+    const { resumeInterruptedCollectionRuns, ensureCollectionRunLoopIsRunning } =
+      await import('./libs/collection');
+    await resumeInterruptedCollectionRuns();
+    ensureCollectionRunLoopIsRunning();
+  } catch (error) {
+    console.error('Failed to resume Collection Runs', error);
+  }
 }
 
 // The database can hold provider API keys in plaintext (see libs/database/Settings) — restrict

@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { promptResponses } from '../schema';
+import { ChatbotId } from '../shared/ChatbotId';
 import { deleteSourceRowsWithPromptIds, deleteSourceRowsWithProjectId } from '../Sources/queries';
 import { ISODateString, getISODateString } from '../shared/ISODateString';
 import { PromptResponseRow, PromptResponseSummaryRow } from './types';
@@ -155,4 +156,30 @@ export async function deletePromptResponseRowsWithProjectId(
 
   const db = await getDatabase();
   return db.delete(promptResponses).where(eq(promptResponses.project_id, projectId)).returning();
+}
+
+/** Deletes the Prompt Responses of one (Run, Prompt) for the given Chatbots, ahead of re-claiming
+ * that Prompt group — closes the window where a process killed after a batched insert but before
+ * the item status write would otherwise leave a duplicate set of responses on resume or retry.
+ * Unlike the two delete helpers above, this one does NOT delete Sources first: `sources.prompt_
+ * response_id` has `ON DELETE CASCADE` (foreign keys are ON per `client.ts`, locked by
+ * `tests/unit/database/cascade.test.ts`), so the cascade removes them as a side effect of this
+ * delete instead. */
+export async function deletePromptResponseRowsWithRunIdAndPromptId(
+  runId: string,
+  promptId: string,
+  chatbotIds: ChatbotId[]
+): Promise<PromptResponseRow[]> {
+  if (!chatbotIds.length) return [];
+  const db = await getDatabase();
+  return db
+    .delete(promptResponses)
+    .where(
+      and(
+        eq(promptResponses.run_id, runId),
+        eq(promptResponses.prompt_id, promptId),
+        inArray(promptResponses.chatbot_id, chatbotIds)
+      )
+    )
+    .returning();
 }
