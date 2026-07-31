@@ -14,13 +14,14 @@ import {
 import {
   claimCollectionRunRow,
   finishCollectionRunRow,
+  finishRunningCollectionRunRow,
   getCollectionRunRowWithId,
   getOldestPendingCollectionRunRow,
   insertCollectionRunRow,
-  refreshCollectionRunCounters,
+  insertCollectionRunWithItems,
+  recomputeCollectionRunCounters,
   reopenCollectionRunRow,
   resetRunningCollectionRunRows,
-  setCollectionRunItemsTotal,
 } from '@/libs/database/CollectionRuns/queries';
 import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
@@ -168,12 +169,27 @@ describe('CollectionRuns queries', () => {
     });
 
     const reopened = await reopenCollectionRunRow(run.id);
-    expect(reopened.status).toBe('pending');
-    expect(reopened.started_at).toBeNull();
-    expect(reopened.finished_at).toBeNull();
-    expect(reopened.error).toBeNull();
+    expect(reopened?.status).toBe('pending');
+    expect(reopened?.started_at).toBeNull();
+    expect(reopened?.finished_at).toBeNull();
+    expect(reopened?.error).toBeNull();
     // items_total is untouched by reopen — retry never changes it.
-    expect(reopened.items_total).toBe(3);
+    expect(reopened?.items_total).toBe(3);
+  });
+
+  it('does not reopen a run that is currently running — a retry firing mid-drain must not fight the live loop for the Run status', async () => {
+    const run = await insertCollectionRunRow({
+      status: 'running',
+      started_at: new Date().toISOString(),
+      finished_at: null,
+      items_total: 3,
+      items_completed: 1,
+      items_failed: 1,
+      error: null,
+    });
+
+    expect(await reopenCollectionRunRow(run.id)).toBeUndefined();
+    expect((await getCollectionRunRowWithId(run.id))?.status).toBe('running');
   });
 
   it('resets running runs back to pending on boot recovery', async () => {
@@ -190,21 +206,6 @@ describe('CollectionRuns queries', () => {
     const reset = await resetRunningCollectionRunRows();
     expect(reset.map((row) => row.id)).toEqual([run.id]);
     expect((await getCollectionRunRowWithId(run.id))?.status).toBe('pending');
-  });
-
-  it('sets items_total', async () => {
-    const run = await insertCollectionRunRow({
-      status: 'pending',
-      started_at: null,
-      finished_at: null,
-      items_total: 0,
-      items_completed: 0,
-      items_failed: 0,
-      error: null,
-    });
-
-    const updated = await setCollectionRunItemsTotal(run.id, 12);
-    expect(updated.items_total).toBe(12);
   });
 
   it('recomputes items_completed and items_failed from the item rows', async () => {
@@ -225,11 +226,81 @@ describe('CollectionRuns queries', () => {
       makeItemInput(run.id, project.id, prompt.id, ChatbotId.GoogleAIOverview, 'pending'),
     ]);
 
-    await refreshCollectionRunCounters(run.id);
+    await recomputeCollectionRunCounters(run.id);
 
     const refreshed = await getCollectionRunRowWithId(run.id);
     expect(refreshed?.items_completed).toBe(1);
     expect(refreshed?.items_failed).toBe(1);
+  });
+
+  it('inserts the run, its items and items_total together, so a pending run is never visible without its items', async () => {
+    const { project, prompt } = await createProjectAndPrompt();
+    const runId = crypto.randomUUID();
+
+    const run = await insertCollectionRunWithItems(
+      {
+        id: runId,
+        status: 'pending',
+        started_at: null,
+        finished_at: null,
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      },
+      [
+        makeItemInput(runId, project.id, prompt.id, ChatbotId.ChatGPT),
+        makeItemInput(runId, project.id, prompt.id, ChatbotId.Perplexity),
+      ]
+    );
+
+    expect(run.id).toBe(runId);
+    // `items_total` is already set on the returned row — the caller never sees the interim 0.
+    expect(run.items_total).toBe(2);
+    expect(await countCollectionRunItemRowsByStatus(runId)).toMatchObject({ pending: 2 });
+  });
+
+  it('rolls the whole insert back when an item row is invalid, leaving no orphan run for the loop to claim', async () => {
+    const { project } = await createProjectAndPrompt();
+    const runId = crypto.randomUUID();
+
+    await expect(
+      insertCollectionRunWithItems(
+        {
+          id: runId,
+          status: 'pending',
+          started_at: null,
+          finished_at: null,
+          items_total: 0,
+          items_completed: 0,
+          items_failed: 0,
+          error: null,
+        },
+        // `prompt_id` violates the FK, so the item insert throws after the run row was inserted.
+        [makeItemInput(runId, project.id, 'no-such-prompt', ChatbotId.ChatGPT)]
+      )
+    ).rejects.toThrow();
+
+    expect(await getCollectionRunRowWithId(runId)).toBeUndefined();
+  });
+
+  it('finishes a run only while it is still running, so a reopened run is not clobbered', async () => {
+    const run = await insertCollectionRunRow({
+      status: 'running',
+      started_at: new Date().toISOString(),
+      finished_at: null,
+      items_total: 1,
+      items_completed: 0,
+      items_failed: 0,
+      error: null,
+    });
+
+    expect((await finishRunningCollectionRunRow(run.id, 'completed'))?.status).toBe('completed');
+
+    // The run is no longer `running` — a second finaliser (e.g. the loop's outer catch arriving
+    // after a retry already reopened the run) must no-op rather than overwrite the status.
+    expect(await finishRunningCollectionRunRow(run.id, 'failed', 'boom')).toBeUndefined();
+    expect((await getCollectionRunRowWithId(run.id))?.status).toBe('completed');
   });
 });
 
@@ -386,10 +457,16 @@ describe('CollectionRunItems queries', () => {
       attemptsUsed: 2,
     });
 
-    expect(finished.status).toBe('failed');
-    expect(finished.error).toBe('rate limited');
-    expect(finished.attempts).toBe(3);
-    expect(finished.finished_at).not.toBeNull();
+    expect(finished?.status).toBe('failed');
+    expect(finished?.error).toBe('rate limited');
+    expect(finished?.attempts).toBe(3);
+    expect(finished?.finished_at).not.toBeNull();
+  });
+
+  it('returns undefined rather than throwing when the item row is gone (cascaded away by a deleted Prompt/Project)', async () => {
+    expect(
+      await finishCollectionRunItemRow('does-not-exist', { status: 'failed', attemptsUsed: 1 })
+    ).toBeUndefined();
   });
 
   it('resets running items back to pending on boot recovery', async () => {

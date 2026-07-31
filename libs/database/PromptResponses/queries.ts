@@ -114,6 +114,7 @@ export async function insertPromptResponseRow(
 export async function insertPromptResponseRows(
   inputs: InsertPromptResponseRowInput[]
 ): Promise<PromptResponseRow[]> {
+  if (!inputs.length) return [];
   const db = await getDatabase();
   return db.insert(promptResponses).values(inputs).returning();
 }

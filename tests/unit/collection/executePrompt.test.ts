@@ -86,7 +86,7 @@ mock.module('@/libs/ai/sentimentAnalysis', () => ({
 mock.module('@/libs/utils/brandIdsRanking', () => ({
   getBrandIdsRankingsInText: mock((text: string) => [text]),
 }));
-mock.module('@/libs/utils/sourcesAnalysis', () => ({
+mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: async () => [],
 }));
 
