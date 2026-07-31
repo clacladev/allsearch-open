@@ -81,10 +81,13 @@ export async function claimCollectionRunItemRowsForPrompt(
     .returning();
 }
 
+/** Returns `undefined` rather than throwing when the row is gone — deleting the Prompt or Project
+ * mid-Run cascades the item row away (`ON DELETE CASCADE`), and the row being gone means the work
+ * it tracked is moot, not a failure. */
 export async function finishCollectionRunItemRow(
   id: string,
   fields: { status: CollectionRunItemStatus; error?: string; attemptsUsed: number }
-): Promise<CollectionRunItemRow> {
+): Promise<CollectionRunItemRow | undefined> {
   const db = await getDatabase();
   const [row] = await db
     .update(collectionRunItems)
@@ -96,7 +99,6 @@ export async function finishCollectionRunItemRow(
     })
     .where(eq(collectionRunItems.id, id))
     .returning();
-  if (!row) throw new Error(`No collection_run_items row found for id ${id}`);
   return row;
 }
 

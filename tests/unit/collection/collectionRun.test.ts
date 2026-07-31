@@ -62,8 +62,10 @@ mock.module('@/libs/ai/sentimentAnalysis', () => ({
   analyzeResponseSentiment: mockSentiment,
 }));
 // Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
-// page is fetched.
-mock.module('@/libs/utils/sourcesAnalysis', () => ({
+// page is fetched. Mocked at the leaf module `libs/collection/analyseSources.ts`, which is what
+// `executePrompt.ts` calls and what the `'use step'` wrapper in `libs/utils/sourcesAnalysis.ts`
+// delegates to — so this covers both callers.
+mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: mockSources,
 }));
 
@@ -488,5 +490,39 @@ describe('issue 10 — cancellation (non-Done-when case from the plan)', () => {
     const finishedRun = await getRun(run.id);
     expect(finishedRun?.status).toBe('cancelled');
     expect(finishedRun?.items_completed).toBe(completedItems.length);
+  });
+
+  it('lands a never-started run cancelled itself, since no loop will ever claim it to finalise it', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('CancelBeforeStart');
+    await createPrompts(project.id, 2);
+
+    // Deliberately never starts the loop — this is the "cancel from the runs list before the
+    // worker picks it up" case, where nothing else exists to move the run out of `pending`.
+    const run = await createCollectionRun({ projectIds: [project.id] });
+    expect(run.status).toBe('pending');
+
+    const cancelledRun = await cancelCollectionRun(run.id);
+    expect(cancelledRun.status).toBe('cancelled');
+    expect(cancelledRun.finished_at).not.toBeNull();
+
+    const items = await getItemsForRun(run.id);
+    expect(items.every((item) => item.status === 'cancelled')).toBe(true);
+  });
+});
+
+describe('issue 10 — paused and archived Projects', () => {
+  it('collects nothing for a paused Project even when it is named explicitly, matching the isProjectPaused gate this replaced', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('Paused');
+    await createPrompts(project.id, 2);
+    await db.update(projects).set({ is_paused: true }).where(eq(projects.id, project.id));
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.items_total).toBe(0);
+    // Zero items is a legitimate no-op, recorded as completed rather than left for the loop.
+    expect(run.status).toBe('completed');
+    expect(await getItemsForRun(run.id)).toHaveLength(0);
   });
 });

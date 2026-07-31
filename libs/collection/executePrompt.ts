@@ -15,7 +15,7 @@ import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { BrandsSentiment } from '@/libs/database/PromptResponses/types';
 import { SourceItem } from '@/libs/database/Sources/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
-import { analysePromptResponseSources } from '@/libs/utils/sourcesAnalysis';
+import { analysePromptResponseSources } from './analyseSources';
 import { callAiWithRetry } from './callAi';
 
 export type PromptChatbotOutcome = {
@@ -73,6 +73,11 @@ export async function executePrompt(input: ExecutePromptInput): Promise<PromptCh
     error: result.isCompleted ? undefined : result.error.message,
   }));
   const responses = callResults.flatMap((result) => (result.isCompleted ? [result.value] : []));
+
+  // Every requested Chatbot failed — nothing to analyse or persist. Skipping this avoids
+  // `insertPromptResponseRows`/`insertSourceRows` being called with an empty array, and the three
+  // analyses running for nothing.
+  if (!responses.length) return outcomes;
 
   const [brandIdsRankingResult, sourcesResult, sentimentsResult] = await Promise.allSettled([
     analysePromptResponsesForBrandRankings(responses, project, competitors),

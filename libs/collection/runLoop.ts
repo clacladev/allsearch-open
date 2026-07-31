@@ -2,12 +2,12 @@ import { deletePromptResponseRowsWithRunIdAndPromptId } from '@/libs/database/Pr
 import { updateProjectRow } from '@/libs/database/Projects/queries';
 import {
   claimCollectionRunRow,
-  finishCollectionRunRow,
+  finishRunningCollectionRunRow,
   getOldestPendingCollectionRunRow,
-  refreshCollectionRunCounters,
+  recomputeCollectionRunCounters,
   resetRunningCollectionRunRows,
 } from '@/libs/database/CollectionRuns/queries';
-import { CollectionRunRow, CollectionRunStatus } from '@/libs/database/CollectionRuns/types';
+import { CollectionRunRow } from '@/libs/database/CollectionRuns/types';
 import {
   cancelPendingCollectionRunItemRows,
   claimCollectionRunItemRowsForPrompt,
@@ -92,35 +92,55 @@ async function executeCollectionRun(run: CollectionRunRow): Promise<void> {
 
     while (true) {
       const group = await getNextPendingPromptGroupForRun(run.id);
-      // No pending groups remain. Items only leave `pending` via a claim in this same loop (a
-      // failure marks an item `failed`, never back to `pending`), so none can appear later in
-      // this run — safe to stop claiming and just drain whatever is still in flight below.
-      if (!group) break;
+      if (group) {
+        const items = await claimCollectionRunItemRowsForPrompt(
+          run.id,
+          group.promptId,
+          group.chatbotIds
+        );
+        if (!items.length) continue; // Raced with another loop instance — re-query, don't assume.
 
-      const items = await claimCollectionRunItemRowsForPrompt(
-        run.id,
-        group.promptId,
-        group.chatbotIds
-      );
-      if (!items.length) continue; // Raced with another loop instance — re-query, don't assume.
+        touchedProjectIds.add(group.projectId);
 
-      touchedProjectIds.add(group.projectId);
+        // `.catch()` is attached here, before the promise is admitted to the in-flight set: without
+        // it, a rejection from `executeGroup` (it can still throw from the delete-then-insert or
+        // the finish writes, even though its own try/catch contains a persistence failure) would
+        // surface as an unhandled rejection rather than something `Promise.race`/`Promise.all`
+        // below can observe safely.
+        const groupPromise: Promise<void> = executeGroup(run, group, items)
+          .catch((error) => console.error('Collection Run group failed', error))
+          .finally(() => inFlightGroups.delete(groupPromise));
+        inFlightGroups.add(groupPromise);
 
-      const groupPromise: Promise<void> = executeGroup(run, group, items).finally(() => {
-        inFlightGroups.delete(groupPromise);
-      });
-      inFlightGroups.add(groupPromise);
-
-      if (inFlightGroups.size >= MAX_CONCURRENT_PROMPT_GROUPS) {
-        await Promise.race(inFlightGroups);
+        if (inFlightGroups.size >= MAX_CONCURRENT_PROMPT_GROUPS) {
+          await Promise.race(inFlightGroups);
+        }
+        continue;
       }
-    }
-    await Promise.all(inFlightGroups);
 
-    const counts = await countCollectionRunItemRowsByStatus(run.id);
-    const status: CollectionRunStatus = counts.cancelled ? 'cancelled' : 'completed';
-    await refreshCollectionRunCounters(run.id);
-    await finishCollectionRunRow(run.id, status);
+      if (inFlightGroups.size) {
+        // Groups are still finishing, which could themselves free up capacity or (indirectly)
+        // leave more to claim; wait for one before deciding there is nothing left.
+        await Promise.race(inFlightGroups);
+        continue;
+      }
+
+      // Nothing pending and nothing in flight, as of this check. `retryFailedCollectionRunItems`
+      // resets items back to `pending` from outside this loop and can do so at any moment
+      // (finding 2) — including after a claim pass here already saw no groups — so this is
+      // re-verified against a fresh count rather than assumed. If pending items appeared, loop
+      // back into claiming instead of falling through to finalise.
+      const counts = await countCollectionRunItemRowsByStatus(run.id);
+      if (counts.pending) continue;
+
+      await recomputeCollectionRunCounters(run.id);
+      // Conditional on the Run still being `running`: closes the same window from the other side
+      // — `retryFailedCollectionRunItems` could reopen this Run to `pending` between the count
+      // above and this write, and that reopen must not be clobbered back to a terminal status by a
+      // finaliser acting on a now-stale view of the Run.
+      await finishRunningCollectionRunRow(run.id, counts.cancelled ? 'cancelled' : 'completed');
+      break;
+    }
 
     const now = new Date().toISOString();
     await Promise.all(
@@ -131,8 +151,10 @@ async function executeCollectionRun(run: CollectionRunRow): Promise<void> {
   } catch (error) {
     // An error escaping here means the Run itself could not execute (e.g. a claim or counter
     // write throwing) — as opposed to a per-item failure, which `executeGroup` below already
-    // contains. This is the only path that ends a Run `failed`.
-    await finishCollectionRunRow(run.id, 'failed', getErrorMessage(error));
+    // contains. This is the only path that ends a Run `failed`, and only when the Run is still
+    // `running` — a Run already reopened by a retry, or already finalised by this same run loop on
+    // a previous pass, must not be clobbered.
+    await finishRunningCollectionRunRow(run.id, 'failed', getErrorMessage(error));
   }
 }
 
@@ -171,17 +193,32 @@ async function executeGroup(
       })
     );
   } catch (error) {
-    // `executePrompt` only throws when persistence itself fails — every item of this group fails
-    // with that message, and the Run carries on (a Run with failed items still ends `completed`).
-    const message = getErrorMessage(error);
-    await Promise.all(
-      items.map((item) =>
-        finishCollectionRunItemRow(item.id, { status: 'failed', error: message, attemptsUsed: 1 })
-      )
-    );
+    // `executePrompt` throwing usually means persistence itself failed — every item of this group
+    // fails with that message, and the Run carries on (a Run with failed items still ends
+    // `completed`). It can also mean the Prompt or Project was deleted mid-Run: the `ON DELETE
+    // CASCADE` FKs remove the item rows too, so `finishCollectionRunItemRow` below returns
+    // `undefined` for them instead of throwing (the work it would have recorded is moot, not a
+    // failure) — and this whole branch is wrapped so that failing to record a failure can never
+    // itself escape and be mistaken by the caller for the Run being unable to execute at all.
+    try {
+      const message = getErrorMessage(error);
+      await Promise.all(
+        items.map((item) =>
+          finishCollectionRunItemRow(item.id, { status: 'failed', error: message, attemptsUsed: 1 })
+        )
+      );
+    } catch (innerError) {
+      console.error('Collection Run group failure handling itself failed', innerError);
+    }
   } finally {
     // Counters are derived, never accumulated in memory, so they stay correct after a crash, a
-    // resume, or a retry with no reconciliation code.
-    await refreshCollectionRunCounters(run.id);
+    // resume, or a retry with no reconciliation code. Guarded for the same reason as the catch
+    // above — the Run's own Project could be gone by now too (its counters row is unaffected, but
+    // there is no reason to let this throw escape either).
+    try {
+      await recomputeCollectionRunCounters(run.id);
+    } catch (counterError) {
+      console.error('Collection Run counter recompute failed', counterError);
+    }
   }
 }
