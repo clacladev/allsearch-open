@@ -68,9 +68,10 @@ import {
 } from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from '../database/testHelpers';
 
-// Real temp SQLite, keyed on ALLSEARCH_DB_PATH (libs/database/client.ts) so this suite's
-// getDatabase() calls don't collide with tests/unit/database/settings.test.ts, the only other
-// suite allowed to call the memoised getDatabase() directly.
+// Real temp SQLite, keyed on ALLSEARCH_DB_PATH (libs/database/client.ts) so each suite that calls
+// getDatabase() directly (this file, tests/unit/database/settings.test.ts,
+// tests/unit/collection/collectionRun.test.ts, tests/unit/collection/collectionRunQueries.test.ts)
+// gets its own connection.
 let dbPath: string;
 let db: AllSearchDatabase;
 
@@ -85,11 +86,9 @@ afterAll(() => {
   delete process.env.ALLSEARCH_DB_PATH;
   closeDatabase(db);
   cleanupTempDbPath(dbPath);
-  // mock.module is process-wide in Bun and `mock.restore()` does NOT undo it — it only clears
-  // mock.fn call state, not the module registrations made by mock.module above. The AI-leaf mocks
-  // above stay registered for whatever file runs next in this process; that file's own top-level
-  // mock.module calls (the same pattern this file uses) are what actually take over.
-  mock.restore();
+  // mock.module is process-wide in Bun: the AI-leaf mocks above stay registered for whatever file
+  // runs next in this process; that file's own top-level mock.module calls (the same pattern this
+  // file uses) are what actually take over.
 });
 
 afterEach(async () => {
