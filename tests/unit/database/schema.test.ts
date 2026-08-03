@@ -75,7 +75,6 @@ describe('schema round trip', () => {
         chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
-        workflow_id: 'workflow-1',
         model_id: 'model-1',
         brand_ids_ranking: ['brand-1', 'brand-2'],
         sentiment: { 'brand-1': 2, 'brand-2': -1 },
@@ -192,7 +191,6 @@ describe('schema round trip', () => {
         chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
-        workflow_id: 'workflow-1',
         model_id: 'model-1',
       })
       .returning();

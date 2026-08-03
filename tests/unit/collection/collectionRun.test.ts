@@ -250,7 +250,6 @@ function makeFabricatedResponseInput(
     chatbot_id: chatbotId,
     prompt_id: promptId,
     project_id: projectId,
-    workflow_id: runId,
     model_id: 'fabricated-model',
     run_id: runId,
   };
@@ -285,7 +284,6 @@ describe('issue 10 Done-when 1 — N x M items created and completed', () => {
     const responses = await getResponsesForRun(run.id);
     expect(responses).toHaveLength(12);
     expect(responses.every((row) => row.run_id === run.id)).toBe(true);
-    expect(responses.every((row) => row.workflow_id === run.id)).toBe(true);
   });
 });
 
@@ -523,5 +521,29 @@ describe('issue 10 — paused and archived Projects', () => {
     // Zero items is a legitimate no-op, recorded as completed rather than left for the loop.
     expect(run.status).toBe('completed');
     expect(await getItemsForRun(run.id)).toHaveLength(0);
+  });
+
+  it('excludes paused and archived Projects from an all-Projects run, matching /api/process-prompts', async () => {
+    await setAllProviderKeys();
+
+    const normalProject = await createProject('AllRunNormal');
+    await createPrompts(normalProject.id, 2);
+
+    const pausedProject = await createProject('AllRunPaused');
+    await createPrompts(pausedProject.id, 2);
+    await db.update(projects).set({ is_paused: true }).where(eq(projects.id, pausedProject.id));
+
+    const archivedProject = await createProject('AllRunArchived');
+    await createPrompts(archivedProject.id, 2);
+    await db
+      .update(projects)
+      .set({ is_archived: true })
+      .where(eq(projects.id, archivedProject.id));
+
+    const run = await createCollectionRun();
+
+    const items = await getItemsForRun(run.id);
+    expect(items).toHaveLength(2 * ALL_CHATBOT_IDS.length);
+    expect(items.every((item) => item.project_id === normalProject.id)).toBe(true);
   });
 });
