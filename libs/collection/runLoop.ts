@@ -176,7 +176,6 @@ async function executeGroup(
       promptName: group.promptName,
       projectId: group.projectId,
       chatbotIds,
-      workflowId: run.id,
       runId: run.id,
     });
 

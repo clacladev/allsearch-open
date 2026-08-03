@@ -10,7 +10,7 @@ export type PromptToCollect = { id: string; name: string };
 export async function selectPromptsToCollect(
   projectId: string,
   targetDate: ISODateString,
-  options?: { maxPrompts?: number; shouldForce?: boolean }
+  options?: { shouldForce?: boolean }
 ): Promise<PromptToCollect[]> {
   const prompts = await getPromptRowsWithProjectId(projectId, false);
 
@@ -25,10 +25,6 @@ export async function selectPromptsToCollect(
     filteredPrompts = prompts.filter(
       (prompt) => !responses.some((response) => response.prompt_id === prompt.id)
     );
-  }
-
-  if (options?.maxPrompts) {
-    filteredPrompts = filteredPrompts.slice(0, options.maxPrompts);
   }
 
   return filteredPrompts.map((prompt) => ({

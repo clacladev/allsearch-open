@@ -1,5 +1,4 @@
 import { NextConfig } from 'next';
-import { withWorkflow } from 'workflow/next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -26,5 +25,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// TODO(issue 11): drops out with the Workflow DevKit runtime.
-export default withWorkflow(nextConfig);
+export default nextConfig;

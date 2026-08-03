@@ -171,7 +171,6 @@ export async function POST(
             chatbot_id: r.chatbot_id,
             prompt_id: promptIdMap[r.prompt_id] ?? r.prompt_id,
             project_id: newProject.id,
-            workflow_id: r.workflow_id,
             run_id: r.run_id,
             created_at: r.created_at,
           }))

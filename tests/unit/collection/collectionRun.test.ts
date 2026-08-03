@@ -63,8 +63,7 @@ mock.module('@/libs/ai/sentimentAnalysis', () => ({
 }));
 // Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
 // page is fetched. Mocked at the leaf module `libs/collection/analyseSources.ts`, which is what
-// `executePrompt.ts` calls and what the `'use step'` wrapper in `libs/utils/sourcesAnalysis.ts`
-// delegates to — so this covers both callers.
+// `executePrompt.ts` calls.
 mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: mockSources,
 }));
@@ -91,7 +90,7 @@ import {
 import { claimCollectionRunItemRowsForPrompt } from '@/libs/database/CollectionRunItems/queries';
 import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
-import { setProviderKey } from '@/libs/database/Settings/queries';
+import { setProviderKey, setStoredEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   collectionRunItems,
@@ -251,7 +250,6 @@ function makeFabricatedResponseInput(
     chatbot_id: chatbotId,
     prompt_id: promptId,
     project_id: projectId,
-    workflow_id: runId,
     model_id: 'fabricated-model',
     run_id: runId,
   };
@@ -286,7 +284,6 @@ describe('issue 10 Done-when 1 — N x M items created and completed', () => {
     const responses = await getResponsesForRun(run.id);
     expect(responses).toHaveLength(12);
     expect(responses.every((row) => row.run_id === run.id)).toBe(true);
-    expect(responses.every((row) => row.workflow_id === run.id)).toBe(true);
   });
 });
 
@@ -524,5 +521,140 @@ describe('issue 10 — paused and archived Projects', () => {
     // Zero items is a legitimate no-op, recorded as completed rather than left for the loop.
     expect(run.status).toBe('completed');
     expect(await getItemsForRun(run.id)).toHaveLength(0);
+  });
+
+  it('excludes paused and archived Projects from an all-Projects run, matching /api/process-prompts', async () => {
+    await setAllProviderKeys();
+
+    const normalProject = await createProject('AllRunNormal');
+    await createPrompts(normalProject.id, 2);
+
+    const pausedProject = await createProject('AllRunPaused');
+    await createPrompts(pausedProject.id, 2);
+    await db.update(projects).set({ is_paused: true }).where(eq(projects.id, pausedProject.id));
+
+    const archivedProject = await createProject('AllRunArchived');
+    await createPrompts(archivedProject.id, 2);
+    await db
+      .update(projects)
+      .set({ is_archived: true })
+      .where(eq(projects.id, archivedProject.id));
+
+    const run = await createCollectionRun();
+
+    const items = await getItemsForRun(run.id);
+    expect(items).toHaveLength(2 * ALL_CHATBOT_IDS.length);
+    expect(items.every((item) => item.project_id === normalProject.id)).toBe(true);
+  });
+});
+
+describe('issue 10/14 — zero-item Run still bumps prompts_updated_at', () => {
+  it('materialises zero items and still bumps prompts_updated_at when every Chatbot is off', async () => {
+    await setAllProviderKeys();
+    // A deliberate all-off selection (`[]`), distinct from a fresh install's `null` — see
+    // `getEffectiveEnabledChatbotIds`'s doc comment.
+    await setStoredEnabledChatbotIds([]);
+    const project = await createProject('AllChatbotsOff');
+    await createPrompts(project.id, 2);
+    expect(project.prompts_updated_at).toBeNull();
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.items_total).toBe(0);
+    expect(run.status).toBe('completed');
+    expect(await getItemsForRun(run.id)).toHaveLength(0);
+
+    const [updatedProject] = await db.select().from(projects).where(eq(projects.id, project.id));
+    expect(updatedProject.prompts_updated_at).toBeTruthy();
+  });
+
+  it('bumps prompts_updated_at for a Project that contributed zero items even when another Project in the same Run has work', async () => {
+    await setAllProviderKeys();
+
+    const projectWithWork = await createProject('MixedHasWork');
+    await createPrompts(projectWithWork.id, 1);
+
+    const projectAlreadyDone = await createProject('MixedAlreadyDone');
+    const [donePrompt] = await createPrompts(projectAlreadyDone.id, 1);
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: donePrompt.id,
+      project_id: projectAlreadyDone.id,
+      model_id: 'existing-model',
+    });
+
+    const run = await createCollectionRun({
+      projectIds: [projectWithWork.id, projectAlreadyDone.id],
+    });
+
+    expect(run.items_total).toBeGreaterThan(0);
+    expect(run.status).toBe('pending');
+
+    const [updatedWithWork] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectWithWork.id));
+    const [updatedAlreadyDone] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectAlreadyDone.id));
+
+    // The Project with work is bumped later by the loop's own `touchedProjectIds`, not at
+    // creation time — only the zero-item Project must already be bumped here.
+    expect(updatedWithWork.prompts_updated_at).toBeNull();
+    expect(updatedAlreadyDone.prompts_updated_at).toBeTruthy();
+
+    // Once the Run actually drains, `runLoop.ts`'s own `touchedProjectIds` bump (~lines 145-150)
+    // catches the Project that had work too.
+    await driveLoopToCompletion();
+    const [finishedWithWork] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectWithWork.id));
+    expect(finishedWithWork.prompts_updated_at).toBeTruthy();
+  });
+});
+
+describe('issue 10 — shouldForce re-collects Prompts that already have a Prompt Response today', () => {
+  it('skips a Prompt with an existing Prompt Response today when unforced, but materialises it when shouldForce is true', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('ForceCase');
+    const [prompt] = await createPrompts(project.id, 1);
+
+    // A Prompt Response already exists for today, from outside this Run (no run_id).
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: prompt.id,
+      project_id: project.id,
+      model_id: 'existing-model',
+    });
+
+    const unforcedRun = await createCollectionRun({ projectIds: [project.id] });
+    expect(unforcedRun.items_total).toBe(0);
+    expect(unforcedRun.status).toBe('completed');
+
+    const forcedRun = await createCollectionRun({ projectIds: [project.id], shouldForce: true });
+    expect(forcedRun.items_total).toBe(ALL_CHATBOT_IDS.length);
+    expect(await getItemsForRun(forcedRun.id)).toHaveLength(ALL_CHATBOT_IDS.length);
+  });
+});
+
+describe('issue 10 — partial enabled-Chatbot selection', () => {
+  it('materialises items only for the enabled subset of Chatbots, never the disabled one', async () => {
+    await setAllProviderKeys();
+    await setStoredEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.Perplexity]);
+    const project = await createProject('PartialChatbots');
+    await createPrompts(project.id, 1);
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.items_total).toBe(2);
+    const items = await getItemsForRun(run.id);
+    expect(items).toHaveLength(2);
+    expect(items.map((item) => item.chatbot_id).sort()).toEqual(
+      [ChatbotId.ChatGPT, ChatbotId.Perplexity].sort()
+    );
   });
 });

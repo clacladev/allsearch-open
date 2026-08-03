@@ -46,7 +46,6 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     '.vercel/**',
 
-    'app/.well-known/**',
     '.claude/**',
   ]),
 ]);

@@ -4,11 +4,8 @@ import { SourceItem } from '../database/Sources/types';
 import { getUrlAnalysis } from '../utils/urlAnalysis';
 import { getUrlCleanComponents } from '../utils/urls';
 
-/** The plain implementation `libs/utils/sourcesAnalysis.ts` delegates to (issue 10 risk 1's stated
- *  fallback) — moved here so `libs/collection/executePrompt.ts` can call it directly without
- *  going through a `'use step'` directive outside any workflow context. Nothing under
- *  `libs/collection/` carries a DevKit directive; `libs/utils/sourcesAnalysis.ts` keeps the
- *  directive as a thin wrapper for its other, still-DevKit-driven callers. */
+/** The only implementation of source analysis, called directly by
+ *  `libs/collection/executePrompt.ts`. */
 export async function analysePromptResponseSources(
   uniqueSources: SourceItem[],
   project: ProjectRow,

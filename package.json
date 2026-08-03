@@ -61,7 +61,6 @@
     "tailwindcss-react-aria-components": "^2.1.0",
     "undici": "^7.25.0",
     "use-debounce": "^10.1.1",
-    "workflow": "^4.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {

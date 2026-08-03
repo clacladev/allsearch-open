@@ -79,9 +79,6 @@ export const ROUTES = {
       COMPETITORS: '/api/project/:projectId/competitors',
       SOURCES: '/api/project/:projectId/sources',
       PROCESS_PROMPTS: '/api/process-prompts/:projectId',
-      UPDATE_SOURCES_ANALYSIS:
-        '/api/project/:projectId/update-last-day-of-prompt-responses-analysis',
-      FETCH_NEW_PROMPT_RESPONSES: '/api/project/:projectId/fetch-new-prompt-responses',
       PROMPT_ARTICLES: '/api/project/:projectId/prompts/:promptId/prompt-articles',
       PROMPT_ARTICLE:
         '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId',
@@ -308,10 +305,6 @@ export const RouteHelper = {
       getProcessPrompts: (projectId: string, shouldForce?: boolean) =>
         ROUTES.API.PROJECT.PROCESS_PROMPTS.replace(':projectId', projectId) +
         getUrlParamsString({ shouldForce: shouldForce ? 'true' : undefined }),
-      getUpdateSourcesAnalysis: (projectId: string) =>
-        ROUTES.API.PROJECT.UPDATE_SOURCES_ANALYSIS.replace(':projectId', projectId),
-      getFetchNewPromptResponses: (projectId: string) =>
-        ROUTES.API.PROJECT.FETCH_NEW_PROMPT_RESPONSES.replace(':projectId', projectId),
       getPromptArticles: (projectId: string, promptId: string) =>
         ROUTES.API.PROJECT.PROMPT_ARTICLES.replace(':projectId', projectId).replace(
           ':promptId',

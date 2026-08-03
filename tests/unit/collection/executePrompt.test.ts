@@ -2,13 +2,6 @@ import { mock } from 'bun:test';
 
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 
-// A shared, mutable stub for the effective enabled set (issue 09's gate), used only by the case
-// that omits an explicit `chatbotIds` list.
-let effectiveEnabledChatbotIds: ChatbotId[] = [];
-mock.module('@/libs/database/Settings/queries', () => ({
-  getEffectiveEnabledChatbotIds: async () => effectiveEnabledChatbotIds,
-}));
-
 const PROJECT = {
   id: 'project-1',
   created_at: '2026-01-01T00:00:00.000Z',
@@ -24,22 +17,37 @@ const PROJECT = {
   target_location: null,
 };
 
+const actualProjectQueries = await import('@/libs/database/Projects/queries');
+// Snapshotted into its own binding rather than read off `actualProjectQueries` lazily below: Bun's
+// mock.module mutates the module namespace object in place, so a closure that reads
+// `actualProjectQueries.getProjectRowWithId` at call time (after the mock.module call below has
+// already overwritten that property) would recurse into itself infinitely.
+const realGetProjectRowWithId = actualProjectQueries.getProjectRowWithId;
 mock.module('@/libs/database/Projects/queries', () => ({
-  getProjectRowWithId: async () => PROJECT,
+  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
+  // export namespace, so a stub exporting only `getProjectRowWithId` would make `getProjectRows`
+  // and `updateProjectRow` cease to exist for any other module linked against this one for the
+  // rest of the test process. `getProjectRowWithId` only short-circuits for this file's own fixture
+  // id — any other id (including one this mock leaks in front of, e.g. a real project id from a
+  // DB-backed suite that loads after this one) falls through to the real, DB-backed function
+  // instead of a blanket `undefined`, so a leaked registration cannot make a real Project look like
+  // it doesn't exist.
+  ...actualProjectQueries,
+  getProjectRowWithId: async (id: string) =>
+    id === PROJECT.id ? PROJECT : realGetProjectRowWithId(id),
 }));
 mock.module('@/libs/database/Competitors/queries', () => ({
   getActiveCompetitorRowsWithProjectId: async () => [],
 }));
 
 // Records every row `storePromptResponses` (a private function in the module under test) attempts
-// to insert, so tests can assert brand_ids_ranking/sentiment/run_id/workflow_id stayed positionally
+// to insert, so tests can assert brand_ids_ranking/sentiment/run_id stayed positionally
 // aligned to the response each row came from.
 let insertedRows: Array<{
   text: string;
   brand_ids_ranking: string[];
   sentiment: unknown;
   run_id: string | null;
-  workflow_id: string;
 }> = [];
 mock.module('@/libs/database/PromptResponses/queries', () => ({
   insertPromptResponseRows: mock(async (inputs: any[]) => {
@@ -94,12 +102,14 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
 
+// mock.module is process-wide in Bun: the mocks above stay registered for the rest of the test
+// process, deliberately not reversed.
+
 beforeEach(() => {
   // `providerCooldown` is a module-level singleton shared by every caller of `callAiWithRetry` in
   // the test process; a cooldown left open by another suite (e.g. tests/unit/collection/callAi.test.ts)
   // would otherwise make this file's real, uninjected `sleep` wait it out.
   clearProviderCooldowns();
-  effectiveEnabledChatbotIds = [];
   insertedRows = [];
   mockChatGPT.mockClear();
   mockGoogleAIMode.mockClear();
@@ -116,7 +126,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -148,7 +158,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -164,7 +174,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     const googleOutcome = outcomes.find(
@@ -187,18 +197,16 @@ describe('executePrompt', () => {
     expect(insertedRows.some((row) => row.text === 'perplexity response text')).toBe(true);
   });
 
-  it('carries the run id into both run_id and workflow_id when runId is passed', async () => {
+  it('carries the run id into run_id', async () => {
     await executePrompt({
       promptId: 'prompt-1',
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
-      workflowId: 'run-1',
       runId: 'run-1',
     });
 
     expect(insertedRows).toHaveLength(1);
     expect(insertedRows[0].run_id).toBe('run-1');
-    expect(insertedRows[0].workflow_id).toBe('run-1');
   });
 });

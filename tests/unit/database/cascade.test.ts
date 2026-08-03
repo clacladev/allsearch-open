@@ -59,7 +59,6 @@ describe('cascade delete', () => {
         chatbot_id: ChatbotId.ChatGPT,
         prompt_id: prompt.id,
         project_id: project.id,
-        workflow_id: 'workflow-1',
         model_id: 'model-1',
       })
       .returning();
