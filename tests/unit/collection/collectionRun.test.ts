@@ -567,6 +567,44 @@ describe('issue 10/14 — zero-item Run still bumps prompts_updated_at', () => {
     const [updatedProject] = await db.select().from(projects).where(eq(projects.id, project.id));
     expect(updatedProject.prompts_updated_at).toBeTruthy();
   });
+
+  it('bumps prompts_updated_at for a Project that contributed zero items even when another Project in the same Run has work', async () => {
+    await setAllProviderKeys();
+
+    const projectWithWork = await createProject('MixedHasWork');
+    await createPrompts(projectWithWork.id, 1);
+
+    const projectAlreadyDone = await createProject('MixedAlreadyDone');
+    const [donePrompt] = await createPrompts(projectAlreadyDone.id, 1);
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: donePrompt.id,
+      project_id: projectAlreadyDone.id,
+      model_id: 'existing-model',
+    });
+
+    const run = await createCollectionRun({
+      projectIds: [projectWithWork.id, projectAlreadyDone.id],
+    });
+
+    expect(run.items_total).toBeGreaterThan(0);
+    expect(run.status).toBe('pending');
+
+    const [updatedWithWork] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectWithWork.id));
+    const [updatedAlreadyDone] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectAlreadyDone.id));
+
+    // The Project with work is bumped later by the loop's own `touchedProjectIds`, not at
+    // creation time — only the zero-item Project must already be bumped here.
+    expect(updatedWithWork.prompts_updated_at).toBeNull();
+    expect(updatedAlreadyDone.prompts_updated_at).toBeTruthy();
+  });
 });
 
 describe('issue 10 — shouldForce re-collects Prompts that already have a Prompt Response today', () => {
@@ -591,5 +629,23 @@ describe('issue 10 — shouldForce re-collects Prompts that already have a Promp
     const forcedRun = await createCollectionRun({ projectIds: [project.id], shouldForce: true });
     expect(forcedRun.items_total).toBe(ALL_CHATBOT_IDS.length);
     expect(await getItemsForRun(forcedRun.id)).toHaveLength(ALL_CHATBOT_IDS.length);
+  });
+});
+
+describe('issue 10 — partial enabled-Chatbot selection', () => {
+  it('materialises items only for the enabled subset of Chatbots, never the disabled one', async () => {
+    await setAllProviderKeys();
+    await setStoredEnabledChatbotIds([ChatbotId.ChatGPT, ChatbotId.Perplexity]);
+    const project = await createProject('PartialChatbots');
+    await createPrompts(project.id, 1);
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.items_total).toBe(2);
+    const items = await getItemsForRun(run.id);
+    expect(items).toHaveLength(2);
+    expect(items.map((item) => item.chatbot_id).sort()).toEqual(
+      [ChatbotId.ChatGPT, ChatbotId.Perplexity].sort()
+    );
   });
 });

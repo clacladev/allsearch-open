@@ -1,14 +1,52 @@
 import { mock } from 'bun:test';
 
-// This suite's subject is the routes' wiring — which engine call they make and what they
-// return. Prompt selection is not part of that, and tests/unit/collection/collectionRun.test.ts
-// already exercises it for real. Declare it explicitly rather than inheriting whatever
-// `Prompts/queries` mock happens to be live: Bun's `mock.module` is process-wide, and other
-// suites replace this module without restoring it. Returning no Prompts means each run
-// materialises zero items, finalises `completed` immediately, and no AI call is ever made — this
-// is what keeps the suite free of provider spend.
-mock.module('@/libs/database/Prompts/queries', () => ({
-  getPromptRowsWithProjectId: async () => [],
+// This suite drives real POST requests against a real, migrated temp SQLite database (set up
+// below) rather than stubbing `@/libs/collection` (the engine barrel). Bun's `mock.module` is
+// process-wide and `mock.restore()` does NOT undo it (verified against Bun 1.3.14) — stubbing the
+// barrel here would leak `createCollectionRun`/`ensureCollectionRunLoopIsRunning` fakes into every
+// suite that imports the real engine for the rest of the test process (e.g.
+// tests/unit/collection/collectionRun.test.ts). Only the AI-provider leaf modules are faked below,
+// per the harness tests/unit/collection/collectionRun.test.ts and
+// tests/unit/collection/executePrompt.test.ts also use, so this suite's real, DB-backed Runs can
+// actually be driven to completion by the real Collection Run loop with no AI call ever made and
+// no provider spend.
+const mockChatGPT = mock(async () => ({
+  response: { modelId: 'chatgpt-model' },
+  text: 'chatgpt response',
+  sources: [],
+  toolResults: [],
+}));
+const mockGoogleAIMode = mock(async () => ({
+  response: { modelId: 'google-model' },
+  text: 'google response',
+  sources: [],
+  toolResults: [],
+}));
+const mockPerplexity = mock(async () => ({
+  response: { modelId: 'perplexity-model' },
+  text: 'perplexity response',
+  sources: [],
+  toolResults: [],
+}));
+const mockSentiment = mock(async () => ({}));
+const mockSources = mock(async () => []);
+
+mock.module('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
+  getPromptResponseWithChatGPT: mockChatGPT,
+}));
+mock.module('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
+  getPromptResponseWithGoogleAIMode: mockGoogleAIMode,
+}));
+mock.module('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
+  getPromptResponseWithPerplexity: mockPerplexity,
+}));
+mock.module('@/libs/ai/sentimentAnalysis', () => ({
+  analyzeResponseSentiment: mockSentiment,
+}));
+// Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
+// page is fetched.
+mock.module('@/libs/collection/analyseSources', () => ({
+  analysePromptResponseSources: mockSources,
 }));
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
@@ -17,7 +55,17 @@ import { POST as postOneProject } from '@/app/api/process-prompts/[projectId]/ro
 import { POST as postAllProjects } from '@/app/api/process-prompts/route';
 import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
-import { collectionRuns, projects } from '@/libs/database/schema';
+import { waitForCollectionRunLoop } from '@/libs/collection/runLoop';
+import { ChatbotId } from '@/libs/database/shared/ChatbotId';
+import {
+  collectionRunItems,
+  collectionRuns,
+  projects,
+  promptResponses,
+  prompts,
+  settings,
+  topics,
+} from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from '../database/testHelpers';
 
 // Real temp SQLite, keyed on ALLSEARCH_DB_PATH (libs/database/client.ts) so this suite's
@@ -37,11 +85,22 @@ afterAll(() => {
   delete process.env.ALLSEARCH_DB_PATH;
   closeDatabase(db);
   cleanupTempDbPath(dbPath);
+  // mock.module is process-wide in Bun and `mock.restore()` does NOT undo it — it only clears
+  // mock.fn call state, not the module registrations made by mock.module above. The AI-leaf mocks
+  // above stay registered for whatever file runs next in this process; that file's own top-level
+  // mock.module calls (the same pattern this file uses) are what actually take over.
+  mock.restore();
 });
 
 afterEach(async () => {
   await db.delete(projects);
   await db.delete(collectionRuns);
+  await db.delete(settings);
+  mockChatGPT.mockClear();
+  mockGoogleAIMode.mockClear();
+  mockPerplexity.mockClear();
+  mockSentiment.mockClear();
+  mockSources.mockClear();
 });
 
 function makeRequest(url: string) {
@@ -54,17 +113,53 @@ function makeParams(projectId: string) {
   return { params: Promise.resolve({ projectId }) };
 }
 
-describe('POST /api/process-prompts/[projectId]', () => {
-  it('returns 200 with a runId resolving to a real collection_runs row', async () => {
-    const [project] = await db
-      .insert(projects)
-      .values({ url: 'https://example.com', name: 'Example', aliases: [] })
-      .returning();
+// Writes provider keys straight to the `settings` table, bypassing `@/libs/database/Settings/queries`'s
+// `setProviderKey` entirely: that module is a magnet for other suites' `mock.module` calls (e.g.
+// tests/unit/api/settings-provider-keys-route.test.ts replaces the whole module and never restores
+// it — Bun's `mock.module` is process-wide, per finding 2/the harness note above), and this file
+// must not gamble on which of those happens to still be live when it runs.
+async function setAllProviderKeys() {
+  const validatedAt = new Date().toISOString();
+  await db.insert(settings).values({
+    id: 'singleton',
+    provider_keys: {
+      openai: { key: 'sk-test-openai', status: 'valid', validatedAt },
+      google: { key: 'sk-test-google', status: 'valid', validatedAt },
+      perplexity: { key: 'sk-test-perplexity', status: 'valid', validatedAt },
+    },
+  });
+}
 
-    // No topics/prompts for this project, so `createCollectionRun` materialises zero items and
-    // finalises the run `completed` immediately — this test is about the route's wiring (which
-    // engine call it makes and what it returns), not the worker loop itself, which
-    // tests/unit/collection/collectionRun.test.ts already covers end to end.
+async function createProjectWithPrompt(name: string) {
+  const [project] = await db
+    .insert(projects)
+    .values({ url: `https://${name.toLowerCase()}.example.com`, name, aliases: [] })
+    .returning();
+  const [topic] = await db
+    .insert(topics)
+    .values({ name: 'Topic', project_id: project.id })
+    .returning();
+  const [prompt] = await db
+    .insert(prompts)
+    .values({ name: 'Prompt', topic_id: topic.id, project_id: project.id })
+    .returning();
+  return { project, prompt };
+}
+
+async function getItemsForRun(runId: string) {
+  return db.select().from(collectionRunItems).where(eq(collectionRunItems.run_id, runId));
+}
+
+async function getRun(runId: string) {
+  const [row] = await db.select().from(collectionRuns).where(eq(collectionRuns.id, runId));
+  return row;
+}
+
+describe('POST /api/process-prompts/[projectId]', () => {
+  it('returns 200 with a runId whose materialised items are pinned to the requested Project, and the loop drives the Run to completed', async () => {
+    await setAllProviderKeys();
+    const { project } = await createProjectWithPrompt('Example');
+
     const res = await postOneProject(
       makeRequest(`http://localhost/api/process-prompts/${project.id}`) as never,
       makeParams(project.id)
@@ -74,12 +169,18 @@ describe('POST /api/process-prompts/[projectId]', () => {
     const body = await res.json();
     expect(body.runId).toBeTruthy();
 
-    const [runRow] = await db
-      .select()
-      .from(collectionRuns)
-      .where(eq(collectionRuns.id, body.runId));
-    expect(runRow).toBeDefined();
-    expect(runRow?.id).toBe(body.runId);
+    const items = await getItemsForRun(body.runId);
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((item) => item.project_id === project.id)).toBe(true);
+
+    // Proves the route actually calls `ensureCollectionRunLoopIsRunning()`: nothing else in this
+    // test drives the loop, so if that call were removed the Run would sit `pending` forever and
+    // the assertions below would fail.
+    await waitForCollectionRunLoop();
+    const run = await getRun(body.runId);
+    expect(run?.status).toBe('completed');
+    const finishedItems = await getItemsForRun(body.runId);
+    expect(finishedItems.every((item) => item.status === 'completed')).toBe(true);
   });
 
   it('returns 400 when projectId is missing', async () => {
@@ -93,11 +194,9 @@ describe('POST /api/process-prompts/[projectId]', () => {
 });
 
 describe('POST /api/process-prompts', () => {
-  it('returns 200 with a runId resolving to a real collection_runs row', async () => {
-    await db
-      .insert(projects)
-      .values({ url: 'https://example.com', name: 'Example', aliases: [] })
-      .returning();
+  it('returns 200 with a runId whose materialised items are pinned to the resolved Project, and the loop drives the Run to completed', async () => {
+    await setAllProviderKeys();
+    const { project } = await createProjectWithPrompt('Example');
 
     const res = await postAllProjects();
 
@@ -105,53 +204,48 @@ describe('POST /api/process-prompts', () => {
     const body = await res.json();
     expect(body.runId).toBeTruthy();
 
-    const [runRow] = await db
-      .select()
-      .from(collectionRuns)
-      .where(eq(collectionRuns.id, body.runId));
-    expect(runRow).toBeDefined();
-    expect(runRow?.id).toBe(body.runId);
+    const items = await getItemsForRun(body.runId);
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((item) => item.project_id === project.id)).toBe(true);
+
+    await waitForCollectionRunLoop();
+    const run = await getRun(body.runId);
+    expect(run?.status).toBe('completed');
   });
 });
 
-describe('POST /api/process-prompts/[projectId] — shouldForce wiring', () => {
-  it('passes shouldForce through to createCollectionRun as a boolean, true only for ?shouldForce=true', async () => {
-    // Stubs `@/libs/collection` itself (rather than the DB-backed Prompts mock the rest of this
-    // file uses) so this test can assert exactly what `createCollectionRun` was called with,
-    // instead of only what the route returns — the DB-backed assertions above can't tell forced
-    // apart from unforced. Placed last in this file and never restored mid-file, so nothing else
-    // here depends on the real `@/libs/collection`; the trailing `mock.restore()` below still
-    // cleans this up before the next test file runs.
-    const calls: unknown[] = [];
-    mock.module('@/libs/collection', () => ({
-      createCollectionRun: mock(async (input: unknown) => {
-        calls.push(input);
-        return { id: 'fake-run-id' };
-      }),
-      ensureCollectionRunLoopIsRunning: mock(() => {}),
-    }));
+describe('POST /api/process-prompts/[projectId] — shouldForce semantics', () => {
+  it('materialises zero items when unforced and an existing Prompt Response already covers today, but the full set when shouldForce is true', async () => {
+    await setAllProviderKeys();
+    const { project, prompt } = await createProjectWithPrompt('ForceCase');
 
-    const forcedRes = await postOneProject(
-      makeRequest('http://localhost/api/process-prompts/project-1?shouldForce=true') as never,
-      makeParams('project-1')
-    );
-    expect(forcedRes.status).toBe(200);
+    // A Prompt Response already exists for today, from outside this Run (no run_id).
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: prompt.id,
+      project_id: project.id,
+      model_id: 'existing-model',
+    });
 
     const unforcedRes = await postOneProject(
-      makeRequest('http://localhost/api/process-prompts/project-1') as never,
-      makeParams('project-1')
+      makeRequest(`http://localhost/api/process-prompts/${project.id}`) as never,
+      makeParams(project.id)
     );
     expect(unforcedRes.status).toBe(200);
+    const unforcedBody = await unforcedRes.json();
+    expect(await getItemsForRun(unforcedBody.runId)).toHaveLength(0);
+    await waitForCollectionRunLoop();
 
-    expect(calls).toEqual([
-      { projectIds: ['project-1'], shouldForce: true },
-      { projectIds: ['project-1'], shouldForce: false },
-    ]);
+    const forcedRes = await postOneProject(
+      makeRequest(`http://localhost/api/process-prompts/${project.id}?shouldForce=true`) as never,
+      makeParams(project.id)
+    );
+    expect(forcedRes.status).toBe(200);
+    const forcedBody = await forcedRes.json();
+    const forcedItems = await getItemsForRun(forcedBody.runId);
+    expect(forcedItems).toHaveLength(3);
+    expect(forcedItems.every((item) => item.project_id === project.id)).toBe(true);
+    await waitForCollectionRunLoop();
   });
-});
-
-// `mock.module` is process-wide in Bun and does not undo itself when this file finishes — restore
-// it so the real modules are visible to whatever test file runs next.
-afterAll(() => {
-  mock.restore();
 });
