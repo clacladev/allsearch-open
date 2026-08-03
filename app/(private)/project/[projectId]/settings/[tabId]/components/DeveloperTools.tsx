@@ -21,7 +21,8 @@ export default function DeveloperTools() {
     startUpdateTransition(async () => {
       try {
         const { runId } = await appFetch<{ runId: string }>(
-          RouteHelper.Api.Project.getProcessPrompts(currentProject.id, true)
+          RouteHelper.Api.Project.getProcessPrompts(currentProject.id, true),
+          { method: 'POST' }
         );
         setRunId(runId);
         showSuccessAlertToast(

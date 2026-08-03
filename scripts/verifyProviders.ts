@@ -6,7 +6,7 @@
  * with a fixed brand-style prompt, plus one direct Gemini structured-output
  * call. Reports the CITED source count (`response.sources`) and the
  * USED-BUT-NOT-CITED count (the `web_search` `toolResults` path — see
- * libs/workflows/shared/responseSources.ts) SEPARATELY, because a silent drop
+ * libs/ai/responseSources.ts) SEPARATELY, because a silent drop
  * of the latter degrades AllSearch "Opportunities" while everything else
  * still looks fine.
  *
@@ -25,7 +25,7 @@ import { GenerateTextResult } from 'ai';
 import { getPromptResponseWithChatGPT } from '../libs/ai/projectPrompt/getPromptResponseWithChatGPT';
 import { getPromptResponseWithGoogleAIMode } from '../libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode';
 import { getPromptResponseWithPerplexity } from '../libs/ai/projectPrompt/getPromptResponseWithPerplexity';
-import { getSourcesFromResponse } from '../libs/workflows/shared/responseSources';
+import { getSourcesFromResponse } from '../libs/ai/responseSources';
 import { analyzeResponseSentiment } from '../libs/ai/sentimentAnalysis';
 import { getProviderKey, MissingProviderKeyError, ProviderId } from '../libs/ai/models';
 import { parseTargetLocation } from '../libs/ai/userLocation';
@@ -109,7 +109,7 @@ async function verifyChatbot(
       };
     }
     // ChatGPT-only: Google and Perplexity have no used-but-not-cited path at
-    // all (see libs/workflows/shared/responseSources.ts), so this check would
+    // all (see libs/ai/responseSources.ts), so this check would
     // always fail for them.
     if (options.requireUsedNotCited && usedNotCitedCount === 0) {
       return {

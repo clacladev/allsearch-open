@@ -22,5 +22,5 @@ export const CompetitorSchema = z.object({
 
 export type SaveNewProjectResponse = {
   projectId: string;
-  workflowId: string;
+  runId: string;
 };

@@ -48,7 +48,7 @@ const MOCK_COMPETITORS = [
 
 const MOCK_SAVE_RESPONSE = {
   projectId: MOCK_PROJECT_ID,
-  workflowId: 'mock-workflow-id-12345',
+  runId: 'mock-run-id-12345',
 };
 
 const MOCK_REPORT_DATA = {

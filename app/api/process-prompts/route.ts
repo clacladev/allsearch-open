@@ -1,17 +1,17 @@
-import { fetchDailyPromptsWorkflow } from '@/libs/workflows/fetchDailyPrompts';
-import { start } from 'workflow/api';
-import { getTodayISODateString } from '@/libs/database/shared/ISODateString';
+import { NextResponse } from 'next/server';
+import { createCollectionRun, ensureCollectionRunLoopIsRunning } from '@/libs/collection';
 
-export async function GET(req: Request) {
-  if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response('Unauthorized', { status: 401 });
+export async function POST() {
+  try {
+    const run = await createCollectionRun();
+    ensureCollectionRunLoopIsRunning();
+
+    return Response.json({ message: 'Collection Run started', runId: run.id });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : error },
+      { status: 500 }
+    );
   }
-
-  const today = getTodayISODateString();
-  const run = await start(fetchDailyPromptsWorkflow, [today]);
-
-  return Response.json({
-    message: `Workflow 'fetchDailyPromptsWorkflow' started`,
-    runId: run.runId,
-  });
 }

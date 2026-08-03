@@ -8,9 +8,7 @@ import { insertTopicRows } from '@/libs/database/Topics/queries';
 import { getTopicsMapFromIds, getPromptsMapFromTopicRows } from './helpers';
 import { insertPromptRows } from '@/libs/database/Prompts/queries';
 import { insertCompetitorRows } from '@/libs/database/Competitors/queries';
-import { start } from 'workflow/api';
-import { fetchDailyPromptsForProjectWorkflow } from '@/libs/workflows/fetchDailyPromptsForProject';
-import { getTodayISODateString } from '@/libs/database/shared/ISODateString';
+import { createCollectionRun, ensureCollectionRunLoopIsRunning } from '@/libs/collection';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
 export async function POST(req: NextRequest) {
@@ -74,12 +72,12 @@ export async function POST(req: NextRequest) {
     const competitorRows = await insertCompetitorRows(competitorInputs);
     if (!competitorRows.length) throw new Error('Failed to save competitors');
 
-    // Start the prompt requests workflow
-    const today = getTodayISODateString();
-    const run = await start(fetchDailyPromptsForProjectWorkflow, [projectRow.id, today]);
+    // Start the Collection Run
+    const run = await createCollectionRun({ projectIds: [projectRow.id] });
+    ensureCollectionRunLoopIsRunning();
 
     // Return response
-    const response: SaveNewProjectResponse = { projectId: projectRow.id, workflowId: run.runId };
+    const response: SaveNewProjectResponse = { projectId: projectRow.id, runId: run.id };
     return NextResponse.json(response);
   } catch (error) {
     console.error(error);

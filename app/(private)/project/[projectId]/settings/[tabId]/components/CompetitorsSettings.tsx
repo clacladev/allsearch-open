@@ -17,7 +17,6 @@ import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts'
 import { isDuplicateName, isDuplicateUrl } from './helpers';
 import { appFetch } from '@/hooks/appFetch';
 import { isValidUrl } from '@/libs/utils/urls';
-import UpdateSourcesAnalisysAlert from './UpdateSourcesAnalisys';
 
 export default function CompetitorsSettings() {
   const {
@@ -38,7 +37,6 @@ export default function CompetitorsSettings() {
   const [isRestoring, startRestoringTransition] = useTransition();
   const [restoringCompetitorId, setRestoringCompetitorId] = useState<string>();
   const [shouldShowArchived, setShouldShowArchived] = useState(false);
-  const [shouldShowUpdateSourcesAnalysis, setShouldShowUpdateSourcesAnalysis] = useState(false);
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
   const [savedCompetitorId, setSavedCompetitorId] = useState<string>();
 
@@ -145,8 +143,6 @@ export default function CompetitorsSettings() {
       return;
     }
 
-    setShouldShowUpdateSourcesAnalysis(false);
-
     startAddingTransition(async () => {
       try {
         const newCompetitor = await appFetch<CompetitorRow>(
@@ -166,7 +162,6 @@ export default function CompetitorsSettings() {
         setCustomUrl('');
         setCustomName('');
         setCustomIconUrl('');
-        setShouldShowUpdateSourcesAnalysis(true);
         showSuccessAlertToast('Competitor added', 'The competitor has been added');
       } catch (error) {
         console.error(error);
@@ -402,10 +397,6 @@ export default function CompetitorsSettings() {
           </>
         )}
       </Form>
-
-      {shouldShowUpdateSourcesAnalysis && (
-        <UpdateSourcesAnalisysAlert onClose={() => setShouldShowUpdateSourcesAnalysis(false)} />
-      )}
     </div>
   );
 }

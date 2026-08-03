@@ -13,9 +13,6 @@ bun dev
 
 # Start supabase local
 supabase start
-
-# Monitor local workflow
-npx workflow web
 ```
 
 ## Starting the app

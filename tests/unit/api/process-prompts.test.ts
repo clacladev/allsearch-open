@@ -1,60 +1,121 @@
 import { mock } from 'bun:test';
 
-// Mock external dependencies before importing the route
-mock.module('server-only', () => ({}));
-mock.module('workflow/api', () => ({
-  start: async () => ({ runId: 'mock-run-id-123' }),
+// This suite's subject is the routes' wiring — which engine call they make and what they
+// return. Prompt selection is not part of that, and tests/unit/collection/collectionRun.test.ts
+// already exercises it for real. Declare it explicitly rather than inheriting whatever
+// `Prompts/queries` mock happens to be live: Bun's `mock.module` is process-wide, and other
+// suites replace this module without restoring it. Returning no Prompts means each run
+// materialises zero items, finalises `completed` immediately, and no AI call is ever made — this
+// is what keeps the suite free of provider spend.
+mock.module('@/libs/database/Prompts/queries', () => ({
+  getPromptRowsWithProjectId: async () => [],
 }));
-mock.module('@/libs/workflows/fetchDailyPrompts', () => ({
-  fetchDailyPromptsWorkflow: 'mock-daily-prompts-workflow',
-}));
 
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
-import { GET } from '@/app/api/process-prompts/route';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
+import { eq } from 'drizzle-orm';
+import { POST as postOneProject } from '@/app/api/process-prompts/[projectId]/route';
+import { POST as postAllProjects } from '@/app/api/process-prompts/route';
+import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
+import { migrateDatabase } from '@/libs/database/migrate';
+import { collectionRuns, projects } from '@/libs/database/schema';
+import { cleanupTempDbPath, closeDatabase, createTempDbPath } from '../database/testHelpers';
 
-const CRON_SECRET = 'super-secret-cron-token';
+// Real temp SQLite, keyed on ALLSEARCH_DB_PATH (libs/database/client.ts) so this suite's
+// getDatabase() calls don't collide with tests/unit/database/settings.test.ts, the only other
+// suite allowed to call the memoised getDatabase() directly.
+let dbPath: string;
+let db: AllSearchDatabase;
 
-describe('GET /api/process-prompts — CRON_SECRET auth gate', () => {
-  beforeAll(() => {
-    process.env.CRON_SECRET = CRON_SECRET;
-  });
+beforeAll(async () => {
+  dbPath = createTempDbPath('processPromptsRoute');
+  process.env.ALLSEARCH_DB_PATH = dbPath;
+  db = await getDatabase();
+  await migrateDatabase(db, dbPath);
+});
 
-  afterAll(() => {
-    delete process.env.CRON_SECRET;
-  });
+afterAll(() => {
+  delete process.env.ALLSEARCH_DB_PATH;
+  closeDatabase(db);
+  cleanupTempDbPath(dbPath);
+});
 
-  it('returns 401 when Authorization header is missing', async () => {
-    const req = new Request('http://localhost/api/process-prompts');
-    const res = await GET(req);
-    expect(res.status).toBe(401);
-    expect(await res.text()).toBe('Unauthorized');
-  });
+afterEach(async () => {
+  await db.delete(projects);
+  await db.delete(collectionRuns);
+});
 
-  it('returns 401 when Authorization header has the wrong token', async () => {
-    const req = new Request('http://localhost/api/process-prompts', {
-      headers: { Authorization: 'Bearer wrong-token' },
-    });
-    const res = await GET(req);
-    expect(res.status).toBe(401);
-    expect(await res.text()).toBe('Unauthorized');
-  });
+function makeRequest(url: string) {
+  const req = new Request(url, { method: 'POST' });
+  Object.defineProperty(req, 'nextUrl', { value: new URL(url) });
+  return req;
+}
 
-  it('returns 401 when Authorization header is malformed (no Bearer prefix)', async () => {
-    const req = new Request('http://localhost/api/process-prompts', {
-      headers: { Authorization: CRON_SECRET }, // missing "Bearer "
-    });
-    const res = await GET(req);
-    expect(res.status).toBe(401);
-  });
+function makeParams(projectId: string) {
+  return { params: Promise.resolve({ projectId }) };
+}
 
-  it('returns 200 with a runId when the correct CRON_SECRET is provided', async () => {
-    const req = new Request('http://localhost/api/process-prompts', {
-      headers: { Authorization: `Bearer ${CRON_SECRET}` },
-    });
-    const res = await GET(req);
+describe('POST /api/process-prompts/[projectId]', () => {
+  it('returns 200 with a runId resolving to a real collection_runs row', async () => {
+    const [project] = await db
+      .insert(projects)
+      .values({ url: 'https://example.com', name: 'Example', aliases: [] })
+      .returning();
+
+    // No topics/prompts for this project, so `createCollectionRun` materialises zero items and
+    // finalises the run `completed` immediately — this test is about the route's wiring (which
+    // engine call it makes and what it returns), not the worker loop itself, which
+    // tests/unit/collection/collectionRun.test.ts already covers end to end.
+    const res = await postOneProject(
+      makeRequest(`http://localhost/api/process-prompts/${project.id}`) as never,
+      makeParams(project.id)
+    );
+
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.runId).toBe('mock-run-id-123');
-    expect(body.message).toContain('fetchDailyPromptsWorkflow');
+    expect(body.runId).toBeTruthy();
+
+    const [runRow] = await db
+      .select()
+      .from(collectionRuns)
+      .where(eq(collectionRuns.id, body.runId));
+    expect(runRow).toBeDefined();
+    expect(runRow?.id).toBe(body.runId);
   });
+
+  it('returns 400 when projectId is missing', async () => {
+    const res = await postOneProject(
+      makeRequest('http://localhost/api/process-prompts/') as never,
+      makeParams('')
+    );
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/process-prompts', () => {
+  it('returns 200 with a runId resolving to a real collection_runs row', async () => {
+    await db
+      .insert(projects)
+      .values({ url: 'https://example.com', name: 'Example', aliases: [] })
+      .returning();
+
+    const res = await postAllProjects();
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.runId).toBeTruthy();
+
+    const [runRow] = await db
+      .select()
+      .from(collectionRuns)
+      .where(eq(collectionRuns.id, body.runId));
+    expect(runRow).toBeDefined();
+    expect(runRow?.id).toBe(body.runId);
+  });
+});
+
+// `mock.module` is process-wide in Bun and does not undo itself when this file finishes — restore
+// it so the real modules are visible to whatever test file runs next.
+afterAll(() => {
+  mock.restore();
 });
