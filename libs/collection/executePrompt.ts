@@ -2,7 +2,6 @@ import { getPromptResponseWithChatGPT } from '@/libs/ai/projectPrompt/getPromptR
 import { getPromptResponseWithGoogleAIMode } from '@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode';
 import { getPromptResponseWithPerplexity } from '@/libs/ai/projectPrompt/getPromptResponseWithPerplexity';
 import { analyzeResponseSentiment } from '@/libs/ai/sentimentAnalysis';
-import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { CHATBOT_PROVIDER, ChatbotId } from '@/libs/database/shared/ChatbotId';
 import { ProcessPromptResponse } from './types';
 import { getSourcesFromResponse } from '@/libs/ai/responseSources';
@@ -29,10 +28,11 @@ export type ExecutePromptInput = {
   promptId: string;
   promptName: string;
   projectId: string;
-  /** Explicit list, in the order the Chatbots should be attempted. Defaults to
-   *  `getEffectiveEnabledChatbotIds()` when omitted. Retrying a Run passes only the Chatbots whose
-   *  items failed, so already-good Prompt Responses are not duplicated. */
-  chatbotIds?: ChatbotId[];
+  /** Explicit list, in the order the Chatbots should be attempted. The caller (`runLoop.ts`)
+   *  supplies the claimed subset of Chatbots for this Prompt, not the full effective enabled set —
+   *  retrying a Run passes only the Chatbots whose items failed, so already-good Prompt Responses
+   *  are not duplicated. */
+  chatbotIds: ChatbotId[];
   runId: string;
 };
 
@@ -40,11 +40,9 @@ export type ExecutePromptInput = {
  *  Sources in a single batched insert. Returns one outcome per requested Chatbot. Never throws for
  *  a per-Chatbot failure; throws only if persistence itself fails. */
 export async function executePrompt(input: ExecutePromptInput): Promise<PromptChatbotOutcome[]> {
-  const { promptId, promptName, projectId, runId } = input;
+  const { promptId, promptName, projectId, chatbotIds, runId } = input;
   const { project, competitors } = await getProjectInfo(projectId);
   if (!project) throw new Error(`Project ${projectId} not found`);
-
-  const chatbotIds = input.chatbotIds ?? (await getEffectiveEnabledChatbotIds());
 
   // Get responses from every requested chatbot (issue 09: a disabled chatbot must not be called)
   const chatbotCallers: Record<ChatbotId, () => Promise<ProcessPromptResponse>> = {

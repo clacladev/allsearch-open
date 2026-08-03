@@ -90,7 +90,7 @@ import {
 import { claimCollectionRunItemRowsForPrompt } from '@/libs/database/CollectionRunItems/queries';
 import { getDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
-import { setProviderKey } from '@/libs/database/Settings/queries';
+import { setProviderKey, setStoredEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   collectionRunItems,
@@ -545,5 +545,51 @@ describe('issue 10 — paused and archived Projects', () => {
     const items = await getItemsForRun(run.id);
     expect(items).toHaveLength(2 * ALL_CHATBOT_IDS.length);
     expect(items.every((item) => item.project_id === normalProject.id)).toBe(true);
+  });
+});
+
+describe('issue 10/14 — zero-item Run still bumps prompts_updated_at', () => {
+  it('materialises zero items and still bumps prompts_updated_at when every Chatbot is off', async () => {
+    await setAllProviderKeys();
+    // A deliberate all-off selection (`[]`), distinct from a fresh install's `null` — see
+    // `getEffectiveEnabledChatbotIds`'s doc comment.
+    await setStoredEnabledChatbotIds([]);
+    const project = await createProject('AllChatbotsOff');
+    await createPrompts(project.id, 2);
+    expect(project.prompts_updated_at).toBeNull();
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.items_total).toBe(0);
+    expect(run.status).toBe('completed');
+    expect(await getItemsForRun(run.id)).toHaveLength(0);
+
+    const [updatedProject] = await db.select().from(projects).where(eq(projects.id, project.id));
+    expect(updatedProject.prompts_updated_at).toBeTruthy();
+  });
+});
+
+describe('issue 10 — shouldForce re-collects Prompts that already have a Prompt Response today', () => {
+  it('skips a Prompt with an existing Prompt Response today when unforced, but materialises it when shouldForce is true', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('ForceCase');
+    const [prompt] = await createPrompts(project.id, 1);
+
+    // A Prompt Response already exists for today, from outside this Run (no run_id).
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: prompt.id,
+      project_id: project.id,
+      model_id: 'existing-model',
+    });
+
+    const unforcedRun = await createCollectionRun({ projectIds: [project.id] });
+    expect(unforcedRun.items_total).toBe(0);
+    expect(unforcedRun.status).toBe('completed');
+
+    const forcedRun = await createCollectionRun({ projectIds: [project.id], shouldForce: true });
+    expect(forcedRun.items_total).toBe(ALL_CHATBOT_IDS.length);
+    expect(await getItemsForRun(forcedRun.id)).toHaveLength(ALL_CHATBOT_IDS.length);
   });
 });

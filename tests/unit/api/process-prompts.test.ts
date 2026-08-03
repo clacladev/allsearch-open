@@ -114,6 +114,42 @@ describe('POST /api/process-prompts', () => {
   });
 });
 
+describe('POST /api/process-prompts/[projectId] — shouldForce wiring', () => {
+  it('passes shouldForce through to createCollectionRun as a boolean, true only for ?shouldForce=true', async () => {
+    // Stubs `@/libs/collection` itself (rather than the DB-backed Prompts mock the rest of this
+    // file uses) so this test can assert exactly what `createCollectionRun` was called with,
+    // instead of only what the route returns — the DB-backed assertions above can't tell forced
+    // apart from unforced. Placed last in this file and never restored mid-file, so nothing else
+    // here depends on the real `@/libs/collection`; the trailing `mock.restore()` below still
+    // cleans this up before the next test file runs.
+    const calls: unknown[] = [];
+    mock.module('@/libs/collection', () => ({
+      createCollectionRun: mock(async (input: unknown) => {
+        calls.push(input);
+        return { id: 'fake-run-id' };
+      }),
+      ensureCollectionRunLoopIsRunning: mock(() => {}),
+    }));
+
+    const forcedRes = await postOneProject(
+      makeRequest('http://localhost/api/process-prompts/project-1?shouldForce=true') as never,
+      makeParams('project-1')
+    );
+    expect(forcedRes.status).toBe(200);
+
+    const unforcedRes = await postOneProject(
+      makeRequest('http://localhost/api/process-prompts/project-1') as never,
+      makeParams('project-1')
+    );
+    expect(unforcedRes.status).toBe(200);
+
+    expect(calls).toEqual([
+      { projectIds: ['project-1'], shouldForce: true },
+      { projectIds: ['project-1'], shouldForce: false },
+    ]);
+  });
+});
+
 // `mock.module` is process-wide in Bun and does not undo itself when this file finishes — restore
 // it so the real modules are visible to whatever test file runs next.
 afterAll(() => {

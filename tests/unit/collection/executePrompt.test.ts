@@ -2,13 +2,6 @@ import { mock } from 'bun:test';
 
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 
-// A shared, mutable stub for the effective enabled set (issue 09's gate), used only by the case
-// that omits an explicit `chatbotIds` list.
-let effectiveEnabledChatbotIds: ChatbotId[] = [];
-mock.module('@/libs/database/Settings/queries', () => ({
-  getEffectiveEnabledChatbotIds: async () => effectiveEnabledChatbotIds,
-}));
-
 const PROJECT = {
   id: 'project-1',
   created_at: '2026-01-01T00:00:00.000Z',
@@ -25,7 +18,13 @@ const PROJECT = {
 };
 
 mock.module('@/libs/database/Projects/queries', () => ({
-  getProjectRowWithId: async () => PROJECT,
+  // Echoes back whatever id was asked for rather than always 'project-1': Bun's mock.module is
+  // process-wide, and its restore-on-afterAll below is not guaranteed to land before another test
+  // file's real, DB-backed call runs (Bun does not serialize test files strictly by declaration
+  // order). Should this mock still be live during such a call, returning a row whose id doesn't
+  // match the one asked for would make a real caller (e.g. `createCollectionRun`'s
+  // `updateProjectRow`) write to the wrong row.
+  getProjectRowWithId: async (id: string) => ({ ...PROJECT, id }),
 }));
 mock.module('@/libs/database/Competitors/queries', () => ({
   getActiveCompetitorRowsWithProjectId: async () => [],
@@ -89,16 +88,22 @@ mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: async () => [],
 }));
 
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { afterAll, beforeEach, describe, expect, it } from 'bun:test';
 import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
+
+afterAll(() => {
+  // mock.module is process-wide in Bun and does not undo itself when this file finishes — restore
+  // it so the real modules (e.g. `@/libs/database/Projects/queries`) are visible to whatever test
+  // file runs next.
+  mock.restore();
+});
 
 beforeEach(() => {
   // `providerCooldown` is a module-level singleton shared by every caller of `callAiWithRetry` in
   // the test process; a cooldown left open by another suite (e.g. tests/unit/collection/callAi.test.ts)
   // would otherwise make this file's real, uninjected `sleep` wait it out.
   clearProviderCooldowns();
-  effectiveEnabledChatbotIds = [];
   insertedRows = [];
   mockChatGPT.mockClear();
   mockGoogleAIMode.mockClear();
