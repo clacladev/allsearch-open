@@ -53,6 +53,11 @@ export async function createCollectionRun(
 
   const runId = crypto.randomUUID();
   const itemInputs = [];
+  // Tracked per Project, not per Run: in a mixed Run (one Project still has work, another was
+  // already collected today), `runLoop.ts`'s `touchedProjectIds` only ever bumps freshness for
+  // Projects it actually claimed a Prompt group for — a Project that contributed zero items here
+  // would otherwise never get its `prompts_updated_at` bumped at all.
+  const projectIdsWithNoItems = new Set(projects.map((project) => project.id));
   for (const project of projects) {
     const prompts = await selectPromptsToCollect(project.id, targetDate, {
       maxPrompts: input?.maxPrompts,
@@ -71,6 +76,7 @@ export async function createCollectionRun(
           started_at: null,
           finished_at: null,
         });
+        projectIdsWithNoItems.delete(project.id);
       }
     }
   }
@@ -89,18 +95,29 @@ export async function createCollectionRun(
     itemInputs
   );
 
-  if (!itemInputs.length) {
-    // No items materialised — either every Prompt already has today's data, or the effective
-    // enabled Chatbot set is empty. Either way, this loop is not going to see these Projects, so
-    // it will never bump their freshness timestamp (`runLoop.ts`'s `touchedProjectIds`) — bump it
-    // here instead, exactly as the deleted `fetchDailyPromptsForProject` workflow did
-    // unconditionally, so a zero-item Run still records "we looked, there was nothing to do".
+  // A Project that contributed zero items here — either every one of its Prompts already has
+  // today's data, or the effective enabled Chatbot set is empty — is one this loop is never going
+  // to see, so it will never bump its freshness timestamp itself. Bump it here instead, exactly as
+  // the deleted `fetchDailyPromptsForProject` workflow did unconditionally, so "we looked, there
+  // was nothing to do" is still recorded. Best-effort: the Run has already landed, so a failure
+  // here (e.g. the Project was deleted between resolve and update) must not strand it `pending` —
+  // log and move on rather than letting the error propagate and skip the caller's
+  // `ensureCollectionRunLoopIsRunning()`.
+  if (projectIdsWithNoItems.size) {
     const now = new Date().toISOString();
-    await Promise.all(
-      projects.map((project) => updateProjectRow(project.id, { prompts_updated_at: now }))
+    const results = await Promise.allSettled(
+      [...projectIdsWithNoItems].map((projectId) =>
+        updateProjectRow(projectId, { prompts_updated_at: now })
+      )
     );
-    return finishCollectionRunRow(run.id, 'completed');
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error('Failed to bump prompts_updated_at for an untouched Project', result.reason);
+      }
+    }
   }
+
+  if (!itemInputs.length) return finishCollectionRunRow(run.id, 'completed');
 
   return run;
 }

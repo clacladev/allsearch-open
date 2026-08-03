@@ -93,9 +93,11 @@ import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
 
 afterAll(() => {
-  // mock.module is process-wide in Bun and does not undo itself when this file finishes — restore
-  // it so the real modules (e.g. `@/libs/database/Projects/queries`) are visible to whatever test
-  // file runs next.
+  // mock.module is process-wide in Bun and `mock.restore()` does NOT undo it (verified against
+  // Bun 1.3.14) — it only clears mock.fn call state (mockClear/mockReset-equivalent for every
+  // mock.fn this process has created), not the module registrations made by mock.module above.
+  // The real `@/libs/database/Projects/queries` etc. stay shadowed by the mocks above for the rest
+  // of the test process; there is no call in this file that reverses that.
   mock.restore();
 });
 
