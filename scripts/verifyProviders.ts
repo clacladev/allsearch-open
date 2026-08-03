@@ -117,7 +117,7 @@ async function verifyChatbot(
         status: 'failed',
         detail:
           'usedNotCited=0: the web_search toolResults path (used-but-not-cited Sources) went ' +
-          'empty — check libs/workflows/shared/responseSources.ts',
+          'empty — check libs/ai/responseSources.ts',
       };
     }
     return {

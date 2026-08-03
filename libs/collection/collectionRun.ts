@@ -1,4 +1,8 @@
-import { getProjectRowWithId, getProjectRows } from '@/libs/database/Projects/queries';
+import {
+  getProjectRowWithId,
+  getProjectRows,
+  updateProjectRow,
+} from '@/libs/database/Projects/queries';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { getTodayISODateString, ISODateString } from '@/libs/database/shared/ISODateString';
@@ -85,7 +89,18 @@ export async function createCollectionRun(
     itemInputs
   );
 
-  if (!itemInputs.length) return finishCollectionRunRow(run.id, 'completed');
+  if (!itemInputs.length) {
+    // No items materialised — either every Prompt already has today's data, or the effective
+    // enabled Chatbot set is empty. Either way, this loop is not going to see these Projects, so
+    // it will never bump their freshness timestamp (`runLoop.ts`'s `touchedProjectIds`) — bump it
+    // here instead, exactly as the deleted `fetchDailyPromptsForProject` workflow did
+    // unconditionally, so a zero-item Run still records "we looked, there was nothing to do".
+    const now = new Date().toISOString();
+    await Promise.all(
+      projects.map((project) => updateProjectRow(project.id, { prompts_updated_at: now }))
+    );
+    return finishCollectionRunRow(run.id, 'completed');
+  }
 
   return run;
 }
