@@ -127,7 +127,6 @@ export async function POST(
       chatbot_id: PromptResponseRow['chatbot_id'];
       prompt_id: string;
       project_id: string;
-      workflow_id: string;
       run_id: PromptResponseRow['run_id'];
       created_at: string;
       _templateSources: SourceRow[];
@@ -162,7 +161,6 @@ export async function POST(
             chatbot_id: chatbotId,
             prompt_id: promptId,
             project_id: projectId,
-            workflow_id: 'backfill',
             run_id: null,
             created_at: createdAt,
             _templateSources: templateSources,

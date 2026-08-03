@@ -29,22 +29,18 @@ export type ExecutePromptInput = {
   promptId: string;
   promptName: string;
   projectId: string;
-  /** Explicit list, in the order the Chatbots should be attempted. Omitted only by the legacy
-   *  DevKit wrappers, which fall back to `getEffectiveEnabledChatbotIds()`. Retrying a Run passes
-   *  only the Chatbots whose items failed, so already-good Prompt Responses are not duplicated. */
+  /** Explicit list, in the order the Chatbots should be attempted. Defaults to
+   *  `getEffectiveEnabledChatbotIds()` when omitted. Retrying a Run passes only the Chatbots whose
+   *  items failed, so already-good Prompt Responses are not duplicated. */
   chatbotIds?: ChatbotId[];
-  /** `prompt_responses.workflow_id` is still NOT NULL until issue 11 drops it. The Collection Run
-   *  passes its own run id here as well as in `runId`; the DevKit wrappers pass their legacy
-   *  `fetchDailyPromptsWorkflow-<projectId>-<date>` string and leave `runId` undefined. */
-  workflowId: string;
-  runId?: string;
+  runId: string;
 };
 
 /** Executes one Prompt against the given Chatbots and persists the resulting Prompt Responses and
  *  Sources in a single batched insert. Returns one outcome per requested Chatbot. Never throws for
  *  a per-Chatbot failure; throws only if persistence itself fails. */
 export async function executePrompt(input: ExecutePromptInput): Promise<PromptChatbotOutcome[]> {
-  const { promptId, promptName, projectId, workflowId, runId } = input;
+  const { promptId, promptName, projectId, runId } = input;
   const { project, competitors } = await getProjectInfo(projectId);
   if (!project) throw new Error(`Project ${projectId} not found`);
 
@@ -97,7 +93,6 @@ export async function executePrompt(input: ExecutePromptInput): Promise<PromptCh
     sources,
     brandIdsRanking,
     sentiments,
-    workflowId,
     runId
   );
 
@@ -223,8 +218,7 @@ async function storePromptResponses(
   sources: SourceItem[],
   brandIdsRanking: string[][],
   sentiments: (BrandsSentiment | undefined)[],
-  workflowId: string,
-  runId?: string
+  runId: string
 ) {
   const enrichedResponses = responses.map((response, index) => {
     const enrichedSources = response.sources.map((originalSource) => {
@@ -244,8 +238,7 @@ async function storePromptResponses(
       model_id: response.modelId,
       prompt_id: promptId,
       project_id: projectId,
-      workflow_id: workflowId,
-      run_id: runId ?? null,
+      run_id: runId,
       enrichedSources,
     };
   });

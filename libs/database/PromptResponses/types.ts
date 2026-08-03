@@ -8,7 +8,7 @@ export type BrandsSentiment = Record<string, SentimentLevel>;
 
 export type PromptResponseRow = typeof promptResponses.$inferSelect;
 
-/** Lightweight projection of PromptResponseRow for overview/analysis queries (excludes text, model_id, project_id, workflow_id). */
+/** Lightweight projection of PromptResponseRow for overview/analysis queries (excludes text, model_id, project_id). */
 export type PromptResponseSummaryRow = Pick<
   PromptResponseRow,
   'id' | 'brand_ids_ranking' | 'sentiment' | 'chatbot_id' | 'prompt_id' | 'created_at'

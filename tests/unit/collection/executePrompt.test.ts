@@ -32,14 +32,13 @@ mock.module('@/libs/database/Competitors/queries', () => ({
 }));
 
 // Records every row `storePromptResponses` (a private function in the module under test) attempts
-// to insert, so tests can assert brand_ids_ranking/sentiment/run_id/workflow_id stayed positionally
+// to insert, so tests can assert brand_ids_ranking/sentiment/run_id stayed positionally
 // aligned to the response each row came from.
 let insertedRows: Array<{
   text: string;
   brand_ids_ranking: string[];
   sentiment: unknown;
   run_id: string | null;
-  workflow_id: string;
 }> = [];
 mock.module('@/libs/database/PromptResponses/queries', () => ({
   insertPromptResponseRows: mock(async (inputs: any[]) => {
@@ -116,7 +115,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -148,7 +147,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -164,7 +163,7 @@ describe('executePrompt', () => {
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
-      workflowId: 'workflow-1',
+      runId: 'run-1',
     });
 
     const googleOutcome = outcomes.find(
@@ -187,18 +186,16 @@ describe('executePrompt', () => {
     expect(insertedRows.some((row) => row.text === 'perplexity response text')).toBe(true);
   });
 
-  it('carries the run id into both run_id and workflow_id when runId is passed', async () => {
+  it('carries the run id into run_id', async () => {
     await executePrompt({
       promptId: 'prompt-1',
       promptName: 'my prompt',
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
-      workflowId: 'run-1',
       runId: 'run-1',
     });
 
     expect(insertedRows).toHaveLength(1);
     expect(insertedRows[0].run_id).toBe('run-1');
-    expect(insertedRows[0].workflow_id).toBe('run-1');
   });
 });
