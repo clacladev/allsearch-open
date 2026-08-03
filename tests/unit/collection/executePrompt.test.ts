@@ -17,14 +17,24 @@ const PROJECT = {
   target_location: null,
 };
 
+const actualProjectQueries = await import('@/libs/database/Projects/queries');
+// Snapshotted into its own binding rather than read off `actualProjectQueries` lazily below: Bun's
+// mock.module mutates the module namespace object in place, so a closure that reads
+// `actualProjectQueries.getProjectRowWithId` at call time (after the mock.module call below has
+// already overwritten that property) would recurse into itself infinitely.
+const realGetProjectRowWithId = actualProjectQueries.getProjectRowWithId;
 mock.module('@/libs/database/Projects/queries', () => ({
-  // Echoes back whatever id was asked for rather than always 'project-1': Bun's mock.module is
-  // process-wide, and its restore-on-afterAll below is not guaranteed to land before another test
-  // file's real, DB-backed call runs (Bun does not serialize test files strictly by declaration
-  // order). Should this mock still be live during such a call, returning a row whose id doesn't
-  // match the one asked for would make a real caller (e.g. `createCollectionRun`'s
-  // `updateProjectRow`) write to the wrong row.
-  getProjectRowWithId: async (id: string) => ({ ...PROJECT, id }),
+  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
+  // export namespace, so a stub exporting only `getProjectRowWithId` would make `getProjectRows`
+  // and `updateProjectRow` cease to exist for any other module linked against this one for the
+  // rest of the test process. `getProjectRowWithId` only short-circuits for this file's own fixture
+  // id — any other id (including one this mock leaks in front of, e.g. a real project id from a
+  // DB-backed suite that loads after this one) falls through to the real, DB-backed function
+  // instead of a blanket `undefined`, so a leaked registration cannot make a real Project look like
+  // it doesn't exist.
+  ...actualProjectQueries,
+  getProjectRowWithId: async (id: string) =>
+    id === PROJECT.id ? PROJECT : realGetProjectRowWithId(id),
 }));
 mock.module('@/libs/database/Competitors/queries', () => ({
   getActiveCompetitorRowsWithProjectId: async () => [],
@@ -88,18 +98,12 @@ mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: async () => [],
 }));
 
-import { afterAll, beforeEach, describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
 
-afterAll(() => {
-  // mock.module is process-wide in Bun and `mock.restore()` does NOT undo it (verified against
-  // Bun 1.3.14) — it only clears mock.fn call state (mockClear/mockReset-equivalent for every
-  // mock.fn this process has created), not the module registrations made by mock.module above.
-  // The real `@/libs/database/Projects/queries` etc. stay shadowed by the mocks above for the rest
-  // of the test process; there is no call in this file that reverses that.
-  mock.restore();
-});
+// mock.module is process-wide in Bun: the mocks above stay registered for the rest of the test
+// process, deliberately not reversed.
 
 beforeEach(() => {
   // `providerCooldown` is a module-level singleton shared by every caller of `callAiWithRetry` in

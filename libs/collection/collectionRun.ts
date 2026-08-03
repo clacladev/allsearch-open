@@ -5,7 +5,7 @@ import {
 } from '@/libs/database/Projects/queries';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
-import { getTodayISODateString, ISODateString } from '@/libs/database/shared/ISODateString';
+import { getTodayISODateString } from '@/libs/database/shared/ISODateString';
 import {
   finishCollectionRunRow,
   finishRunningCollectionRunRow,
@@ -26,8 +26,6 @@ import { selectPromptsToCollect } from './selectPrompts';
 export type CreateCollectionRunInput = {
   /** Omitted = every non-archived, non-paused Project. */
   projectIds?: string[];
-  targetDate?: ISODateString;
-  maxPrompts?: number;
   shouldForce?: boolean;
 };
 
@@ -47,7 +45,7 @@ async function resolveProjectRowsToCollect(projectIds?: string[]): Promise<Proje
 export async function createCollectionRun(
   input?: CreateCollectionRunInput
 ): Promise<CollectionRunRow> {
-  const targetDate = input?.targetDate ?? getTodayISODateString();
+  const targetDate = getTodayISODateString();
   const projects = await resolveProjectRowsToCollect(input?.projectIds);
   const chatbotIds = await getEffectiveEnabledChatbotIds();
 
@@ -60,7 +58,6 @@ export async function createCollectionRun(
   const projectIdsWithNoItems = new Set(projects.map((project) => project.id));
   for (const project of projects) {
     const prompts = await selectPromptsToCollect(project.id, targetDate, {
-      maxPrompts: input?.maxPrompts,
       shouldForce: input?.shouldForce,
     });
     for (const prompt of prompts) {

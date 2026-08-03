@@ -604,6 +604,15 @@ describe('issue 10/14 — zero-item Run still bumps prompts_updated_at', () => {
     // creation time — only the zero-item Project must already be bumped here.
     expect(updatedWithWork.prompts_updated_at).toBeNull();
     expect(updatedAlreadyDone.prompts_updated_at).toBeTruthy();
+
+    // Once the Run actually drains, `runLoop.ts`'s own `touchedProjectIds` bump (~lines 145-150)
+    // catches the Project that had work too.
+    await driveLoopToCompletion();
+    const [finishedWithWork] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectWithWork.id));
+    expect(finishedWithWork.prompts_updated_at).toBeTruthy();
   });
 });
 
