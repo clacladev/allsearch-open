@@ -63,8 +63,7 @@ mock.module('@/libs/ai/sentimentAnalysis', () => ({
 }));
 // Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
 // page is fetched. Mocked at the leaf module `libs/collection/analyseSources.ts`, which is what
-// `executePrompt.ts` calls and what the `'use step'` wrapper in `libs/utils/sourcesAnalysis.ts`
-// delegates to — so this covers both callers.
+// `executePrompt.ts` calls.
 mock.module('@/libs/collection/analyseSources', () => ({
   analysePromptResponseSources: mockSources,
 }));

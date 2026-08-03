@@ -4,8 +4,8 @@ import { getPromptResponseWithPerplexity } from '@/libs/ai/projectPrompt/getProm
 import { analyzeResponseSentiment } from '@/libs/ai/sentimentAnalysis';
 import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { CHATBOT_PROVIDER, ChatbotId } from '@/libs/database/shared/ChatbotId';
-import { ProcessPromptResponse } from '@/libs/workflows/shared/types';
-import { getSourcesFromResponse } from '@/libs/workflows/shared/responseSources';
+import { ProcessPromptResponse } from './types';
+import { getSourcesFromResponse } from '@/libs/ai/responseSources';
 import { insertPromptResponseRows } from '@/libs/database/PromptResponses/queries';
 import { insertSourceRows } from '@/libs/database/Sources/queries';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';

@@ -16,7 +16,6 @@ import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts'
 import { appFetch } from '@/hooks/appFetch';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { isValidUrl } from '@/libs/utils/urls';
-import UpdateSourcesAnalisysAlert from './UpdateSourcesAnalisys';
 
 export default function BrandSettings() {
   const { currentProject, setCurrentProject, projects, setProjects } = usePrivateLayoutContext();
@@ -28,7 +27,6 @@ export default function BrandSettings() {
   const [isTargetLocationSelected, setIsTargetLocationSelected] = useState(false);
   const [targetLocation, setTargetLocation] = useState('');
   const [isSaving, startSaveTransition] = useTransition();
-  const [shouldShowUpdateSourcesAnalysis, setShouldShowUpdateSourcesAnalysis] = useState(false);
 
   const { data: metadata, isLoading: isLoadingDomainMetadata } = useDomainMetadata(
     shouldFetchDomainMetadata && !isDebouncePending() ? urlDebounced : undefined
@@ -67,8 +65,6 @@ export default function BrandSettings() {
       return;
     }
 
-    setShouldShowUpdateSourcesAnalysis(false);
-
     startSaveTransition(async () => {
       try {
         const updatedProject = await appFetch<ProjectRow>(
@@ -94,7 +90,6 @@ export default function BrandSettings() {
           project.id === currentProject.id ? updatedProject : project
         );
         setProjects(newAllProjects);
-        setShouldShowUpdateSourcesAnalysis(true);
         showSuccessAlertToast('Brand updated', 'The brand has been updated');
       } catch (error) {
         console.error(error);
@@ -186,10 +181,6 @@ export default function BrandSettings() {
           Save
         </Button>
       </Form>
-
-      {shouldShowUpdateSourcesAnalysis && (
-        <UpdateSourcesAnalisysAlert onClose={() => setShouldShowUpdateSourcesAnalysis(false)} />
-      )}
     </div>
   );
 }
