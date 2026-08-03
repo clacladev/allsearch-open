@@ -106,7 +106,6 @@ describe('CHECK constraints', () => {
           chatbot_id: 'not-a-real-chatbot' as ChatbotId,
           prompt_id: prompt.id,
           project_id: project.id,
-          workflow_id: 'workflow-1',
           model_id: 'model-1',
         })
       ),

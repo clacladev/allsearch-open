@@ -13,11 +13,11 @@ const useFetchNewPromptResponses = (projectId: string) =>
     ['fetch-new-prompt-responses', projectId],
     async ([, projectId]) => {
       await appFetch<void>(
-        RouteHelper.Api.Project.getFetchNewPromptResponses(projectId),
+        RouteHelper.Api.Project.getProcessPrompts(projectId),
         { method: 'POST' },
         'Failed to fetch new prompt responses'
       );
-      // Allow time for background workflow to begin processing
+      // Allow time for background Collection Run to begin processing
       return new Promise<void>((resolve) => setTimeout(resolve, FETCH_PROMPT_RESPONSES_TIMEOUT));
     }
   );

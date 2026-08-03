@@ -24,9 +24,6 @@
     "plugins": [
       {
         "name": "next"
-      },
-      {
-        "name": "workflow"
       }
     ],
     "target": "ES2017"
@@ -40,5 +37,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "app/.well-known"]
+  "exclude": ["node_modules"]
 }

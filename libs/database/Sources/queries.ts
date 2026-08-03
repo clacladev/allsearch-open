@@ -104,11 +104,3 @@ export async function deleteSourceRowsWithProjectId(projectId: string): Promise<
   const db = await getDatabase();
   await db.delete(sources).where(eq(sources.project_id, projectId));
 }
-
-export async function deleteSourceRowsWithPromptResponseIds(
-  promptResponseIds: string[]
-): Promise<void> {
-  if (!promptResponseIds.length) return;
-  const db = await getDatabase();
-  await db.delete(sources).where(inArray(sources.prompt_response_id, promptResponseIds));
-}

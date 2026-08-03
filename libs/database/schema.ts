@@ -196,7 +196,6 @@ export const promptResponses = sqliteTable(
     project_id: text('project_id')
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
-    workflow_id: text('workflow_id').notNull(),
     model_id: text('model_id').notNull(),
     brand_ids_ranking: text('brand_ids_ranking', { mode: 'json' })
       .$type<string[]>()

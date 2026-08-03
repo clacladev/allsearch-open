@@ -2,10 +2,9 @@ import { getPromptResponseWithChatGPT } from '@/libs/ai/projectPrompt/getPromptR
 import { getPromptResponseWithGoogleAIMode } from '@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode';
 import { getPromptResponseWithPerplexity } from '@/libs/ai/projectPrompt/getPromptResponseWithPerplexity';
 import { analyzeResponseSentiment } from '@/libs/ai/sentimentAnalysis';
-import { getEffectiveEnabledChatbotIds } from '@/libs/database/Settings/queries';
 import { CHATBOT_PROVIDER, ChatbotId } from '@/libs/database/shared/ChatbotId';
-import { ProcessPromptResponse } from '@/libs/workflows/shared/types';
-import { getSourcesFromResponse } from '@/libs/workflows/shared/responseSources';
+import { ProcessPromptResponse } from './types';
+import { getSourcesFromResponse } from '@/libs/ai/responseSources';
 import { insertPromptResponseRows } from '@/libs/database/PromptResponses/queries';
 import { insertSourceRows } from '@/libs/database/Sources/queries';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
@@ -29,26 +28,21 @@ export type ExecutePromptInput = {
   promptId: string;
   promptName: string;
   projectId: string;
-  /** Explicit list, in the order the Chatbots should be attempted. Omitted only by the legacy
-   *  DevKit wrappers, which fall back to `getEffectiveEnabledChatbotIds()`. Retrying a Run passes
-   *  only the Chatbots whose items failed, so already-good Prompt Responses are not duplicated. */
-  chatbotIds?: ChatbotId[];
-  /** `prompt_responses.workflow_id` is still NOT NULL until issue 11 drops it. The Collection Run
-   *  passes its own run id here as well as in `runId`; the DevKit wrappers pass their legacy
-   *  `fetchDailyPromptsWorkflow-<projectId>-<date>` string and leave `runId` undefined. */
-  workflowId: string;
-  runId?: string;
+  /** Explicit list, in the order the Chatbots should be attempted. The caller (`runLoop.ts`)
+   *  supplies the claimed subset of Chatbots for this Prompt, not the full effective enabled set —
+   *  retrying a Run passes only the Chatbots whose items failed, so already-good Prompt Responses
+   *  are not duplicated. */
+  chatbotIds: ChatbotId[];
+  runId: string;
 };
 
 /** Executes one Prompt against the given Chatbots and persists the resulting Prompt Responses and
  *  Sources in a single batched insert. Returns one outcome per requested Chatbot. Never throws for
  *  a per-Chatbot failure; throws only if persistence itself fails. */
 export async function executePrompt(input: ExecutePromptInput): Promise<PromptChatbotOutcome[]> {
-  const { promptId, promptName, projectId, workflowId, runId } = input;
+  const { promptId, promptName, projectId, chatbotIds, runId } = input;
   const { project, competitors } = await getProjectInfo(projectId);
   if (!project) throw new Error(`Project ${projectId} not found`);
-
-  const chatbotIds = input.chatbotIds ?? (await getEffectiveEnabledChatbotIds());
 
   // Get responses from every requested chatbot (issue 09: a disabled chatbot must not be called)
   const chatbotCallers: Record<ChatbotId, () => Promise<ProcessPromptResponse>> = {
@@ -97,7 +91,6 @@ export async function executePrompt(input: ExecutePromptInput): Promise<PromptCh
     sources,
     brandIdsRanking,
     sentiments,
-    workflowId,
     runId
   );
 
@@ -223,8 +216,7 @@ async function storePromptResponses(
   sources: SourceItem[],
   brandIdsRanking: string[][],
   sentiments: (BrandsSentiment | undefined)[],
-  workflowId: string,
-  runId?: string
+  runId: string
 ) {
   const enrichedResponses = responses.map((response, index) => {
     const enrichedSources = response.sources.map((originalSource) => {
@@ -244,8 +236,7 @@ async function storePromptResponses(
       model_id: response.modelId,
       prompt_id: promptId,
       project_id: projectId,
-      workflow_id: workflowId,
-      run_id: runId ?? null,
+      run_id: runId,
       enrichedSources,
     };
   });

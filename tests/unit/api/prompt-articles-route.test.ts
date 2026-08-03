@@ -85,7 +85,13 @@ const mockGenerateOutline = mock(async (): Promise<any> => ({
   ],
 }));
 
+const actualProjectQueries = await import('@/libs/database/Projects/queries');
 mock.module('@/libs/database/Projects/queries', () => ({
+  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
+  // export namespace, so a stub exporting only `getProjectRowWithId` would make this module's
+  // other exports (e.g. `getProjectRows`, `updateProjectRow`) cease to exist for any other suite
+  // linked against the real module for the rest of the test process.
+  ...actualProjectQueries,
   getProjectRowWithId: mockGetProjectRowWithId,
 }));
 

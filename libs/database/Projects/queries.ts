@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, asc, eq, getTableColumns } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { projects } from '../schema';
@@ -11,8 +11,6 @@ type InsertProjectRowInput = Omit<
   'id' | 'created_at' | 'updated_at' | 'is_paused' | 'is_archived' | 'prompts_updated_at'
 >;
 type UpdateProjectRowInput = Omit<ProjectRow, 'id' | 'created_at' | 'updated_at'>;
-
-const projectColumns = getTableColumns(projects);
 
 export async function getProjectRowWithId(id: string): Promise<ProjectRow | undefined> {
   const db = await getDatabase();
@@ -29,27 +27,6 @@ export async function getProjectRows(includeArchived = false): Promise<ProjectRo
     .from(projects)
     .where(and(...conditions))
     .orderBy(asc(projects.created_at));
-}
-
-export async function getProjectRowsAll<K extends keyof ProjectRow>(
-  includeArchived = false,
-  fields?: K[]
-): Promise<Pick<ProjectRow, K>[]> {
-  const db = await getDatabase();
-  const columns = fields
-    ? (Object.fromEntries(fields.map((field) => [field, projectColumns[field]])) as Pick<
-        typeof projectColumns,
-        K
-      >)
-    : (projectColumns as Pick<typeof projectColumns, K>);
-  const conditions = [];
-  if (!includeArchived) conditions.push(eq(projects.is_archived, false));
-  const rows = await db
-    .select(columns)
-    .from(projects)
-    .where(and(...conditions))
-    .orderBy(asc(projects.created_at));
-  return rows as Pick<ProjectRow, K>[];
 }
 
 export async function insertProjectRow(input: InsertProjectRowInput): Promise<ProjectRow> {

@@ -1,26 +1,24 @@
-import { fetchDailyPromptsForProjectWorkflow } from '@/libs/workflows/fetchDailyPromptsForProject';
-import { start } from 'workflow/api';
-import { getTodayISODateString } from '@/libs/database/shared/ISODateString';
-import { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { createCollectionRun, ensureCollectionRunLoopIsRunning } from '@/libs/collection';
 
-export async function GET(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
-  const { projectId } = await params;
-  if (!projectId) return new Response('Missing projectId', { status: 400 });
-  const shouldForce = req.nextUrl.searchParams.get('shouldForce');
+  try {
+    const { projectId } = await params;
+    if (!projectId) return new Response('Missing projectId', { status: 400 });
 
-  const today = getTodayISODateString();
-  const run = await start(fetchDailyPromptsForProjectWorkflow, [
-    projectId,
-    today,
-    undefined,
-    shouldForce === 'true',
-  ]);
+    const shouldForce = req.nextUrl.searchParams.get('shouldForce') === 'true';
+    const run = await createCollectionRun({ projectIds: [projectId], shouldForce });
+    ensureCollectionRunLoopIsRunning();
 
-  return Response.json({
-    message: `Workflow 'fetchDailyPromptsForProjectWorkflow' started`,
-    runId: run.runId,
-  });
+    return Response.json({ message: 'Collection Run started', runId: run.id });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : error },
+      { status: 500 }
+    );
+  }
 }

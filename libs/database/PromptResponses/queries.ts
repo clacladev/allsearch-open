@@ -119,20 +119,6 @@ export async function insertPromptResponseRows(
   return db.insert(promptResponses).values(inputs).returning();
 }
 
-export async function updatePromptResponseRowWithId(
-  id: string,
-  values: Partial<InsertPromptResponseRowInput>
-): Promise<PromptResponseRow> {
-  const db = await getDatabase();
-  const [row] = await db
-    .update(promptResponses)
-    .set(values)
-    .where(eq(promptResponses.id, id))
-    .returning();
-  if (!row) throw new Error(`No prompt_responses row found for id ${id}`);
-  return row;
-}
-
 export async function deletePromptResponseRowsWithPromptIds(
   promptIds: string[],
   projectId: string
