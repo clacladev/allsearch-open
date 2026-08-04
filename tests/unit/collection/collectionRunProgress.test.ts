@@ -72,21 +72,28 @@ describe('buildCollectionRunProgress', () => {
     expect(projectTwo.promptsCompleted).toBe(1);
   });
 
-  it('derives prompt status by precedence: running > pending > completed > failed > cancelled', () => {
-    const cases: { statuses: CollectionRunItemStatus[]; expected: CollectionRunItemStatus }[] = [
-      { statuses: ['running', 'pending'], expected: 'running' },
-      { statuses: ['pending', 'completed'], expected: 'pending' },
-      { statuses: ['completed', 'failed'], expected: 'completed' },
-      { statuses: ['failed', 'failed'], expected: 'failed' },
-      { statuses: ['cancelled', 'cancelled'], expected: 'cancelled' },
+  it('derives prompt status by precedence: running > pending > completed > failed > cancelled, reflected in the project counts', () => {
+    // `status` isn't part of the wire type (see progress.ts); this asserts the derivation via its
+    // only externally-visible effect — how it rolls up into promptsCompleted/promptsFailed.
+    const cases: {
+      statuses: CollectionRunItemStatus[];
+      expectedCompleted: number;
+      expectedFailed: number;
+    }[] = [
+      { statuses: ['running', 'pending'], expectedCompleted: 0, expectedFailed: 0 },
+      { statuses: ['pending', 'completed'], expectedCompleted: 0, expectedFailed: 0 },
+      { statuses: ['completed', 'failed'], expectedCompleted: 1, expectedFailed: 0 },
+      { statuses: ['failed', 'failed'], expectedCompleted: 0, expectedFailed: 1 },
+      { statuses: ['cancelled', 'cancelled'], expectedCompleted: 0, expectedFailed: 0 },
     ];
 
-    for (const { statuses, expected } of cases) {
+    for (const { statuses, expectedCompleted, expectedFailed } of cases) {
       const rows = statuses.map((status, index) =>
         makeRow({ chatbotId: [ChatbotId.ChatGPT, ChatbotId.Perplexity][index], status })
       );
       const progress = buildCollectionRunProgress({ id: 'run-1', status: 'running' }, rows);
-      expect(progress.projects[0].prompts[0].status).toBe(expected);
+      expect(progress.projects[0].promptsCompleted).toBe(expectedCompleted);
+      expect(progress.projects[0].promptsFailed).toBe(expectedFailed);
     }
   });
 
@@ -161,9 +168,7 @@ describe('buildCollectionRunProgress', () => {
     );
 
     const prompt = project.prompts[0];
-    expect(Object.keys(prompt).sort()).toEqual(
-      ['promptId', 'promptName', 'status', 'chatbots'].sort()
-    );
+    expect(Object.keys(prompt).sort()).toEqual(['promptId', 'promptName', 'chatbots'].sort());
 
     const chatbot = prompt.chatbots[0];
     expect(Object.keys(chatbot).sort()).toEqual(['chatbotId', 'status'].sort());

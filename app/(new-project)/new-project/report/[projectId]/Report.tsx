@@ -108,7 +108,7 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
         description="Rankings are based on your selected prompts only. Add more prompts to uncover new opportunities."
       />
 
-      {progress?.isTerminal && progress.status !== 'completed' && (
+      {progress?.isTerminal && (progress.status !== 'completed' || progress.promptsFailed > 0) && (
         <div className="text-tertiary -mt-4 ml-0.5 text-xs">
           {formatCollectionRunProgressSummary(progress)}
         </div>

@@ -47,8 +47,8 @@ export default defineConfig({
       // convention is a dev server started by hand. Run it with:
       //   bun run dev
       //   PLAYWRIGHT_BASE_URL=http://localhost:<port> bunx playwright test --project=chromium-no-auth
-      // The spec itself fails loudly with that instruction (rather than a bare connection-refused
-      // error) when `PLAYWRIGHT_BASE_URL` was not set — see its `test.beforeAll`.
+      // `PLAYWRIGHT_BASE_URL` is optional: this project's `baseURL` (above) already falls back to
+      // `https://localhost:3000`, what `bun run dev` serves.
       name: 'chromium-no-auth',
       testMatch: /collection-run-progress\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },

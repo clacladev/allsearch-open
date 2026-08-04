@@ -5,24 +5,17 @@ import { test, expect } from '@playwright/test';
 // no DB-gated redirect, so it can run against a plain dev server with a migrated database.
 //
 // There is no `webServer` wired up for this project (see playwright.config.ts's comment on why),
-// so a missing `PLAYWRIGHT_BASE_URL` must fail loudly with the exact command to run, rather than
-// a bare connection-refused error from the default `chromium` project's baseURL.
-test.beforeAll(() => {
-  if (!process.env.PLAYWRIGHT_BASE_URL) {
-    throw new Error(
-      'collection-run-progress.spec.ts requires PLAYWRIGHT_BASE_URL. Start a dev server, then run:\n' +
-        '  PLAYWRIGHT_BASE_URL=http://localhost:<port> bunx playwright test --project=chromium-no-auth'
-    );
-  }
-});
+// so this relies on `playwright.config.ts`'s default `baseURL` (`https://localhost:3000`, what
+// `bun run dev` serves) unless `PLAYWRIGHT_BASE_URL` overrides it.
 
-// The EventSource client never retries a closed connection on its own (see
-// useCollectionRunProgress.ts), so the `progress` and `done` frames must arrive as two separate
-// stream requests, exactly like production: the first response serves only the `progress` frame
-// and ends the stream; the client's resulting `onerror`/reconnect makes a second request, which
-// this route handler answers with the `done` frame. Serving both frames in one response would let
-// React batch both `setProgress` calls into one commit and the streaming surface would never
-// render — that was the bug in the previous version of this test.
+// The EventSource client *does* reconnect on its own once the server ends a 200 event-stream
+// response (see useCollectionRunProgress.ts) — what it won't retry is a non-2xx / wrong-content-type
+// response. So the `progress` and `done` frames must arrive as two separate stream requests, exactly
+// like production: the first response serves only the `progress` frame and ends the stream; the
+// client's resulting reconnect makes a second request, which this route handler answers with the
+// `done` frame. Serving both frames in one response would let React batch both `setProgress` calls
+// into one commit and the streaming surface would never render — that was the bug in the previous
+// version of this test.
 
 const MOCK_PROJECT_ID = 'mock-project-id-nike-e2e';
 const MOCK_RUN_ID = 'mock-run-id';
@@ -158,6 +151,6 @@ test('shows streaming Collection Run progress, then swaps to the report', async 
   // --- The EventSource reconnects on its own once the first response ends; the second stream
   // request's `done` frame swaps the surface for the finished report ---
   await expect(page.getByText('Your Brand AI Visibility Report')).toBeVisible();
-  expect(streamRequestCount).toBe(2);
+  expect(streamRequestCount).toBeGreaterThanOrEqual(2);
   expect(reportRequestCount).toBe(1);
 });

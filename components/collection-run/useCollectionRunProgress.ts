@@ -48,15 +48,28 @@ export function useCollectionRunProgress(initialRunId?: string): {
   const [isStreamError, setIsStreamError] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Kept live whenever the current Run is unknown or already finished, so a new active Run is
-  // discovered after the previous one ends — not just once, ever (issue 12 finding 3).
+  // Kept live whenever the current Run is unknown, already finished, or its stream died without
+  // ever reaching a terminal frame, so a new active Run is discovered after the previous one ends
+  // — not just once, ever (issue 12 finding 3) — and so a permanently-closed stream doesn't strand
+  // the caller on a `runId` that will never update again. Skipped entirely when the caller supplied
+  // `initialRunId`: that caller already knows its own Run (e.g. the onboarding report) and has no
+  // dismiss control, so re-discovery would swap the rendered report for an unrelated Run started
+  // later in the same session (issue 12 finding 5).
   const { data: activeRun } = useSWR<ActiveCollectionRunResponse>(
-    !runId || progress?.isTerminal ? RouteHelper.Api.CollectionRuns.getActive() : null,
+    !initialRunId && (!runId || isStreamError || progress?.isTerminal)
+      ? RouteHelper.Api.CollectionRuns.getActive()
+      : null,
     (url: string) => appFetch<ActiveCollectionRunResponse>(url),
     { refreshInterval: 10_000 }
   );
 
   useEffect(() => {
+    if (initialRunId) return;
+    if (isStreamError && runId) {
+      setRunId(undefined);
+      setProgress(undefined);
+      return;
+    }
     if (
       activeRun?.runId &&
       activeRun.runId !== runId &&
@@ -66,7 +79,7 @@ export function useCollectionRunProgress(initialRunId?: string): {
       setProgress(undefined);
       setIsStreamError(false);
     }
-  }, [activeRun, runId, dismissedRunId]);
+  }, [activeRun, runId, dismissedRunId, isStreamError, initialRunId]);
 
   useEffect(() => {
     if (!runId) return;
