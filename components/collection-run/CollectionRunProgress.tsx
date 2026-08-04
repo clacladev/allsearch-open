@@ -42,7 +42,7 @@ export function CollectionRunProgress({
   const showList = !isBar || showDetails;
 
   return (
-    <div data-testid={isBar ? 'collection-run-progress' : undefined} className="flex flex-col gap-3">
+    <div data-testid="collection-run-progress" className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           {progress.isTerminal ? (
@@ -85,7 +85,7 @@ export function CollectionRunProgress({
       <ProgressBarBase value={getCollectionRunProgressPercentage(progress)} />
 
       {showList && (
-        <div className="flex flex-col gap-4">
+        <div className="flex max-h-96 flex-col gap-4 overflow-y-auto">
           {progress.projects.map((project) => (
             <div key={project.projectId} className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
@@ -106,7 +106,7 @@ export function CollectionRunProgress({
                           size="sm"
                           color={STATUS_BADGE_COLOR[chatbot.status]}
                         >
-                          {CHATBOT_DISPLAY_LABELS[chatbot.chatbotId]}
+                          {CHATBOT_DISPLAY_LABELS[chatbot.chatbotId]} · {chatbot.status}
                         </BadgeWithDot>
                       ))}
                     </div>

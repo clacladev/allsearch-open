@@ -126,14 +126,47 @@ describe('buildCollectionRunProgress', () => {
     }
   });
 
-  it('emits a serialised payload with no cost/estimate keys and no answer text (ADR 0007)', () => {
+  it('exposes only the allowed keys at every level, with no cost/estimate/answer content (ADR 0007)', () => {
     const rows: CollectionRunItemProgressRow[] = [makeRow({ status: 'completed' })];
     const progress = buildCollectionRunProgress({ id: 'run-1', status: 'completed' }, rows);
-    const serialised = JSON.stringify(progress).toLowerCase();
 
-    for (const forbidden of ['cost', 'estimate', 'spend', 'token', 'answer', 'text']) {
-      expect(serialised).not.toContain(forbidden);
-    }
+    // Assert on key sets rather than scanning stringified values: a realistic prompt name (e.g.
+    // "best text editor") or chatbot label legitimately contains substrings like "text", so a
+    // value scan is both unsound (false positives) and toothless (misses a forbidden key whose
+    // value happens not to match). The shape is the actual contract ADR 0007 cares about.
+    expect(Object.keys(progress).sort()).toEqual(
+      [
+        'runId',
+        'status',
+        'isTerminal',
+        'promptsTotal',
+        'promptsCompleted',
+        'promptsFailed',
+        'promptsFinished',
+        'projects',
+      ].sort()
+    );
+
+    const project = progress.projects[0];
+    expect(Object.keys(project).sort()).toEqual(
+      [
+        'projectId',
+        'projectName',
+        'promptsTotal',
+        'promptsCompleted',
+        'promptsFailed',
+        'promptsFinished',
+        'prompts',
+      ].sort()
+    );
+
+    const prompt = project.prompts[0];
+    expect(Object.keys(prompt).sort()).toEqual(
+      ['promptId', 'promptName', 'status', 'chatbots'].sort()
+    );
+
+    const chatbot = prompt.chatbots[0];
+    expect(Object.keys(chatbot).sort()).toEqual(['chatbotId', 'status'].sort());
   });
 });
 

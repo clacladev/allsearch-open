@@ -167,4 +167,15 @@ describe('POST /api/collection-runs/[runId]/cancel', () => {
       .where(eq(collectionRunItems.run_id, run.id));
     expect(items.every((item) => item.status === 'cancelled')).toBe(true);
   });
+
+  it('returns 404 JSON for an unknown runId, matching the stream and report routes', async () => {
+    const req = new NextRequest('http://localhost/api/collection-runs/does-not-exist/cancel', {
+      method: 'POST',
+    });
+    const res = await postCancel(req, makeParams('does-not-exist'));
+
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+  });
 });

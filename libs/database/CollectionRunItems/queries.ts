@@ -149,7 +149,9 @@ export type CollectionRunItemProgressRow = {
 
 /** One query for a whole Run's progress: item rows joined to their Prompt and Project names.
  * The ORDER BY must stay deterministic — the stream endpoint compares serialised snapshots to
- * decide whether anything changed, and a non-deterministic order would emit phantom updates. */
+ * decide whether anything changed, and a non-deterministic order would emit phantom updates.
+ * Ordered by Project name, then Prompt created_at/name, then Chatbot id, so the grouped output is
+ * meaningful (not tie-broken on a random item UUID) and stable between polls. */
 export async function getCollectionRunItemProgressRowsForRun(
   runId: string
 ): Promise<CollectionRunItemProgressRow[]> {
@@ -167,7 +169,12 @@ export async function getCollectionRunItemProgressRowsForRun(
     .leftJoin(prompts, eq(collectionRunItems.prompt_id, prompts.id))
     .leftJoin(projects, eq(collectionRunItems.project_id, projects.id))
     .where(eq(collectionRunItems.run_id, runId))
-    .orderBy(asc(collectionRunItems.created_at), asc(collectionRunItems.id));
+    .orderBy(
+      asc(projects.name),
+      asc(prompts.created_at),
+      asc(prompts.name),
+      asc(collectionRunItems.chatbot_id)
+    );
 
   return rows.map((row) => ({
     projectId: row.projectId,

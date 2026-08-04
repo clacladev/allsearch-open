@@ -8,35 +8,70 @@ import { showErrorAlertToast } from '@/components/Alerts';
 import type { ActiveCollectionRunResponse } from '@/app/api/collection-runs/active/types';
 import type { CollectionRunProgress } from '@/libs/collection/progress';
 
-export function useCollectionRunProgress(initialRunId?: string): {
+/** Pure state-machine core of the hook below, extracted so it can be unit-tested without a DOM or
+ * React rendering. `hasDiscoveryResponse` is `activeRun !== undefined` at the call site — it
+ * distinguishes "the `/active` SWR call has not resolved yet" from "it resolved and there is no
+ * active Run" (`activeRunId` is then `null`/`undefined` either way). */
+export function deriveIsRunInProgress(state: {
   runId: string | undefined;
+  hasDiscoveryResponse: boolean;
+  activeRunId: string | null | undefined;
+  isStreamError: boolean;
+  progress: CollectionRunProgress | undefined;
+}): boolean | undefined {
+  const { runId, hasDiscoveryResponse, activeRunId, isStreamError, progress } = state;
+  const knownRunId = runId ?? activeRunId ?? undefined;
+
+  if (!runId && !hasDiscoveryResponse) return undefined;
+  if (isStreamError) return false;
+  if (knownRunId && !progress) return undefined;
+  if (!knownRunId || !progress) return false;
+  return !progress.isTerminal;
+}
+
+export function useCollectionRunProgress(initialRunId?: string): {
   progress: CollectionRunProgress | undefined;
   /** undefined = not known yet (discovery or first frame still pending). */
   isRunInProgress: boolean | undefined;
   isReconnecting: boolean;
+  /** The stream closed permanently (e.g. a 404 on reconnect) without ever reaching a terminal
+   * frame. Callers should stop waiting on `progress` and fall through. */
+  isStreamError: boolean;
   cancel: () => Promise<void>;
   isCancelling: boolean;
   clear: () => void;
 } {
   const [runId, setRunId] = useState(initialRunId);
-  const [isCleared, setIsCleared] = useState(false);
+  const [dismissedRunId, setDismissedRunId] = useState<string | undefined>(undefined);
   const [progress, setProgress] = useState<CollectionRunProgress | undefined>(undefined);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isStreamError, setIsStreamError] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // Kept live whenever the current Run is unknown or already finished, so a new active Run is
+  // discovered after the previous one ends — not just once, ever (issue 12 finding 3).
   const { data: activeRun } = useSWR<ActiveCollectionRunResponse>(
-    runId || isCleared ? null : RouteHelper.Api.CollectionRuns.getActive(),
+    !runId || progress?.isTerminal ? RouteHelper.Api.CollectionRuns.getActive() : null,
     (url: string) => appFetch<ActiveCollectionRunResponse>(url),
     { refreshInterval: 10_000 }
   );
 
   useEffect(() => {
-    if (activeRun?.runId && activeRun.runId !== runId) setRunId(activeRun.runId);
-  }, [activeRun, runId]);
+    if (
+      activeRun?.runId &&
+      activeRun.runId !== runId &&
+      activeRun.runId !== dismissedRunId
+    ) {
+      setRunId(activeRun.runId);
+      setProgress(undefined);
+      setIsStreamError(false);
+    }
+  }, [activeRun, runId, dismissedRunId]);
 
   useEffect(() => {
     if (!runId) return;
 
+    setIsStreamError(false);
     const source = new EventSource(RouteHelper.Api.CollectionRuns.getStream(runId));
 
     source.addEventListener('progress', (event) => {
@@ -49,19 +84,25 @@ export function useCollectionRunProgress(initialRunId?: string): {
       setIsReconnecting(false);
     });
     source.onopen = () => setIsReconnecting(false);
-    source.onerror = () => setIsReconnecting(source.readyState !== EventSource.CLOSED);
+    source.onerror = () => {
+      const isClosed = source.readyState === EventSource.CLOSED;
+      setIsReconnecting(!isClosed);
+      // EventSource never retries a non-200 / non-event-stream response on its own, so a closed
+      // connection here means this stream is dead for good — surface that instead of leaving
+      // callers waiting on a `progress` frame that will never arrive.
+      if (isClosed) setIsStreamError(true);
+    };
 
     return () => source.close();
   }, [runId]);
 
-  let isRunInProgress: boolean | undefined;
-  if ((!runId && !activeRun) || (runId && !progress)) {
-    isRunInProgress = undefined;
-  } else if ((!runId && activeRun?.runId === null && !progress) || progress?.isTerminal) {
-    isRunInProgress = false;
-  } else {
-    isRunInProgress = true;
-  }
+  const isRunInProgress = deriveIsRunInProgress({
+    runId,
+    hasDiscoveryResponse: activeRun !== undefined,
+    activeRunId: activeRun?.runId,
+    isStreamError,
+    progress,
+  });
 
   async function cancel() {
     if (!runId) return;
@@ -83,10 +124,11 @@ export function useCollectionRunProgress(initialRunId?: string): {
   }
 
   function clear() {
-    setIsCleared(true);
+    setDismissedRunId(runId);
     setRunId(undefined);
     setProgress(undefined);
+    setIsStreamError(false);
   }
 
-  return { runId, progress, isRunInProgress, isReconnecting, cancel, isCancelling, clear };
+  return { progress, isRunInProgress, isReconnecting, isStreamError, cancel, isCancelling, clear };
 }
