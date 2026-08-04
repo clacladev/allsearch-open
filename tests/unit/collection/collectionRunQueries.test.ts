@@ -6,6 +6,7 @@ import {
   cancelPendingCollectionRunItemRows,
   countCollectionRunItemRowsByStatus,
   finishCollectionRunItemRow,
+  getCollectionRunItemProgressRowsForRun,
   getNextPendingPromptGroupForRun,
   insertCollectionRunItemRows,
   resetFailedCollectionRunItemRows,
@@ -15,6 +16,7 @@ import {
   claimCollectionRunRow,
   finishCollectionRunRow,
   finishRunningCollectionRunRow,
+  getActiveCollectionRunRow,
   getCollectionRunRowWithId,
   getOldestPendingCollectionRunRow,
   insertCollectionRunRow,
@@ -302,6 +304,46 @@ describe('CollectionRuns queries', () => {
     expect(await finishRunningCollectionRunRow(run.id, 'failed', 'boom')).toBeUndefined();
     expect((await getCollectionRunRowWithId(run.id))?.status).toBe('completed');
   });
+
+  it('returns the oldest not-yet-terminal run, and undefined when only terminal runs exist', async () => {
+    const older = await insertCollectionRunRow({
+      status: 'completed',
+      started_at: null,
+      finished_at: new Date().toISOString(),
+      items_total: 0,
+      items_completed: 0,
+      items_failed: 0,
+      error: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    expect(await getActiveCollectionRunRow()).toBeUndefined();
+
+    const pending = await insertCollectionRunRow({
+      status: 'pending',
+      started_at: null,
+      finished_at: null,
+      items_total: 0,
+      items_completed: 0,
+      items_failed: 0,
+      error: null,
+      created_at: '2026-01-02T00:00:00.000Z',
+    });
+    const running = await insertCollectionRunRow({
+      status: 'running',
+      started_at: new Date().toISOString(),
+      finished_at: null,
+      items_total: 0,
+      items_completed: 0,
+      items_failed: 0,
+      error: null,
+      created_at: '2026-01-03T00:00:00.000Z',
+    });
+
+    expect((await getActiveCollectionRunRow())?.id).toBe(pending.id);
+    // Sanity: the terminal run inserted first is never picked up.
+    expect((await getActiveCollectionRunRow())?.id).not.toBe(older.id);
+    expect((await getActiveCollectionRunRow())?.id).not.toBe(running.id);
+  });
 });
 
 function makeItemInput(
@@ -570,6 +612,50 @@ describe('CollectionRunItems queries', () => {
       failed: 1,
       cancelled: 0,
     });
+  });
+
+  it('returns one row per item with Prompt and Project names, in deterministic created_at order', async () => {
+    const { project, prompt } = await createProjectAndPrompt();
+    const run = await insertCollectionRunRow({
+      status: 'running',
+      started_at: new Date().toISOString(),
+      finished_at: null,
+      items_total: 2,
+      items_completed: 0,
+      items_failed: 0,
+      error: null,
+    });
+
+    await insertCollectionRunItemRows([
+      {
+        ...makeItemInput(run.id, project.id, prompt.id, ChatbotId.Perplexity, 'completed'),
+        created_at: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        ...makeItemInput(run.id, project.id, prompt.id, ChatbotId.ChatGPT, 'pending'),
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    const rows = await getCollectionRunItemProgressRowsForRun(run.id);
+    expect(rows).toEqual([
+      {
+        projectId: project.id,
+        projectName: 'Example',
+        promptId: prompt.id,
+        promptName: 'Prompt',
+        chatbotId: ChatbotId.ChatGPT,
+        status: 'pending',
+      },
+      {
+        projectId: project.id,
+        projectName: 'Example',
+        promptId: prompt.id,
+        promptName: 'Prompt',
+        chatbotId: ChatbotId.Perplexity,
+        status: 'completed',
+      },
+    ]);
   });
 });
 

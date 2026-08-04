@@ -58,6 +58,13 @@ export const ROUTES = {
       CHATBOTS: '/api/settings/chatbots',
     },
 
+    // Collection Runs
+    COLLECTION_RUNS: {
+      ACTIVE: '/api/collection-runs/active',
+      STREAM: '/api/collection-runs/:runId/stream',
+      CANCEL: '/api/collection-runs/:runId/cancel',
+    },
+
     // New Project
     NEW_PROJECT: {
       DOMAIN_METADATA: '/api/new-project/domain-metadata',
@@ -96,7 +103,8 @@ export const ROUTES = {
 
 export const RouteHelper = {
   NewProject: {
-    getReport: (projectId: string) => ROUTES.NEW_PROJECT.REPORT.replace(':projectId', projectId),
+    getReport: (projectId: string, runId?: string) =>
+      ROUTES.NEW_PROJECT.REPORT.replace(':projectId', projectId) + getUrlParamsString({ runId }),
   },
 
   Project: {
@@ -272,6 +280,12 @@ export const RouteHelper = {
         }),
       getReport: (projectId: string) =>
         ROUTES.API.NEW_PROJECT.REPORT + getUrlParamsString({ projectId }),
+    },
+
+    CollectionRuns: {
+      getActive: () => ROUTES.API.COLLECTION_RUNS.ACTIVE,
+      getStream: (runId: string) => ROUTES.API.COLLECTION_RUNS.STREAM.replace(':runId', runId),
+      getCancel: (runId: string) => ROUTES.API.COLLECTION_RUNS.CANCEL.replace(':runId', runId),
     },
 
     Project: {

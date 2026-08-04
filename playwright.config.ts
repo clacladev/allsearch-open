@@ -29,11 +29,20 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      testIgnore: /collection-run-progress\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile,
       },
       dependencies: ['setup'],
+    },
+    {
+      // This app has no auth and no middleware, so this spec runs against a plain dev server
+      // without the Supabase magic-link setup the `chromium` project depends on (issue 21 owns
+      // fixing that setup; this project is a deliberate carve-out, not a workaround for it).
+      name: 'chromium-no-auth',
+      testMatch: /collection-run-progress\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });
