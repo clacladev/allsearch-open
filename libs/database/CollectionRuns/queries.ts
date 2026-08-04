@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, asc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { collectionRuns, collectionRunItems } from '../schema';
@@ -140,6 +140,20 @@ export async function resetRunningCollectionRunRows(): Promise<CollectionRunRow[
     .set({ status: 'pending' })
     .where(eq(collectionRuns.status, 'running'))
     .returning();
+}
+
+/** The Run the progress surface should attach to: the oldest not-yet-terminal Run, which is
+ * exactly the one the single Collection Run loop drains first. Terminal Runs are deliberately
+ * never returned, so a reload after a run finished shows no bar. */
+export async function getActiveCollectionRunRow(): Promise<CollectionRunRow | undefined> {
+  const db = await getDatabase();
+  const rows = await db
+    .select()
+    .from(collectionRuns)
+    .where(inArray(collectionRuns.status, ['pending', 'running']))
+    .orderBy(asc(collectionRuns.created_at), asc(collectionRuns.id))
+    .limit(1);
+  return rows[0];
 }
 
 /** Recomputes `items_completed` and `items_failed` from the item rows in one statement, rather
