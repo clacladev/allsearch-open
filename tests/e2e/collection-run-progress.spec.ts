@@ -4,8 +4,25 @@ import { test, expect } from '@playwright/test';
 // not `chromium` — the app has no auth and no middleware, and `app/(new-project)/**` performs
 // no DB-gated redirect, so it can run against a plain dev server with a migrated database.
 //
-// `route.fulfill` delivers the whole SSE body in a single response, so this spec verifies
-// rendering and the progress -> report swap, not incremental frame-by-frame timing.
+// There is no `webServer` wired up for this project (see playwright.config.ts's comment on why),
+// so a missing `PLAYWRIGHT_BASE_URL` must fail loudly with the exact command to run, rather than
+// a bare connection-refused error from the default `chromium` project's baseURL.
+test.beforeAll(() => {
+  if (!process.env.PLAYWRIGHT_BASE_URL) {
+    throw new Error(
+      'collection-run-progress.spec.ts requires PLAYWRIGHT_BASE_URL. Start a dev server, then run:\n' +
+        '  PLAYWRIGHT_BASE_URL=http://localhost:<port> bunx playwright test --project=chromium-no-auth'
+    );
+  }
+});
+
+// The EventSource client never retries a closed connection on its own (see
+// useCollectionRunProgress.ts), so the `progress` and `done` frames must arrive as two separate
+// stream requests, exactly like production: the first response serves only the `progress` frame
+// and ends the stream; the client's resulting `onerror`/reconnect makes a second request, which
+// this route handler answers with the `done` frame. Serving both frames in one response would let
+// React batch both `setProgress` calls into one commit and the streaming surface would never
+// render — that was the bug in the previous version of this test.
 
 const MOCK_PROJECT_ID = 'mock-project-id-nike-e2e';
 const MOCK_RUN_ID = 'mock-run-id';
@@ -100,12 +117,17 @@ const MOCK_REPORT_DATA = {
 
 test('shows streaming Collection Run progress, then swaps to the report', async ({ page }) => {
   let reportRequestCount = 0;
+  let streamRequestCount = 0;
 
   await page.route('**/api/collection-runs/*/stream', (route) => {
-    const body =
-      `retry: 3000\n\n` +
-      `event: progress\ndata: ${JSON.stringify(MOCK_PROGRESS_FRAME)}\n\n` +
-      `event: done\ndata: ${JSON.stringify(MOCK_DONE_FRAME)}\n\n`;
+    streamRequestCount++;
+    // First request (initial EventSource connect): serve only the `progress` frame and end the
+    // response. Second request (the reconnect the client's EventSource makes on its own once the
+    // first response ends): serve the terminal `done` frame.
+    const isFirstRequest = streamRequestCount === 1;
+    const body = isFirstRequest
+      ? `retry: 3000\n\nevent: progress\ndata: ${JSON.stringify(MOCK_PROGRESS_FRAME)}\n\n`
+      : `retry: 3000\n\nevent: done\ndata: ${JSON.stringify(MOCK_DONE_FRAME)}\n\n`;
     return route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
@@ -125,13 +147,17 @@ test('shows streaming Collection Run progress, then swaps to the report', async 
 
   await page.goto(`/new-project/report/${MOCK_PROJECT_ID}?runId=${MOCK_RUN_ID}`);
 
-  // --- The progress surface, fed by the mocked `progress` frame ---
-  await expect(page.getByText('Nike').first()).toBeVisible();
-  await expect(page.getByText('1 of 2')).toBeVisible();
-  await expect(page.getByText('ChatGPT').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  // --- The progress surface, fed by the mocked `progress` frame from the first stream request ---
+  const progressSurface = page.getByTestId('collection-run-progress');
+  await expect(progressSurface).toBeVisible();
+  await expect(progressSurface.getByTestId('collection-run-progress-count')).toHaveText('1 of 2');
+  await expect(progressSurface.getByTestId('collection-run-progress-cancel')).toBeVisible();
+  await expect(progressSurface.getByText('ChatGPT').first()).toBeVisible();
+  expect(reportRequestCount).toBe(0);
 
-  // --- The `done` frame swaps the surface for the finished report ---
+  // --- The EventSource reconnects on its own once the first response ends; the second stream
+  // request's `done` frame swaps the surface for the finished report ---
   await expect(page.getByText('Your Brand AI Visibility Report')).toBeVisible();
+  expect(streamRequestCount).toBe(2);
   expect(reportRequestCount).toBe(1);
 });

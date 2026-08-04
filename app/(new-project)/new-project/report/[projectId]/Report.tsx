@@ -11,7 +11,7 @@ import BrandsRankingTodayRadial, {
   getBrandsRankingTodayRadialData,
 } from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingTodayRadial';
 import { NewProjectLayoutColumn } from '@/app/(new-project)/layout';
-import { ArrowRight } from '@untitledui/icons';
+import { ArrowRight, RefreshCcw01 } from '@untitledui/icons';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
 import VisibilityScoresBarChart, {
   getVisibilityScoresBarChartData,
@@ -35,7 +35,11 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
     useCollectionRunProgress(runId);
 
   // Request the report only once the stream says the Run is done (or that there is no Run).
-  const { data, error: reportError } = useSWRImmutable(
+  const {
+    data,
+    error: reportError,
+    mutate: retryReport,
+  } = useSWRImmutable(
     isRunInProgress === false ? ['new-project-report', projectId] : null,
     () => appFetch<OverviewData>(RouteHelper.Api.NewProject.getReport(projectId))
   );
@@ -57,12 +61,15 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
     );
   }
 
-  if (isRunInProgress === true) {
+  // `progress` can still be undefined here for a render or two (the `isRunInProgress` flip and the
+  // frame that backs it land in separate state updates) — fall through to the loading state below
+  // rather than asserting it is present.
+  if (isRunInProgress === true && progress) {
     return (
       <NewProjectLayoutColumn size="lg">
         <FormHeader title="Collecting your AI visibility data…" description="" />
         <CollectionRunProgress
-          progress={progress!}
+          progress={progress}
           variant="panel"
           isReconnecting={isReconnecting}
           onCancel={cancel}
@@ -75,7 +82,21 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
   if (!data) {
     return (
       <NewProjectLayoutColumn size="lg">
-        <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
+        {reportError ? (
+          <>
+            <div className="text-error-800 text-sm">{reportError.message}</div>
+            <Button
+              size="lg"
+              color="secondary"
+              iconLeading={RefreshCcw01}
+              onClick={() => retryReport()}
+            >
+              Retry
+            </Button>
+          </>
+        ) : (
+          <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
+        )}
       </NewProjectLayoutColumn>
     );
   }
@@ -87,7 +108,7 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
         description="Rankings are based on your selected prompts only. Add more prompts to uncover new opportunities."
       />
 
-      {!!progress?.promptsFailed && (
+      {progress?.isTerminal && progress.status !== 'completed' && (
         <div className="text-tertiary -mt-4 ml-0.5 text-xs">
           {formatCollectionRunProgressSummary(progress)}
         </div>

@@ -40,6 +40,15 @@ export default defineConfig({
       // This app has no auth and no middleware, so this spec runs against a plain dev server
       // without the Supabase magic-link setup the `chromium` project depends on (issue 21 owns
       // fixing that setup; this project is a deliberate carve-out, not a workaround for it).
+      //
+      // There is deliberately no `webServer` here: the app needs a migrated per-install SQLite
+      // database (and, for other specs, provider config) that Playwright cannot bootstrap on its
+      // own, and no other project in this file uses `webServer` either — the established
+      // convention is a dev server started by hand. Run it with:
+      //   bun run dev
+      //   PLAYWRIGHT_BASE_URL=http://localhost:<port> bunx playwright test --project=chromium-no-auth
+      // The spec itself fails loudly with that instruction (rather than a bare connection-refused
+      // error) when `PLAYWRIGHT_BASE_URL` was not set — see its `test.beforeAll`.
       name: 'chromium-no-auth',
       testMatch: /collection-run-progress\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },

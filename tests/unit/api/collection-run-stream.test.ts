@@ -229,10 +229,62 @@ describe('GET /api/collection-runs/[runId]/stream', () => {
 
     const second = await nextFrame();
     expect(second?.event).toBe('progress');
-    const secondData = second?.data as { promptsCompleted: number };
+    const secondData = second?.data as {
+      promptsCompleted: number;
+      projects: { prompts: { chatbots: { chatbotId: string; status: string }[] }[] }[];
+    };
     // Both items belong to the same Prompt; the Prompt only reads as covered once every item is
-    // no longer pending/running, so promptsCompleted is still 0 with one item left pending.
+    // no longer pending/running, so promptsCompleted is still 0 with one item left pending — but
+    // the flipped item itself must show up as `completed` in the snapshot, otherwise a duplicated
+    // stale frame (same promptsCompleted, same everything) would pass this test too.
     expect(secondData.promptsCompleted).toBe(0);
+    const flippedChatbot = secondData.projects[0].prompts[0].chatbots.find(
+      (chatbot) => chatbot.chatbotId === ChatbotId.ChatGPT
+    );
+    expect(flippedChatbot?.status).toBe('completed');
+  }, 6_000);
+
+  it('emits a `done` frame and closes once the Run turns terminal while the stream is open', async () => {
+    // The production path: the stream starts on a non-terminal Run (so it enters the poll loop
+    // instead of the early-return branch at the top of the handler) and only becomes terminal on a
+    // later poll, while the connection is still open — as opposed to the earlier "terminal Run"
+    // test, which only exercises the early-return branch for a Run that was already finished when
+    // the stream started.
+    const { runId, items } = await createRunWithItems('running', ['running']);
+
+    const req = new NextRequest(`http://localhost/api/collection-runs/${runId}/stream`);
+    const res = await getStream(req, makeParams(runId));
+    expect(res.body).toBeTruthy();
+
+    const { nextFrame, reader } = createSseFrameReader(res.body!);
+
+    const first = await nextFrame();
+    expect(first?.event).toBe('progress');
+
+    await db
+      .update(collectionRunItems)
+      .set({ status: 'completed', finished_at: new Date().toISOString() })
+      .where(eq(collectionRunItems.id, items[0].id));
+    await db
+      .update(collectionRuns)
+      .set({ status: 'completed', finished_at: new Date().toISOString() })
+      .where(eq(collectionRuns.id, runId));
+    await recomputeCollectionRunCounters(runId);
+
+    // The poll that observes the terminal Run first sends a `progress` frame (the snapshot
+    // changed) and then, in the same iteration, the terminal `done` frame — see the route's
+    // `if (progress.isTerminal)` check right after its snapshot-diff `send('progress', ...)`.
+    const second = await nextFrame();
+    expect(second?.event).toBe('progress');
+
+    const done = await nextFrame();
+    expect(done?.event).toBe('done');
+    const doneData = done?.data as { isTerminal: boolean; status: string };
+    expect(doneData.isTerminal).toBe(true);
+    expect(doneData.status).toBe('completed');
+
+    const finalRead = await reader.read();
+    expect(finalRead.done).toBe(true);
   }, 6_000);
 
   it('ends the stream on client disconnect rather than hanging', async () => {

@@ -145,6 +145,12 @@ export function formatCollectionRunProgressSummary(progress: CollectionRunProgre
       (promptsFailed > 0 ? ` — ${promptsFailed} failed` : '')
     );
   }
+  if (status === 'failed') {
+    return (
+      `Run failed — covered ${promptsCompleted} of ${promptsTotal} Prompts` +
+      (promptsFailed > 0 ? ` — ${promptsFailed} failed` : '')
+    );
+  }
   if (promptsFailed > 0) {
     return `Covered ${promptsCompleted} of ${promptsTotal} Prompts — ${promptsFailed} failed`;
   }
