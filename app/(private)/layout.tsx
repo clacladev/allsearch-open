@@ -49,7 +49,9 @@ export default async function PrivateLayout({ children }: { children: ReactNode 
           >
             <EventContextProvider>
               <Sidebar />
-              {children}
+              <div style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}>
+                {children}
+              </div>
               <CollectionRunProgressBar />
             </EventContextProvider>
           </PrivateLayoutContextProvider>

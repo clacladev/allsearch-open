@@ -12,7 +12,6 @@ export type CollectionRunProgressChatbot = { chatbotId: ChatbotId; status: Colle
 export type CollectionRunProgressPrompt = {
   promptId: string;
   promptName: string;
-  status: CollectionRunItemStatus; // derived, see buildCollectionRunProgress
   chatbots: CollectionRunProgressChatbot[];
 };
 
@@ -87,7 +86,7 @@ export function buildCollectionRunProgress(
 
     for (const [promptId, prompt] of project.promptsById) {
       const status = derivePromptStatus(prompt.chatbots);
-      prompts.push({ promptId, promptName: prompt.promptName, status, chatbots: prompt.chatbots });
+      prompts.push({ promptId, promptName: prompt.promptName, chatbots: prompt.chatbots });
       if (status === 'completed') projectPromptsCompleted++;
       if (status === 'failed') projectPromptsFailed++;
       if (status === 'completed' || status === 'failed' || status === 'cancelled') {

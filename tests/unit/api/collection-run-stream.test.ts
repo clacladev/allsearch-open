@@ -8,6 +8,7 @@ import { migrateDatabase } from '@/libs/database/migrate';
 import { recomputeCollectionRunCounters } from '@/libs/database/CollectionRuns/queries';
 import { collectionRunItems, collectionRuns, projects, prompts, topics } from '@/libs/database/schema';
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
+import { COLLECTION_RUN_PROGRESS_HEARTBEAT_MS } from '@/libs/collection/constants';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from '../database/testHelpers';
 
 // Direct handler invocation against a real, migrated temp SQLite DB — same pattern as
@@ -306,4 +307,65 @@ describe('GET /api/collection-runs/[runId]/stream', () => {
     const finalRead = await reader.read();
     expect(finalRead.done).toBe(true);
   }, 6_000);
+
+  it('synthesises a cancelled `done` frame and closes when the Run row disappears mid-stream', async () => {
+    // e.g. the Run's Project gets deleted while the stream is open: `getCollectionRunProgress`
+    // then returns undefined on a later poll even though the stream started on a live, non-terminal
+    // Run. The route must not just break the loop silently — an EventSource client reconnecting
+    // into a 404 would get stuck (see route.ts's comment on this branch) — so it synthesises a
+    // terminal frame from the last known snapshot instead.
+    const { runId } = await createRunWithItems('running', ['running']);
+
+    const req = new NextRequest(`http://localhost/api/collection-runs/${runId}/stream`);
+    const res = await getStream(req, makeParams(runId));
+    expect(res.body).toBeTruthy();
+
+    const { nextFrame, reader } = createSseFrameReader(res.body!);
+
+    const first = await nextFrame();
+    expect(first?.event).toBe('progress');
+
+    // Cascades to the Run's items too (see schema.ts's onDelete: 'cascade').
+    await db.delete(collectionRuns).where(eq(collectionRuns.id, runId));
+
+    const done = await nextFrame();
+    expect(done?.event).toBe('done');
+    const doneData = done?.data as { isTerminal: boolean; status: string };
+    expect(doneData.isTerminal).toBe(true);
+    expect(doneData.status).toBe('cancelled');
+
+    const finalRead = await reader.read();
+    expect(finalRead.done).toBe(true);
+  }, 6_000);
+
+  it('sends a heartbeat comment frame when nothing changes for longer than the heartbeat cadence', async () => {
+    // Real-time wait rather than a mocked clock: the route's poll loop uses a plain
+    // `setTimeout`-backed `sleep`, and constants.ts is shared by unrelated modules (rate limiting),
+    // so mocking it process-wide would risk bleeding into other test files. This is slow but honest.
+    const { runId } = await createRunWithItems('running', ['pending']);
+
+    const req = new NextRequest(`http://localhost/api/collection-runs/${runId}/stream`);
+    const res = await getStream(req, makeParams(runId));
+    expect(res.body).toBeTruthy();
+
+    const { nextFrame, reader } = createSseFrameReader(res.body!);
+
+    const first = await nextFrame();
+    expect(first?.event).toBe('progress');
+
+    // Nothing about the Run changes for longer than the heartbeat cadence, so a comment frame must
+    // already be sitting in the stream's internal buffer by the time we read again — enqueue
+    // happens on the producer side regardless of when the consumer reads. Read the raw chunk
+    // directly (rather than through `nextFrame`, which would keep blocking past the heartbeat
+    // waiting for an actual data frame) and look for the `: ping` comment.
+    await new Promise((resolve) =>
+      setTimeout(resolve, COLLECTION_RUN_PROGRESS_HEARTBEAT_MS + 2_000)
+    );
+    const { value, done } = await reader.read();
+    expect(done).toBe(false);
+    const chunkText = new TextDecoder().decode(value);
+    expect(chunkText).toContain(': ping');
+
+    reader.cancel();
+  }, COLLECTION_RUN_PROGRESS_HEARTBEAT_MS + 5_000);
 });
