@@ -54,6 +54,3 @@ tests/e2e/.auth/
 
 # conductor personal settings (shared ones live in .conductor/settings.toml)
 .conductor/settings.local.toml
-
-# graphify generated output
-graphify-out/
