@@ -3,7 +3,14 @@ import Report from './Report';
 
 export const metadata: Metadata = { title: 'New Project - Report' };
 
-export default async function ReportPage({ params }: { params: Promise<{ projectId: string }> }) {
+export default async function ReportPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ runId?: string }>;
+}) {
   const { projectId } = await params;
-  return <Report projectId={projectId} />;
+  const { runId } = await searchParams;
+  return <Report projectId={projectId} runId={runId} />;
 }

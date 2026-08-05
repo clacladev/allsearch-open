@@ -3,9 +3,8 @@ import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { getPromptResponseSummaryRowsWithProjectIdInDateRange } from '@/libs/database/PromptResponses/queries';
 import { getSourceSummaryRowsWithProjectIdInDateRange } from '@/libs/database/Sources/queries';
-import { REPORT_TRY_AGAIN_LATER_ERROR_CODE } from './types';
 import { getActiveCompetitorRowsWithProjectId } from '@/libs/database/Competitors/queries';
-import { getISODateString } from '@/libs/database/shared/ISODateString';
+import { getISODateString, getTodayISODateString } from '@/libs/database/shared/ISODateString';
 import { z } from 'zod';
 import { getOverviewData } from '@/libs/utils/project-analysis/getOverviewData';
 
@@ -19,14 +18,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (!project.prompts_updated_at) {
-      return NextResponse.json(
-        { error: 'Project prompts not updated yet', code: REPORT_TRY_AGAIN_LATER_ERROR_CODE },
-        { status: 503 }
-      );
-    }
-
-    const targetDateISO = getISODateString(project.prompts_updated_at);
+    // `prompts_updated_at` is null only when no Run has ever claimed a Prompt group for this
+    // Project yet — e.g. a Run cancelled/killed before it got that far. Fall back to today so the
+    // report renders empty rather than erroring (issue 12 removed the 503 retry branch).
+    const targetDateISO = project.prompts_updated_at
+      ? getISODateString(project.prompts_updated_at)
+      : getTodayISODateString();
     const [promptResponses, competitors, prompts, sourceRows] = await Promise.all([
       getPromptResponseSummaryRowsWithProjectIdInDateRange(projectId, targetDateISO, targetDateISO),
       getActiveCompetitorRowsWithProjectId(projectId),

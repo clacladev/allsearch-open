@@ -3,7 +3,7 @@ import 'server-only';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
-import { collectionRunItems, prompts } from '../schema';
+import { collectionRunItems, projects, prompts } from '../schema';
 import { ChatbotId } from '../shared/ChatbotId';
 import {
   CollectionRunItemRow,
@@ -136,6 +136,54 @@ export async function cancelPendingCollectionRunItemRows(
     .set({ status: 'cancelled' })
     .where(and(eq(collectionRunItems.run_id, runId), eq(collectionRunItems.status, 'pending')))
     .returning();
+}
+
+export type CollectionRunItemProgressRow = {
+  projectId: string;
+  projectName: string;
+  promptId: string;
+  promptName: string;
+  chatbotId: ChatbotId;
+  status: CollectionRunItemStatus;
+};
+
+/** One query for a whole Run's progress: item rows joined to their Prompt and Project names.
+ * The ORDER BY must stay deterministic — the stream endpoint compares serialised snapshots to
+ * decide whether anything changed, and a non-deterministic order would emit phantom updates.
+ * Ordered by Project name, then Prompt created_at/name, then Chatbot id, so the grouped output is
+ * meaningful (not tie-broken on a random item UUID) and stable between polls. */
+export async function getCollectionRunItemProgressRowsForRun(
+  runId: string
+): Promise<CollectionRunItemProgressRow[]> {
+  const db = await getDatabase();
+  const rows = await db
+    .select({
+      projectId: collectionRunItems.project_id,
+      projectName: projects.name,
+      promptId: collectionRunItems.prompt_id,
+      promptName: prompts.name,
+      chatbotId: collectionRunItems.chatbot_id,
+      status: collectionRunItems.status,
+    })
+    .from(collectionRunItems)
+    .leftJoin(prompts, eq(collectionRunItems.prompt_id, prompts.id))
+    .leftJoin(projects, eq(collectionRunItems.project_id, projects.id))
+    .where(eq(collectionRunItems.run_id, runId))
+    .orderBy(
+      asc(projects.name),
+      asc(prompts.created_at),
+      asc(prompts.name),
+      asc(collectionRunItems.chatbot_id)
+    );
+
+  return rows.map((row) => ({
+    projectId: row.projectId,
+    projectName: row.projectName ?? '',
+    promptId: row.promptId,
+    promptName: row.promptName ?? '',
+    chatbotId: row.chatbotId,
+    status: row.status as CollectionRunItemStatus,
+  }));
 }
 
 export async function countCollectionRunItemRowsByStatus(

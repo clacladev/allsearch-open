@@ -172,7 +172,10 @@ const SidebarNavigationSimple = ({
 
       <NavList activeUrl={activeUrl} items={items} />
 
-      <div className="mt-auto flex flex-col gap-4 px-2 py-4 lg:px-4 lg:py-6">
+      <div
+        className="mt-auto flex flex-col gap-4 px-2 py-4 lg:px-4 lg:py-6"
+        style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}
+      >
         {footerItems.length > 0 && (
           <ul className="flex flex-col">
             {footerItems.map((item) => (

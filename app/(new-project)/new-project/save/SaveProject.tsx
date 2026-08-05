@@ -56,7 +56,7 @@ export default function SaveProject() {
     competitors,
     (data) => {
       resetAll();
-      router.replace(RouteHelper.NewProject.getReport(data.projectId));
+      router.replace(RouteHelper.NewProject.getReport(data.projectId, data.runId));
     }
   );
 

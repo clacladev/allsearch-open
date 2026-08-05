@@ -10,3 +10,11 @@ export const PROVIDER_COOLDOWN_MS = 30_000;
  *  depth so a cancellation takes effect promptly. Deliberately the same number so there is one
  *  tunable, not two. */
 export const MAX_CONCURRENT_PROMPT_GROUPS = MAX_CONCURRENT_AI_CALLS;
+
+/** How often the SSE endpoint re-reads the Run's items. One cheap indexed query per second per
+ * open stream; the endpoint only writes a frame when the snapshot actually changed. */
+export const COLLECTION_RUN_PROGRESS_POLL_INTERVAL_MS = 1_000;
+/** Comment frame cadence when nothing changed, so idle connections are not dropped. */
+export const COLLECTION_RUN_PROGRESS_HEARTBEAT_MS = 15_000;
+/** `retry:` hint sent to EventSource — how long the browser waits before reconnecting. */
+export const COLLECTION_RUN_PROGRESS_RETRY_MS = 3_000;
