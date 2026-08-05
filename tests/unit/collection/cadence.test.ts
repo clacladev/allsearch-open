@@ -1,3 +1,9 @@
+// Must run before any `Date` use below: pins the process timezone to one that actually observes
+// the US spring-forward transition the DST test exercises. Without this, the test is vacuous under
+// any timezone that doesn't shift on this date (e.g. Europe/London, UTC) — verified against Bun
+// 1.3.14, which reads `process.env.TZ` at Date-use time, not at process start.
+process.env.TZ = 'America/New_York';
+
 import { describe, expect, it } from 'bun:test';
 import { deriveCollectionCadenceState } from '@/libs/collection/cadence';
 

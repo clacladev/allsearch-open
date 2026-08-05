@@ -236,6 +236,23 @@ describe('POST /api/process-prompts', () => {
     // Drains the seeded (item-less) Run before afterEach cleans up.
     await waitForCollectionRunLoop();
   });
+
+  it('creates exactly one collection_runs row when two app-wide POSTs race (criterion 13)', async () => {
+    await setAllProviderKeys();
+    await createProjectWithPrompt('Example');
+
+    const [resA, resB] = await Promise.all([postAllProjects(), postAllProjects()]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+    const [bodyA, bodyB] = await Promise.all([resA.json(), resB.json()]);
+    expect(bodyA.runId).toBe(bodyB.runId);
+
+    const runs = await db.select().from(collectionRuns);
+    expect(runs).toHaveLength(1);
+
+    await waitForCollectionRunLoop();
+  });
 });
 
 describe('POST /api/process-prompts/[projectId] — shouldForce semantics', () => {

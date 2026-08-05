@@ -52,6 +52,41 @@ export async function insertCollectionRunWithItems(
   });
 }
 
+/** Same insert as `insertCollectionRunWithItems`, but atomic with the "no other Run already
+ * active" check (criterion 13): the check and the insert happen inside the same transaction, so
+ * two overlapping app-wide refresh requests — however much async work (Project/Prompt resolution)
+ * ran before each reached this call — can never both insert a Run. The loser observes the winner's
+ * row and is returned it instead (`wasCreated: false`), without inserting its own Run or items.
+ * Deliberately not used by the per-Project route or new-Project creation, which must still be able
+ * to start a Run while another is in flight — only the app-wide route needs this guard. */
+export async function insertCollectionRunWithItemsIfNoneActive(
+  input: InsertCollectionRunRowInput & { id: string },
+  itemInputs: InsertCollectionRunItemRowInput[]
+): Promise<{ run: CollectionRunRow; wasCreated: boolean }> {
+  const db = await getDatabase();
+  return db.transaction((tx) => {
+    const [activeRow] = tx
+      .select()
+      .from(collectionRuns)
+      .where(inArray(collectionRuns.status, ['pending', 'running']))
+      .orderBy(asc(collectionRuns.created_at), asc(collectionRuns.id))
+      .limit(1)
+      .all();
+    if (activeRow) return { run: activeRow, wasCreated: false };
+
+    tx.insert(collectionRuns).values(input).run();
+    if (itemInputs.length) tx.insert(collectionRunItems).values(itemInputs).run();
+    const [row] = tx
+      .update(collectionRuns)
+      .set({ items_total: itemInputs.length })
+      .where(eq(collectionRuns.id, input.id))
+      .returning()
+      .all();
+    if (!row) throw new Error(`No collection_runs row found for id ${input.id}`);
+    return { run: row, wasCreated: true };
+  });
+}
+
 export async function getCollectionRunRowWithId(id: string): Promise<CollectionRunRow | undefined> {
   const db = await getDatabase();
   const rows = await db.select().from(collectionRuns).where(eq(collectionRuns.id, id)).limit(1);
