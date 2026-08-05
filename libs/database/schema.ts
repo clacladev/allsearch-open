@@ -166,6 +166,17 @@ export const collectionRuns = sqliteTable(
   {
     id: idColumn(),
     status: text('status').notNull(),
+    // `'all' | 'projects'` (see `CollectionRunScope`). `'all'` means the Run covered every eligible
+    // Project and is what the 7-day cadence clock anchors on. Deliberately has NO CHECK constraint,
+    // unlike `status` above: adding one forces drizzle-kit to rebuild this table (`CREATE __new_x` /
+    // `INSERT SELECT` / `DROP TABLE` / `RENAME`), and that `DROP TABLE` runs inside the migration
+    // transaction — where `PRAGMA foreign_keys` (set ON for every connection, see
+    // `libs/database/client.ts`) cannot be turned off — which would cascade-delete every
+    // `collection_run_items` row and NULL every `prompt_responses.run_id`. The `'all'` default
+    // backfills pre-existing rows, whose true scope is unknowable; this is behaviourally identical
+    // to the documented "no app-wide Run yet → anchor on the most recent completed Run of any scope"
+    // fallback.
+    scope: text('scope').notNull().default('all'),
     started_at: text('started_at'),
     finished_at: text('finished_at'),
     items_total: integer('items_total').notNull().default(0),

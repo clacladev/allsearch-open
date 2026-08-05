@@ -211,6 +211,31 @@ describe('POST /api/process-prompts', () => {
     const run = await getRun(body.runId);
     expect(run?.status).toBe('completed');
   });
+
+  it('is a no-op returning the already-in-flight Run when one is pending (criterion 13)', async () => {
+    const [existingRun] = await db
+      .insert(collectionRuns)
+      .values({
+        status: 'pending',
+        started_at: null,
+        finished_at: null,
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      })
+      .returning();
+
+    const res = await postAllProjects();
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.runId).toBe(existingRun.id);
+    expect(await db.select().from(collectionRuns)).toHaveLength(1);
+
+    // Drains the seeded (item-less) Run before afterEach cleans up.
+    await waitForCollectionRunLoop();
+  });
 });
 
 describe('POST /api/process-prompts/[projectId] — shouldForce semantics', () => {

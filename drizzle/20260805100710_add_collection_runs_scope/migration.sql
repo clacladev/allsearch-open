@@ -1,0 +1,1 @@
+ALTER TABLE `collection_runs` ADD `scope` text DEFAULT 'all' NOT NULL;
