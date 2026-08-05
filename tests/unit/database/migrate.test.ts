@@ -8,7 +8,7 @@ import { sql } from 'drizzle-orm';
 
 import { createDatabase, type AllSearchDatabase } from '@/libs/database/client';
 import { migrateDatabase } from '@/libs/database/migrate';
-import { projects, settings } from '@/libs/database/schema';
+import { collectionRunItems, collectionRuns, projects, settings } from '@/libs/database/schema';
 import { cleanupTempDbPath, closeDatabase, createTempDbPath } from './testHelpers';
 
 const EXPECTED_TABLE_NAMES = [
@@ -207,6 +207,73 @@ describe('migrateDatabase', () => {
       expect(rows[0].enabled_chatbots).toBeNull();
     } finally {
       rmSync(beforeRebuildFolder, { recursive: true, force: true });
+    }
+  });
+
+  it('adds scope as a plain column ADD, preserving a pre-existing Run and its Run items (finding 1: no cascade-delete)', async () => {
+    dbPath = createTempDbPath('migrate-collection-runs-scope');
+
+    // Migrate using only the migrations before add_collection_runs_scope — an ALTER TABLE ADD is
+    // what this guards; a table recreate (`CREATE __new_x` / `INSERT SELECT` / `DROP TABLE` /
+    // `RENAME`) on `collection_runs` would cascade-delete these `collection_run_items` rows because
+    // `PRAGMA foreign_keys` is ON for every connection and cannot be toggled off inside the
+    // migration transaction.
+    const realMigrationsFolder = join(process.cwd(), 'drizzle');
+    const realMigrationNames = readdirSync(realMigrationsFolder).sort();
+    const migrationsBeforeScope = realMigrationNames.slice(0, -1);
+    const beforeScopeFolder = mkdtempSync(join(tmpdir(), 'allsearch-migrate-scope-'));
+    for (const migrationName of migrationsBeforeScope) {
+      cpSync(join(realMigrationsFolder, migrationName), join(beforeScopeFolder, migrationName), {
+        recursive: true,
+      });
+    }
+
+    try {
+      db = await createDatabase(dbPath);
+      await migrateDatabase(db, dbPath, beforeScopeFolder);
+
+      const [project] = await db
+        .insert(projects)
+        .values({ url: 'https://example.com', name: 'Example', aliases: [] })
+        .returning();
+      await db.run(sql`
+        INSERT INTO topics (id, created_at, updated_at, name, project_id, is_archived)
+        VALUES ('topic-1', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', 'Topic', ${project.id}, 0)
+      `);
+      await db.run(sql`
+        INSERT INTO prompts (id, created_at, updated_at, name, topic_id, project_id, is_archived)
+        VALUES ('prompt-1', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', 'Prompt', 'topic-1', ${project.id}, 0)
+      `);
+      // Raw SQL, not the drizzle `collectionRuns`/`collectionRunItems` insert builders: those
+      // reflect today's schema (which has `scope`) and the table at this migration state does not
+      // have that column yet.
+      await db.run(sql`
+        INSERT INTO collection_runs (id, status, started_at, finished_at, items_total, items_completed, items_failed, error, created_at)
+        VALUES ('run-1', 'completed', '2026-01-01T00:00:00Z', '2026-01-01T00:01:00Z', 2, 2, 0, NULL, '2026-01-01T00:00:00Z')
+      `);
+      await db.run(sql`
+        INSERT INTO collection_run_items (id, run_id, project_id, prompt_id, chatbot_id, status, attempts, error, started_at, finished_at, created_at)
+        VALUES ('item-1', 'run-1', ${project.id}, 'prompt-1', 'chatgpt', 'completed', 1, NULL, '2026-01-01T00:00:00Z', '2026-01-01T00:01:00Z', '2026-01-01T00:00:00Z')
+      `);
+      await db.run(sql`
+        INSERT INTO collection_run_items (id, run_id, project_id, prompt_id, chatbot_id, status, attempts, error, started_at, finished_at, created_at)
+        VALUES ('item-2', 'run-1', ${project.id}, 'prompt-1', 'perplexity', 'completed', 1, NULL, '2026-01-01T00:00:00Z', '2026-01-01T00:01:00Z', '2026-01-01T00:00:00Z')
+      `);
+      closeDatabase(db);
+
+      // Now apply the app's real, full migration sequence, including add_collection_runs_scope.
+      db = await createDatabase(dbPath);
+      await migrateDatabase(db, dbPath);
+
+      const runRows = await db.select().from(collectionRuns);
+      expect(runRows).toHaveLength(1);
+      expect(runRows[0].id).toBe('run-1');
+      expect(runRows[0].scope).toBe('all');
+
+      const itemRows = await db.select().from(collectionRunItems);
+      expect(itemRows.map((row) => row.id).sort()).toEqual(['item-1', 'item-2']);
+    } finally {
+      rmSync(beforeScopeFolder, { recursive: true, force: true });
     }
   });
 });

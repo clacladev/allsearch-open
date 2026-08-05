@@ -61,9 +61,13 @@ export const ROUTES = {
     // Collection Runs
     COLLECTION_RUNS: {
       ACTIVE: '/api/collection-runs/active',
+      CADENCE: '/api/collection-runs/cadence',
       STREAM: '/api/collection-runs/:runId/stream',
       CANCEL: '/api/collection-runs/:runId/cancel',
+      RETRY: '/api/collection-runs/:runId/retry',
     },
+    // The app-wide Collection Run trigger; the per-Project sibling is API.PROJECT.PROCESS_PROMPTS.
+    PROCESS_PROMPTS: '/api/process-prompts',
 
     // New Project
     NEW_PROJECT: {
@@ -284,8 +288,11 @@ export const RouteHelper = {
 
     CollectionRuns: {
       getActive: () => ROUTES.API.COLLECTION_RUNS.ACTIVE,
+      getCadence: () => ROUTES.API.COLLECTION_RUNS.CADENCE,
       getStream: (runId: string) => ROUTES.API.COLLECTION_RUNS.STREAM.replace(':runId', runId),
       getCancel: (runId: string) => ROUTES.API.COLLECTION_RUNS.CANCEL.replace(':runId', runId),
+      getRetry: (runId: string) => ROUTES.API.COLLECTION_RUNS.RETRY.replace(':runId', runId),
+      getProcessAllPrompts: () => ROUTES.API.PROCESS_PROMPTS,
     },
 
     Project: {

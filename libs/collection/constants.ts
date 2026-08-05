@@ -18,3 +18,9 @@ export const COLLECTION_RUN_PROGRESS_POLL_INTERVAL_MS = 1_000;
 export const COLLECTION_RUN_PROGRESS_HEARTBEAT_MS = 15_000;
 /** `retry:` hint sent to EventSource — how long the browser waits before reconnecting. */
 export const COLLECTION_RUN_PROGRESS_RETRY_MS = 3_000;
+
+/** The single, hardcoded, app-wide collection cadence (issue 13, criterion 1). Not configurable,
+ * not per-Project, not surfaced as a setting. Measured as exact elapsed milliseconds, never in
+ * calendar days, so DST transitions cannot shift it. */
+export const COLLECTION_CADENCE_DAYS = 7;
+export const COLLECTION_CADENCE_MS = COLLECTION_CADENCE_DAYS * 24 * 60 * 60 * 1000;

@@ -1,14 +1,15 @@
 import 'server-only';
 
-import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
 
 import { getDatabase } from '../client';
 import { collectionRuns, collectionRunItems } from '../schema';
 import { CollectionRunItemRow } from '../CollectionRunItems/types';
-import { CollectionRunRow, CollectionRunStatus } from './types';
+import { CollectionRunRow, CollectionRunScope, CollectionRunStatus } from './types';
 
-type InsertCollectionRunRowInput = Omit<CollectionRunRow, 'id' | 'created_at'> & {
+type InsertCollectionRunRowInput = Omit<CollectionRunRow, 'id' | 'created_at' | 'scope'> & {
   created_at?: string;
+  scope?: CollectionRunScope;
 };
 type InsertCollectionRunItemRowInput = Omit<CollectionRunItemRow, 'id' | 'created_at'> & {
   created_at?: string;
@@ -154,6 +155,55 @@ export async function getActiveCollectionRunRow(): Promise<CollectionRunRow | un
     .orderBy(asc(collectionRuns.created_at), asc(collectionRuns.id))
     .limit(1);
   return rows[0];
+}
+
+/** The finish timestamp the 7-day cadence clock is anchored on: the most recent `completed` Run
+ * with `scope = 'all'`. Falls back to the most recent `completed` Run of any scope when no
+ * app-wide Run has ever completed, so a freshly onboarded install (whose only Run was the
+ * per-Project one fired at Project creation) is not immediately told its data is stale. Returns
+ * null when no Run has ever completed. `finished_at` holds `new Date().toISOString()` values, so
+ * lexicographic DESC ordering is chronological. */
+export async function getCollectionCadenceAnchorTimestamp(): Promise<string | null> {
+  const db = await getDatabase();
+  const [scopedRow] = await db
+    .select({ finished_at: collectionRuns.finished_at })
+    .from(collectionRuns)
+    .where(
+      and(
+        eq(collectionRuns.status, 'completed'),
+        eq(collectionRuns.scope, 'all'),
+        isNotNull(collectionRuns.finished_at)
+      )
+    )
+    .orderBy(desc(collectionRuns.finished_at))
+    .limit(1);
+  if (scopedRow) return scopedRow.finished_at;
+
+  const [anyScopeRow] = await db
+    .select({ finished_at: collectionRuns.finished_at })
+    .from(collectionRuns)
+    .where(and(eq(collectionRuns.status, 'completed'), isNotNull(collectionRuns.finished_at)))
+    .orderBy(desc(collectionRuns.finished_at))
+    .limit(1);
+  return anyScopeRow?.finished_at ?? null;
+}
+
+/** The most recently finished terminal Run (`completed | failed | cancelled`), regardless of
+ * scope — the only Run the retry offer ever applies to. */
+export async function getLatestTerminalCollectionRunRow(): Promise<CollectionRunRow | undefined> {
+  const db = await getDatabase();
+  const [row] = await db
+    .select()
+    .from(collectionRuns)
+    .where(
+      and(
+        inArray(collectionRuns.status, ['completed', 'failed', 'cancelled']),
+        isNotNull(collectionRuns.finished_at)
+      )
+    )
+    .orderBy(desc(collectionRuns.finished_at), desc(collectionRuns.id))
+    .limit(1);
+  return row;
 }
 
 /** Recomputes `items_completed` and `items_failed` from the item rows in one statement, rather

@@ -138,6 +138,18 @@ export async function cancelPendingCollectionRunItemRows(
     .returning();
 }
 
+/** How many DISTINCT Prompts have at least one `failed` item in this Run. Deliberately not
+ * `collection_runs.items_failed`, which counts Prompt x Chatbot items and would overstate the
+ * number shown to the user. */
+export async function countDistinctFailedPromptsForRun(runId: string): Promise<number> {
+  const db = await getDatabase();
+  const rows = await db
+    .select({ count: sql<number>`count(distinct ${collectionRunItems.prompt_id})` })
+    .from(collectionRunItems)
+    .where(and(eq(collectionRunItems.run_id, runId), eq(collectionRunItems.status, 'failed')));
+  return Number(rows[0]?.count ?? 0);
+}
+
 export type CollectionRunItemProgressRow = {
   projectId: string;
   projectName: string;

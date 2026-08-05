@@ -14,7 +14,7 @@ import {
   recomputeCollectionRunCounters,
   reopenCollectionRunRow,
 } from '@/libs/database/CollectionRuns/queries';
-import { CollectionRunRow } from '@/libs/database/CollectionRuns/types';
+import { CollectionRunRow, CollectionRunScope } from '@/libs/database/CollectionRuns/types';
 import {
   cancelPendingCollectionRunItemRows,
   countCollectionRunItemRowsByStatus,
@@ -47,6 +47,10 @@ export async function createCollectionRun(
 ): Promise<CollectionRunRow> {
   const targetDate = getTodayISODateString();
   const projects = await resolveProjectRowsToCollect(input?.projectIds);
+  // Derived here rather than passed in, so a call site can never record a scope that contradicts
+  // its own projectIds. Omitting projectIds is exactly "every eligible Project" — the only kind of
+  // Run that resets the 7-day cadence clock.
+  const scope: CollectionRunScope = input?.projectIds ? 'projects' : 'all';
   const chatbotIds = await getEffectiveEnabledChatbotIds();
 
   const runId = crypto.randomUUID();
@@ -82,6 +86,7 @@ export async function createCollectionRun(
     {
       id: runId,
       status: 'pending',
+      scope,
       started_at: null,
       finished_at: null,
       items_total: 0,
