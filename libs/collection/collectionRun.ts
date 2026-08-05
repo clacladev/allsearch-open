@@ -11,10 +11,11 @@ import {
   finishRunningCollectionRunRow,
   getCollectionRunRowWithId,
   insertCollectionRunWithItems,
+  insertCollectionRunWithItemsIfNoneActive,
   recomputeCollectionRunCounters,
   reopenCollectionRunRow,
 } from '@/libs/database/CollectionRuns/queries';
-import { CollectionRunRow } from '@/libs/database/CollectionRuns/types';
+import { CollectionRunRow, CollectionRunScope } from '@/libs/database/CollectionRuns/types';
 import {
   cancelPendingCollectionRunItemRows,
   countCollectionRunItemRowsByStatus,
@@ -38,15 +39,20 @@ async function resolveProjectRowsToCollect(projectIds?: string[]): Promise<Proje
 /** Creates a `pending` Collection Run and materialises one `pending` item per
  * (Prompt x enabled Chatbot), setting `items_total`. Does not start anything. Every Project/Prompt
  * lookup happens before the Run is inserted, and the insert itself — Run row, item rows and
- * `items_total` — is one atomic transaction (`insertCollectionRunWithItems`), so the Run can never
- * be observed `pending` with its items not yet landed. A Run with zero items — every Prompt already
- * has today's data, which is a legitimate no-op — is finalised `completed` immediately rather than
- * left for the loop to discover nothing to do. */
+ * `items_total` — is one atomic transaction (`insertCollectionRunWithItems`, or
+ * `insertCollectionRunWithItemsIfNoneActive` for scope 'all' — see criterion 13 below), so the Run
+ * can never be observed `pending` with its items not yet landed. A Run with zero items — every
+ * Prompt already has today's data, which is a legitimate no-op — is finalised `completed`
+ * immediately rather than left for the loop to discover nothing to do. */
 export async function createCollectionRun(
   input?: CreateCollectionRunInput
 ): Promise<CollectionRunRow> {
   const targetDate = getTodayISODateString();
   const projects = await resolveProjectRowsToCollect(input?.projectIds);
+  // Derived here rather than passed in, so a call site can never record a scope that contradicts
+  // its own projectIds. Omitting projectIds is exactly "every eligible Project" — the only kind of
+  // Run that resets the 7-day cadence clock.
+  const scope: CollectionRunScope = input?.projectIds ? 'projects' : 'all';
   const chatbotIds = await getEffectiveEnabledChatbotIds();
 
   const runId = crypto.randomUUID();
@@ -78,19 +84,30 @@ export async function createCollectionRun(
     }
   }
 
-  const run = await insertCollectionRunWithItems(
-    {
-      id: runId,
-      status: 'pending',
-      started_at: null,
-      finished_at: null,
-      items_total: 0,
-      items_completed: 0,
-      items_failed: 0,
-      error: null,
-    },
-    itemInputs
-  );
+  const runInput = {
+    id: runId,
+    status: 'pending' as const,
+    scope,
+    started_at: null,
+    finished_at: null,
+    items_total: 0,
+    items_completed: 0,
+    items_failed: 0,
+    error: null,
+  };
+
+  // Criterion 13: the app-wide refresh (scope 'all') must never create a second overlapping Run —
+  // the check and the insert happen atomically in the same transaction. The per-Project route and
+  // new-Project creation (scope 'projects') are exempt: those may still start a Run while another
+  // is in flight, so they use the plain, unguarded insert.
+  let run: CollectionRunRow;
+  if (scope === 'all') {
+    const result = await insertCollectionRunWithItemsIfNoneActive(runInput, itemInputs);
+    if (!result.wasCreated) return result.run;
+    run = result.run;
+  } else {
+    run = await insertCollectionRunWithItems(runInput, itemInputs);
+  }
 
   // A Project that contributed zero items here — either every one of its Prompts already has
   // today's data, or the effective enabled Chatbot set is empty — is one this loop is never going

@@ -70,14 +70,17 @@ export function useCollectionRunProgress(initialRunId?: string): {
       setProgress(undefined);
       return;
     }
-    if (
-      activeRun?.runId &&
-      activeRun.runId !== runId &&
-      activeRun.runId !== dismissedRunId
-    ) {
-      setRunId(activeRun.runId);
-      setProgress(undefined);
-      setIsStreamError(false);
+    if (activeRun?.runId && activeRun.runId !== runId) {
+      // A dismissed Run id becoming active again means it was reopened (e.g. a retry after the
+      // progress bar was dismissed) — clear the dismissal so the branch above re-attaches to it on
+      // the next pass, instead of ignoring it for its whole lifetime.
+      if (activeRun.runId === dismissedRunId) {
+        setDismissedRunId(undefined);
+      } else {
+        setRunId(activeRun.runId);
+        setProgress(undefined);
+        setIsStreamError(false);
+      }
     }
   }, [activeRun, runId, dismissedRunId, isStreamError, initialRunId]);
 

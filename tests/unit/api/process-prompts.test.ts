@@ -211,6 +211,48 @@ describe('POST /api/process-prompts', () => {
     const run = await getRun(body.runId);
     expect(run?.status).toBe('completed');
   });
+
+  it('is a no-op returning the already-in-flight Run when one is pending (criterion 13)', async () => {
+    const [existingRun] = await db
+      .insert(collectionRuns)
+      .values({
+        status: 'pending',
+        started_at: null,
+        finished_at: null,
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      })
+      .returning();
+
+    const res = await postAllProjects();
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.runId).toBe(existingRun.id);
+    expect(await db.select().from(collectionRuns)).toHaveLength(1);
+
+    // Drains the seeded (item-less) Run before afterEach cleans up.
+    await waitForCollectionRunLoop();
+  });
+
+  it('creates exactly one collection_runs row when two app-wide POSTs race (criterion 13)', async () => {
+    await setAllProviderKeys();
+    await createProjectWithPrompt('Example');
+
+    const [resA, resB] = await Promise.all([postAllProjects(), postAllProjects()]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+    const [bodyA, bodyB] = await Promise.all([resA.json(), resB.json()]);
+    expect(bodyA.runId).toBe(bodyB.runId);
+
+    const runs = await db.select().from(collectionRuns);
+    expect(runs).toHaveLength(1);
+
+    await waitForCollectionRunLoop();
+  });
 });
 
 describe('POST /api/process-prompts/[projectId] — shouldForce semantics', () => {

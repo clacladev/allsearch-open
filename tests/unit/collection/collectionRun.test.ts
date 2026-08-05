@@ -641,6 +641,49 @@ describe('issue 10 — shouldForce re-collects Prompts that already have a Promp
   });
 });
 
+describe('issue 13 — scope is derived from projectIds', () => {
+  it('writes scope=all when createCollectionRun is called with no projectIds', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('ScopeAll');
+    await createPrompts(project.id, 1);
+
+    const run = await createCollectionRun();
+
+    expect(run.scope).toBe('all');
+  });
+
+  it('writes scope=projects when createCollectionRun is called with explicit projectIds', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('ScopeProjects');
+    await createPrompts(project.id, 1);
+
+    const run = await createCollectionRun({ projectIds: [project.id] });
+
+    expect(run.scope).toBe('projects');
+  });
+
+  it('finalises a zero-item app-wide Run completed with scope=all and a non-null finished_at, resetting the clock', async () => {
+    await setAllProviderKeys();
+    const project = await createProject('ScopeAllZeroItems');
+    const [prompt] = await createPrompts(project.id, 1);
+    // Every Prompt already has today's data, so the app-wide Run materialises zero items.
+    await db.insert(promptResponses).values({
+      text: 'already collected today',
+      chatbot_id: ChatbotId.ChatGPT,
+      prompt_id: prompt.id,
+      project_id: project.id,
+      model_id: 'existing-model',
+    });
+
+    const run = await createCollectionRun();
+
+    expect(run.items_total).toBe(0);
+    expect(run.status).toBe('completed');
+    expect(run.scope).toBe('all');
+    expect(run.finished_at).not.toBeNull();
+  });
+});
+
 describe('issue 10 — partial enabled-Chatbot selection', () => {
   it('materialises items only for the enabled subset of Chatbots, never the disabled one', async () => {
     await setAllProviderKeys();
