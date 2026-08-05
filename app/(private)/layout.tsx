@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { ROUTES } from '@/libs/routes';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { MessagesContextProvider } from './components/MessagesContext';
+import { CollectionRunProgressBar } from '@/components/collection-run/CollectionRunProgressBar';
 
 // This app has no user identity, so nothing here reads a session cookie or other
 // dynamic API — the signal that used to force per-request rendering implicitly.
@@ -48,7 +49,10 @@ export default async function PrivateLayout({ children }: { children: ReactNode 
           >
             <EventContextProvider>
               <Sidebar />
-              {children}
+              <div style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}>
+                {children}
+              </div>
+              <CollectionRunProgressBar />
             </EventContextProvider>
           </PrivateLayoutContextProvider>
         </MessagesContextProvider>

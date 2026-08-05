@@ -3,9 +3,8 @@
 import { Button } from '@/components/base/buttons/button';
 import { RouteHelper } from '@/libs/routes';
 import FormHeader from '../../components/FormHeader';
-import { REPORT_TRY_AGAIN_LATER_ERROR_CODE } from '@/app/api/new-project/report/types';
-import useSWR from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+import useSWRImmutable from 'swr/immutable';
+import { useMemo } from 'react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { VisualContainer } from '@/app/(private)/project/[projectId]/overview/components/VisualContainer';
 import BrandsRankingTodayRadial, {
@@ -18,33 +17,10 @@ import VisibilityScoresBarChart, {
   getVisibilityScoresBarChartData,
 } from '../../../../(private)/project/[projectId]/overview/components/VisibilityScoresBarChart';
 import { MetricsSimple } from '@/components/application/metrics/metrics';
-
-const useReportBrandRankings = (
-  projectId: string,
-  shouldPoll: boolean,
-  onSuccess: (brands: OverviewData | undefined) => void
-) =>
-  useSWR(
-    projectId ? ['new-project-report', projectId] : null,
-    async (): Promise<OverviewData | undefined> => {
-      if (!projectId) return;
-      const endpointUrl = RouteHelper.Api.NewProject.getReport(projectId);
-      const response = await fetch(endpointUrl);
-
-      if (!response.ok) {
-        try {
-          const json = await response.json();
-          if (json.code === REPORT_TRY_AGAIN_LATER_ERROR_CODE) return undefined;
-          throw new Error(json.error);
-        } catch (error) {
-          throw error;
-        }
-      }
-
-      return await response.json();
-    },
-    { onSuccess, refreshInterval: shouldPoll ? 5_000 : 0 }
-  );
+import { CollectionRunProgress } from '@/components/collection-run/CollectionRunProgress';
+import { useCollectionRunProgress } from '@/components/collection-run/useCollectionRunProgress';
+import { appFetch } from '@/hooks/appFetch';
+import { formatCollectionRunProgressSummary } from '@/libs/collection/progress';
 
 function getMentionsTotal(data: OverviewData | undefined) {
   if (!data) return undefined;
@@ -54,14 +30,18 @@ function getMentionsTotal(data: OverviewData | undefined) {
   );
 }
 
-export default function Report({ projectId }: { projectId: string }) {
-  const [shouldPoll, setShouldPoll] = useState(true);
-  const [shouldShowRetry, setShouldShowRetry] = useState(false);
+export default function Report({ projectId, runId }: { projectId: string; runId?: string }) {
+  const { progress, isRunInProgress, isReconnecting, cancel, isCancelling } =
+    useCollectionRunProgress(runId);
 
-  const { data, error: reportError } = useReportBrandRankings(
-    projectId,
-    shouldPoll,
-    (brandsRanking) => setShouldPoll(!brandsRanking)
+  // Request the report only once the stream says the Run is done (or that there is no Run).
+  const {
+    data,
+    error: reportError,
+    mutate: retryReport,
+  } = useSWRImmutable(
+    isRunInProgress === false ? ['new-project-report', projectId] : null,
+    () => appFetch<OverviewData>(RouteHelper.Api.NewProject.getReport(projectId))
   );
 
   const [rankingsSummaryRadialData, visibilityScoreBarListData, mentionsTotal] = useMemo(
@@ -73,25 +53,49 @@ export default function Report({ projectId }: { projectId: string }) {
     [data]
   );
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setShouldShowRetry(true), 60_000);
-    return () => clearTimeout(timeout);
-  }, []);
+  if (isRunInProgress === undefined) {
+    return (
+      <NewProjectLayoutColumn size="lg">
+        <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
+      </NewProjectLayoutColumn>
+    );
+  }
+
+  // `progress` can still be undefined here for a render or two (the `isRunInProgress` flip and the
+  // frame that backs it land in separate state updates) — fall through to the loading state below
+  // rather than asserting it is present.
+  if (isRunInProgress === true && progress) {
+    return (
+      <NewProjectLayoutColumn size="lg">
+        <FormHeader title="Collecting your AI visibility data…" description="" />
+        <CollectionRunProgress
+          progress={progress}
+          variant="panel"
+          isReconnecting={isReconnecting}
+          onCancel={cancel}
+          isCancelling={isCancelling}
+        />
+      </NewProjectLayoutColumn>
+    );
+  }
 
   if (!data) {
     return (
       <NewProjectLayoutColumn size="lg">
-        <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
-
-        {shouldShowRetry && (
-          <Button
-            color="secondary"
-            onClick={() => window.location.reload()}
-            isDisabled={reportError}
-            iconLeading={RefreshCcw01}
-          >
-            Retry
-          </Button>
+        {reportError ? (
+          <>
+            <div className="text-error-800 text-sm">{reportError.message}</div>
+            <Button
+              size="lg"
+              color="secondary"
+              iconLeading={RefreshCcw01}
+              onClick={() => retryReport()}
+            >
+              Retry
+            </Button>
+          </>
+        ) : (
+          <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
         )}
       </NewProjectLayoutColumn>
     );
@@ -103,6 +107,12 @@ export default function Report({ projectId }: { projectId: string }) {
         title="Your Brand AI Visibility Report"
         description="Rankings are based on your selected prompts only. Add more prompts to uncover new opportunities."
       />
+
+      {progress?.isTerminal && (progress.status !== 'completed' || progress.promptsFailed > 0) && (
+        <div className="text-tertiary -mt-4 ml-0.5 text-xs">
+          {formatCollectionRunProgressSummary(progress)}
+        </div>
+      )}
 
       {reportError && (
         <div className="text-error-800 -mt-4 ml-0.5 text-xs">{reportError?.message}</div>
