@@ -5,6 +5,7 @@ import {
   claimCollectionRunItemRowsForPrompt,
   cancelPendingCollectionRunItemRows,
   countCollectionRunItemRowsByStatus,
+  countDistinctFailedPromptsForRun,
   finishCollectionRunItemRow,
   getCollectionRunItemProgressRowsForRun,
   getNextPendingPromptGroupForRun,
@@ -17,7 +18,9 @@ import {
   finishCollectionRunRow,
   finishRunningCollectionRunRow,
   getActiveCollectionRunRow,
+  getCollectionCadenceAnchorTimestamp,
   getCollectionRunRowWithId,
+  getLatestTerminalCollectionRunRow,
   getOldestPendingCollectionRunRow,
   insertCollectionRunRow,
   insertCollectionRunWithItems,
@@ -344,6 +347,172 @@ describe('CollectionRuns queries', () => {
     expect((await getActiveCollectionRunRow())?.id).not.toBe(older.id);
     expect((await getActiveCollectionRunRow())?.id).not.toBe(running.id);
   });
+
+  describe('getCollectionCadenceAnchorTimestamp', () => {
+    it('returns null when no Runs exist', async () => {
+      expect(await getCollectionCadenceAnchorTimestamp()).toBeNull();
+    });
+
+    it('returns the latest completed scope=all run finished_at', async () => {
+      await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+      const latest = await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-02T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect(await getCollectionCadenceAnchorTimestamp()).toBe(latest.finished_at);
+    });
+
+    it('ignores a more recent completed scope=projects run', async () => {
+      const allRun = await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'projects',
+        started_at: null,
+        finished_at: '2026-01-05T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect(await getCollectionCadenceAnchorTimestamp()).toBe(allRun.finished_at);
+    });
+
+    it('ignores failed and cancelled runs even when more recent', async () => {
+      const completedRun = await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunRow({
+        status: 'failed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-05T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: 'boom',
+      });
+      await insertCollectionRunRow({
+        status: 'cancelled',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-06T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect(await getCollectionCadenceAnchorTimestamp()).toBe(completedRun.finished_at);
+    });
+
+    it('falls back to the latest completed any-scope run when no scope=all run has ever completed', async () => {
+      const projectsRun = await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'projects',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect(await getCollectionCadenceAnchorTimestamp()).toBe(projectsRun.finished_at);
+    });
+  });
+
+  describe('getLatestTerminalCollectionRunRow', () => {
+    it('picks the most recent terminal run by finished_at across completed/failed/cancelled', async () => {
+      await insertCollectionRunRow({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+      const latest = await insertCollectionRunRow({
+        status: 'failed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-03T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: 'boom',
+      });
+      await insertCollectionRunRow({
+        status: 'cancelled',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-02T00:00:00.000Z',
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect((await getLatestTerminalCollectionRunRow())?.id).toBe(latest.id);
+    });
+
+    it('ignores pending and running runs', async () => {
+      await insertCollectionRunRow({
+        status: 'pending',
+        started_at: null,
+        finished_at: null,
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunRow({
+        status: 'running',
+        started_at: new Date().toISOString(),
+        finished_at: null,
+        items_total: 0,
+        items_completed: 0,
+        items_failed: 0,
+        error: null,
+      });
+
+      expect(await getLatestTerminalCollectionRunRow()).toBeUndefined();
+    });
+  });
 });
 
 function makeItemInput(
@@ -656,6 +825,106 @@ describe('CollectionRunItems queries', () => {
         status: 'completed',
       },
     ]);
+  });
+
+  describe('countDistinctFailedPromptsForRun', () => {
+    it('counts 1 Prompt with 3 failed Chatbot items as 1', async () => {
+      const { project, prompt } = await createProjectAndPrompt();
+      const run = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 3,
+        items_completed: 0,
+        items_failed: 3,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(run.id, project.id, prompt.id, ChatbotId.ChatGPT, 'failed'),
+        makeItemInput(run.id, project.id, prompt.id, ChatbotId.Perplexity, 'failed'),
+        makeItemInput(run.id, project.id, prompt.id, ChatbotId.GoogleAIOverview, 'failed'),
+      ]);
+
+      expect(await countDistinctFailedPromptsForRun(run.id)).toBe(1);
+    });
+
+    it('counts 2 Prompts each with a failed item as 2', async () => {
+      const { project, prompt: promptA } = await createProjectAndPrompt();
+      const [topicB] = await db
+        .insert(topics)
+        .values({ name: 'Topic B', project_id: project.id })
+        .returning();
+      const [promptB] = await db
+        .insert(prompts)
+        .values({ name: 'Prompt B', topic_id: topicB.id, project_id: project.id })
+        .returning();
+      const run = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 2,
+        items_completed: 0,
+        items_failed: 2,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(run.id, project.id, promptA.id, ChatbotId.ChatGPT, 'failed'),
+        makeItemInput(run.id, project.id, promptB.id, ChatbotId.ChatGPT, 'failed'),
+      ]);
+
+      expect(await countDistinctFailedPromptsForRun(run.id)).toBe(2);
+    });
+
+    it('returns 0 when nothing failed, and does not count completed/cancelled items', async () => {
+      const { project, prompt } = await createProjectAndPrompt();
+      const run = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 2,
+        items_completed: 1,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(run.id, project.id, prompt.id, ChatbotId.ChatGPT, 'completed'),
+        makeItemInput(run.id, project.id, prompt.id, ChatbotId.Perplexity, 'cancelled'),
+      ]);
+
+      expect(await countDistinctFailedPromptsForRun(run.id)).toBe(0);
+    });
+
+    it('is pinned to the given run: failed items on an older run do not leak into the newer run count', async () => {
+      const { project, prompt } = await createProjectAndPrompt();
+      const olderRun = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 1,
+        items_completed: 0,
+        items_failed: 1,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(olderRun.id, project.id, prompt.id, ChatbotId.ChatGPT, 'failed'),
+      ]);
+
+      const newerRun = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 1,
+        items_completed: 1,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(newerRun.id, project.id, prompt.id, ChatbotId.ChatGPT, 'completed'),
+      ]);
+
+      expect(await countDistinctFailedPromptsForRun(newerRun.id)).toBe(0);
+      expect(await countDistinctFailedPromptsForRun(olderRun.id)).toBe(1);
+    });
   });
 });
 

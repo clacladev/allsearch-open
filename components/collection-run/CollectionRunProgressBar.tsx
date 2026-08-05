@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { XClose } from '@untitledui/icons';
 import { Button } from '@/components/base/buttons/button';
 import { CollectionRunProgress } from './CollectionRunProgress';
-import { useCollectionRunProgress } from './useCollectionRunProgress';
+import { useCollectionRunContext } from './CollectionRunContext';
 
 // Reserves space for this fixed bar via a CSS variable on the document root, so page content that
 // pins to the bottom (e.g. the sidebar's footer cards) can pad itself clear of the overlap instead
@@ -13,7 +13,7 @@ const BAR_HEIGHT_CSS_VAR = '--collection-run-bar-height';
 
 export function CollectionRunProgressBar() {
   const { progress, isReconnecting, isStreamError, cancel, isCancelling, clear } =
-    useCollectionRunProgress();
+    useCollectionRunContext();
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

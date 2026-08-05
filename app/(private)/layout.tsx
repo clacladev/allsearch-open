@@ -11,6 +11,8 @@ import { ROUTES } from '@/libs/routes';
 import { getPromptRowsWithProjectId } from '@/libs/database/Prompts/queries';
 import { MessagesContextProvider } from './components/MessagesContext';
 import { CollectionRunProgressBar } from '@/components/collection-run/CollectionRunProgressBar';
+import { CollectionRunProvider } from '@/components/collection-run/CollectionRunContext';
+import { CollectionCadenceSurfaces } from '@/components/collection-run/CollectionCadenceSurfaces';
 
 // This app has no user identity, so nothing here reads a session cookie or other
 // dynamic API — the signal that used to force per-request rendering implicitly.
@@ -48,11 +50,14 @@ export default async function PrivateLayout({ children }: { children: ReactNode 
             }}
           >
             <EventContextProvider>
-              <Sidebar />
-              <div style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}>
-                {children}
-              </div>
-              <CollectionRunProgressBar />
+              <CollectionRunProvider>
+                <Sidebar />
+                <div style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}>
+                  {children}
+                </div>
+                <CollectionRunProgressBar />
+                <CollectionCadenceSurfaces hasProjects={activeProjects.length > 0} />
+              </CollectionRunProvider>
             </EventContextProvider>
           </PrivateLayoutContextProvider>
         </MessagesContextProvider>
