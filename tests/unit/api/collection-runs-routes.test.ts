@@ -279,6 +279,63 @@ describe('GET /api/collection-runs/cadence', () => {
     const body = await res.json();
     expect(body.failedRun).toBeNull();
   });
+
+  it('reports failedRun as null when only an older run has failed items (latest terminal run only)', async () => {
+    const { project, prompt } = await createProjectAndPrompt();
+    const [olderRun] = await db
+      .insert(collectionRuns)
+      .values({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-01T00:00:00.000Z',
+        items_total: 1,
+        items_completed: 0,
+        items_failed: 1,
+        error: null,
+      })
+      .returning();
+    await db.insert(collectionRunItems).values({
+      run_id: olderRun.id,
+      project_id: project.id,
+      prompt_id: prompt.id,
+      chatbot_id: ChatbotId.ChatGPT,
+      status: 'failed',
+      attempts: 3,
+      error: 'boom',
+      started_at: null,
+      finished_at: null,
+    });
+
+    const [newerRun] = await db
+      .insert(collectionRuns)
+      .values({
+        status: 'completed',
+        scope: 'all',
+        started_at: null,
+        finished_at: '2026-01-02T00:00:00.000Z',
+        items_total: 1,
+        items_completed: 1,
+        items_failed: 0,
+        error: null,
+      })
+      .returning();
+    await db.insert(collectionRunItems).values({
+      run_id: newerRun.id,
+      project_id: project.id,
+      prompt_id: prompt.id,
+      chatbot_id: ChatbotId.ChatGPT,
+      status: 'completed',
+      attempts: 1,
+      error: null,
+      started_at: null,
+      finished_at: null,
+    });
+
+    const res = await getCadence();
+    const body = await res.json();
+    expect(body.failedRun).toBeNull();
+  });
 });
 
 describe('POST /api/collection-runs/[runId]/retry', () => {

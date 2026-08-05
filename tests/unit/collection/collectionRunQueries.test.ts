@@ -893,6 +893,38 @@ describe('CollectionRunItems queries', () => {
 
       expect(await countDistinctFailedPromptsForRun(run.id)).toBe(0);
     });
+
+    it('is pinned to the given run: failed items on an older run do not leak into the newer run count', async () => {
+      const { project, prompt } = await createProjectAndPrompt();
+      const olderRun = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 1,
+        items_completed: 0,
+        items_failed: 1,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(olderRun.id, project.id, prompt.id, ChatbotId.ChatGPT, 'failed'),
+      ]);
+
+      const newerRun = await insertCollectionRunRow({
+        status: 'completed',
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        items_total: 1,
+        items_completed: 1,
+        items_failed: 0,
+        error: null,
+      });
+      await insertCollectionRunItemRows([
+        makeItemInput(newerRun.id, project.id, prompt.id, ChatbotId.ChatGPT, 'completed'),
+      ]);
+
+      expect(await countDistinctFailedPromptsForRun(newerRun.id)).toBe(0);
+      expect(await countDistinctFailedPromptsForRun(olderRun.id)).toBe(1);
+    });
   });
 });
 

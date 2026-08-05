@@ -9,8 +9,43 @@ import { AlertFloating } from '@/components/application/alerts/alerts';
 import { Button } from '@/components/base/buttons/button';
 import { showErrorAlertToast } from '@/components/Alerts';
 import { deriveCollectionCadenceState } from '@/libs/collection/cadence';
+import type { CollectionCadenceState } from '@/libs/collection/cadence';
 import { useCollectionRunContext } from './CollectionRunContext';
 import type { CollectionCadenceResponse } from '@/app/api/collection-runs/cadence/types';
+
+/** Pure decision core of the component below, extracted so the criteria that decide which of the
+ * three cadence surfaces render (retry offer, staleness banner, quiet countdown) can be
+ * unit-tested without a DOM or SWR — the same pattern `deriveIsRunInProgress` establishes in
+ * `useCollectionRunProgress.ts`. */
+export function deriveCadenceSurfaces(input: {
+  hasProjects: boolean;
+  isRunInProgress: boolean | undefined;
+  cadenceData: CollectionCadenceResponse | undefined;
+  dismissedRetryRunId: string | undefined;
+  now: number;
+}): {
+  shouldShowRetry: boolean;
+  failedRun: CollectionCadenceResponse['failedRun'];
+  cadenceState: CollectionCadenceState;
+} {
+  const { hasProjects, isRunInProgress, cadenceData, dismissedRetryRunId, now } = input;
+
+  // undefined = not known yet; prevents a flash before discovery resolves. Hides all three
+  // surfaces while a Run is in progress, before Project discovery, and before cadence data loads.
+  if (!hasProjects || isRunInProgress !== false || !cadenceData) {
+    return { shouldShowRetry: false, failedRun: null, cadenceState: { kind: 'unknown' } };
+  }
+
+  const failedRun = cadenceData.failedRun;
+  return {
+    shouldShowRetry: !!failedRun && failedRun.runId !== dismissedRetryRunId,
+    failedRun,
+    cadenceState: deriveCollectionCadenceState({
+      lastCompletedRunFinishedAt: cadenceData.lastCompletedRunFinishedAt,
+      now,
+    }),
+  };
+}
 
 // Renders the three cadence surfaces (retry offer, staleness banner, quiet countdown) above the
 // Collection Run progress bar, in every page under (private). Reuses the shared
@@ -20,8 +55,9 @@ export function CollectionCadenceSurfaces({ hasProjects }: { hasProjects: boolea
   const { mutate: mutateGlobal } = useSWRConfig();
   const [dismissedRetryRunId, setDismissedRetryRunId] = useState<string>();
   const wasRunInProgressRef = useRef(isRunInProgress);
-  // Lazily read once at mount (not during render, which must stay pure), then refreshed whenever
-  // fresh cadence data arrives so the derived state stays in step with the 60s poll.
+  // Lazily read once at mount (not during render, which must stay pure), then kept live by a 60s
+  // timer so the countdown/staleness boundary is re-evaluated even while the cadence poll keeps
+  // returning a deep-equal (same-reference) SWR payload.
   const [now, setNow] = useState(() => Date.now());
 
   const { data, mutate } = useSWR<CollectionCadenceResponse>(
@@ -31,12 +67,16 @@ export function CollectionCadenceSurfaces({ hasProjects }: { hasProjects: boolea
   );
 
   useEffect(() => {
-    if (data) setNow(Date.now());
-  }, [data]);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
-  // Re-check cadence as soon as a Run finishes, instead of waiting for the next 60s poll.
+  // Re-check cadence as soon as a Run finishes, instead of waiting for the next 60s poll. Compares
+  // against "not false" rather than "true" so a retry that reopens a dismissed Run — whose progress
+  // stays undefined for its whole lifetime (see useCollectionRunProgress.ts) — still counts as a
+  // completion when it lands on false.
   useEffect(() => {
-    if (wasRunInProgressRef.current === true && isRunInProgress === false) {
+    if (wasRunInProgressRef.current !== false && isRunInProgress === false) {
       mutate();
     }
     wasRunInProgressRef.current = isRunInProgress;
@@ -78,18 +118,15 @@ export function CollectionCadenceSurfaces({ hasProjects }: { hasProjects: boolea
     }
   );
 
-  if (!hasProjects) return null;
-  // undefined = not known yet; prevents a flash before discovery resolves.
-  if (isRunInProgress !== false) return null;
-  if (!data) return null;
-
-  const cadenceState = deriveCollectionCadenceState({
-    lastCompletedRunFinishedAt: data.lastCompletedRunFinishedAt,
+  const { shouldShowRetry, failedRun, cadenceState } = deriveCadenceSurfaces({
+    hasProjects,
+    isRunInProgress,
+    cadenceData: data,
+    dismissedRetryRunId,
     now,
   });
 
-  const failedRun = data.failedRun;
-  const shouldShowRetry = !!failedRun && failedRun.runId !== dismissedRetryRunId;
+  if (!shouldShowRetry && cadenceState.kind === 'unknown') return null;
 
   return (
     <div
