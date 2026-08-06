@@ -12,12 +12,18 @@ import { getRankingsSummary } from './getRankingsSummary';
 import { getSentimentDataset, SentimentDataset } from './getSentimentDataset';
 import { getSentimentScores, SentimentScores } from './getSentimentScores';
 import { BrandInfo, Opportunity } from './types';
-import { getPromptResponsesWorkRows } from './helpers';
+import { getPromptResponsesWorkRows, getLatestCollectionGroup } from './helpers';
 import { Summary } from '@/libs/utils/Summary';
 
 export const MAX_TOP_SOURCE_DOMAINS = 6;
 export const MAX_TOP_SOURCE_CONTENTS = 6;
 export const MAX_TOP_OPPORTUNITIES = 6;
+
+export type LatestRunInfo = {
+  runId: string | null;
+  date: ISODateString;
+  finishedAt: string;
+};
 
 export type OverviewData = {
   startDate: string;
@@ -26,6 +32,7 @@ export type OverviewData = {
   visibilityDataset: VisibilityDataset;
   visibilityScores: VisibilityScores;
   rankingsSummary: BrandInfo[];
+  latestRun: LatestRunInfo | null;
   topSourceDomainsSummary: Summary<SourceDomain>;
   topSourceContentSummary: Summary<SourceContent>;
   topOpportunitiesSummary: Summary<Opportunity>;
@@ -67,6 +74,9 @@ export async function getOverviewData(
   // Cleanup prompt responses before processing
   const promptResponsesWorkRows = getPromptResponsesWorkRows(promptResponses, sourceRows);
 
+  // The collection the headline latest-run figures describe; null when the range holds no responses.
+  const latestCollectionGroup = getLatestCollectionGroup(promptResponsesWorkRows);
+
   // Get the different analyses
   const [
     visibilityDataset,
@@ -95,6 +105,9 @@ export async function getOverviewData(
     visibilityDataset,
     visibilityScores,
     rankingsSummary,
+    latestRun: latestCollectionGroup
+      ? { runId: latestCollectionGroup.runId, date: latestCollectionGroup.date, finishedAt: latestCollectionGroup.finishedAt }
+      : null,
     topSourceDomainsSummary,
     topSourceContentSummary,
     topOpportunitiesSummary,

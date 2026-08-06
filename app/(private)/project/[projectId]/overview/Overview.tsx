@@ -2,7 +2,10 @@
 
 import { config } from '@/config';
 import { BarChart11, Eye, FaceSmile } from '@untitledui/icons';
+import dayjs from 'dayjs';
+import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { AlertFloating } from '@/components/application/alerts/alerts';
+import { LatestRunNotice } from './components/LatestRunNotice';
 import { VisualContainer } from './components/VisualContainer';
 import VisibilityChart from './components/VisibilityChart';
 import { DateRangePickerCard } from './components/DateRangePickerCard';
@@ -28,11 +31,11 @@ import SentimentScoresBarChart, {
   getSentimentScoresBarChartData,
 } from './components/SentimentScoresBarChart';
 import { getBrandColor, PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
-import OverviewChartTypeGroup, {
-  OverviewChartType,
-} from './components/OverviewChartTypeGroup';
+import OverviewChartTypeGroup, { OverviewChartType } from './components/OverviewChartTypeGroup';
 import { ChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
 import type { ChatbotId } from '@/libs/database/shared/ChatbotId';
+
+dayjs.extend(LocalizedFormat);
 
 function getProjectVisibilityScore(overviewData: OverviewData) {
   const projectId = overviewData.brands.find((brand) => brand.isProject)?.brandId;
@@ -69,7 +72,12 @@ export default function ProjectOverview({
   const [chartType, setChartType] = useState<OverviewChartType>('visibility');
   const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
 
-  const [projectVisibilityScore, visibilityScoreBarListData, sentimentScoreBarListData, brandColorMap] = useMemo(
+  const [
+    projectVisibilityScore,
+    visibilityScoreBarListData,
+    sentimentScoreBarListData,
+    brandColorMap,
+  ] = useMemo(
     () => [
       getProjectVisibilityScore(overviewData),
       getVisibilityScoresBarChartData(overviewData),
@@ -133,12 +141,26 @@ export default function ProjectOverview({
         />
       )}
 
+      {overviewData.latestRun && (
+        <LatestRunNotice
+          latestRunDate={overviewData.latestRun.date}
+          latestRunFinishedAt={overviewData.latestRun.finishedAt}
+          latestRunId={overviewData.latestRun.runId}
+          rangeEndDate={endDate}
+        />
+      )}
+
       <div className="flex items-center gap-2">
         <DateRangePickerCard
           selectedDateRange={selectedDateRange}
           onApplyAction={onDateRangeChange}
         />
         <ExportActionsButton onExportCsvAction={onExportCsv} />
+        {overviewData.latestRun && (
+          <span className="text-tertiary text-sm" data-testid="overview-latest-run-provenance">
+            {`Latest data from ${dayjs(overviewData.latestRun.date).format('ll')}`}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 md:flex-row">
@@ -202,7 +224,10 @@ export default function ProjectOverview({
               contentClassName="h-70 overflow-auto"
               headerTrailing={hasManyDaysOfVisibility ? undefined : chartToggle}
             >
-              <VisibilityScoresBarChart items={visibilityScoreBarListData} highlightId={projectId} />
+              <VisibilityScoresBarChart
+                items={visibilityScoreBarListData}
+                highlightId={projectId}
+              />
             </VisualContainer>
           </>
         )}

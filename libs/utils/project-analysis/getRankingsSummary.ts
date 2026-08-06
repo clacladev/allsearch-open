@@ -1,4 +1,4 @@
-import { PromptResponseWorkRow } from './helpers';
+import { PromptResponseWorkRow, getLatestCollectionGroup } from './helpers';
 import { BrandInfo } from './types';
 
 export async function getRankingsSummary(
@@ -7,11 +7,9 @@ export async function getRankingsSummary(
 ): Promise<BrandInfo[]> {
   if (!promptResponses.length) return [];
 
-  // Find the latest date (assuming responses are sorted by created_at)
-  const endDate = promptResponses[promptResponses.length - 1].created_at_iso_date;
-  const filteredResponses = promptResponses.filter(
-    (response) => response.created_at_iso_date === endDate
-  );
+  const latestGroup = getLatestCollectionGroup(promptResponses);
+  if (!latestGroup) return [];
+  const filteredResponses = latestGroup.responses;
 
   const brandsRankingsSums: Map<string, number> = new Map();
   const brandsRankingsCounts: Map<string, number> = new Map();

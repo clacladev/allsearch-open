@@ -1,5 +1,7 @@
 'use client';
 
+import dayjs from 'dayjs';
+import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { Button } from '@/components/base/buttons/button';
 import { RouteHelper } from '@/libs/routes';
 import FormHeader from '../../components/FormHeader';
@@ -7,9 +9,9 @@ import useSWRImmutable from 'swr/immutable';
 import { useMemo } from 'react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { VisualContainer } from '@/app/(private)/project/[projectId]/overview/components/VisualContainer';
-import BrandsRankingTodayRadial, {
-  getBrandsRankingTodayRadialData,
-} from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingTodayRadial';
+import BrandsRankingRadial, {
+  getBrandsRankingRadialData,
+} from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingRadial';
 import { NewProjectLayoutColumn } from '@/app/(new-project)/layout';
 import { ArrowRight, RefreshCcw01 } from '@untitledui/icons';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
@@ -21,6 +23,8 @@ import { CollectionRunProgress } from '@/components/collection-run/CollectionRun
 import { useCollectionRunProgress } from '@/components/collection-run/useCollectionRunProgress';
 import { appFetch } from '@/hooks/appFetch';
 import { formatCollectionRunProgressSummary } from '@/libs/collection/progress';
+
+dayjs.extend(LocalizedFormat);
 
 function getMentionsTotal(data: OverviewData | undefined) {
   if (!data) return undefined;
@@ -39,14 +43,13 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
     data,
     error: reportError,
     mutate: retryReport,
-  } = useSWRImmutable(
-    isRunInProgress === false ? ['new-project-report', projectId] : null,
-    () => appFetch<OverviewData>(RouteHelper.Api.NewProject.getReport(projectId))
+  } = useSWRImmutable(isRunInProgress === false ? ['new-project-report', projectId] : null, () =>
+    appFetch<OverviewData>(RouteHelper.Api.NewProject.getReport(projectId))
   );
 
   const [rankingsSummaryRadialData, visibilityScoreBarListData, mentionsTotal] = useMemo(
     () => [
-      getBrandsRankingTodayRadialData(data),
+      getBrandsRankingRadialData(data),
       getVisibilityScoresBarChartData(data),
       getMentionsTotal(data),
     ],
@@ -108,6 +111,15 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
         description="Rankings are based on your selected prompts only. Add more prompts to uncover new opportunities."
       />
 
+      {data.latestRun && (
+        <div
+          className="text-tertiary -mt-4 ml-0.5 text-xs"
+          data-testid="report-latest-run-provenance"
+        >
+          {`Ranking from the collection on ${dayjs(data.latestRun.date).format('ll')}`}
+        </div>
+      )}
+
       {progress?.isTerminal && (progress.status !== 'completed' || progress.promptsFailed > 0) && (
         <div className="text-tertiary -mt-4 ml-0.5 text-xs">
           {formatCollectionRunProgressSummary(progress)}
@@ -122,10 +134,10 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
         <div className="flex flex-col gap-4">
           <VisualContainer
             title="Average position"
-            info="How your brand ranks against your competitors today."
+            info="How your brand ranks against your competitors."
             className="min-w-60"
           >
-            <BrandsRankingTodayRadial data={rankingsSummaryRadialData} highlightId={projectId} />
+            <BrandsRankingRadial data={rankingsSummaryRadialData} highlightId={projectId} />
           </VisualContainer>
 
           {!!mentionsTotal && (

@@ -8,7 +8,7 @@ const NOW = Date.parse('2026-01-08T00:00:00.000Z');
 function makeCadenceData(
   overrides: Partial<CollectionCadenceResponse> = {}
 ): CollectionCadenceResponse {
-  return { lastCompletedRunFinishedAt: null, failedRun: null, ...overrides };
+  return { lastCompletedRunFinishedAt: null, lastCompletedRunId: null, failedRun: null, ...overrides };
 }
 
 describe('deriveCadenceSurfaces', () => {
