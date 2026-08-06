@@ -24,6 +24,7 @@ function makeWorkRow(
     chatbot_id: ChatbotId.ChatGPT,
     prompt_id: 'prompt-1',
     created_at: '2026-01-01T00:00:00.000Z',
+    run_id: null,
     key: '2026-01-01-prompt-1-chatgpt',
     created_at_iso_date: '2026-01-01',
     ...overrides,
@@ -49,12 +50,14 @@ describe('getRankingsSummary', () => {
       // Old date: brand-b wins
       makeWorkRow({
         id: 'r1',
+        created_at: '2026-01-01T10:00:00.000Z',
         created_at_iso_date: '2026-01-01',
         brand_ids_ranking: ['brand-b', 'brand-a'],
       }),
       // Latest date: brand-a wins
       makeWorkRow({
         id: 'r2',
+        created_at: '2026-01-02T10:00:00.000Z',
         created_at_iso_date: '2026-01-02',
         brand_ids_ranking: ['brand-a', 'brand-b'],
       }),
@@ -126,18 +129,143 @@ describe('getRankingsSummary', () => {
     expect(result).toHaveLength(2);
   });
 
-  it('uses only the latest iso date (last in the sorted array)', async () => {
+  it('uses only the latest collection group regardless of array order', async () => {
     const brandA = makeBrandInfo({ brandId: 'brand-a', label: 'A' });
     const brands = new Map([['brand-a', brandA]]);
 
     const responses = [
-      makeWorkRow({ id: 'r1', created_at_iso_date: '2026-01-01', brand_ids_ranking: [] }),
-      makeWorkRow({ id: 'r2', created_at_iso_date: '2026-01-03', brand_ids_ranking: ['brand-a'] }),
+      // Newest row first — the DB returns rows DESC by created_at.
+      makeWorkRow({
+        id: 'r2',
+        created_at: '2026-01-03T10:00:00.000Z',
+        created_at_iso_date: '2026-01-03',
+        brand_ids_ranking: ['brand-a'],
+      }),
+      makeWorkRow({
+        id: 'r1',
+        created_at: '2026-01-01T10:00:00.000Z',
+        created_at_iso_date: '2026-01-01',
+        brand_ids_ranking: [],
+      }),
     ];
 
     const result = await getRankingsSummary(brands, responses);
     // Only the latest date (2026-01-03) is used — brand-a appears in that response
     expect(result[0].brandId).toBe('brand-a');
+  });
+
+  it('describes the latest run even when it is nine days old and nothing came after it', async () => {
+    const brandA = makeBrandInfo({ brandId: 'brand-a', label: 'A' });
+    const brandB = makeBrandInfo({ brandId: 'brand-b', label: 'B', isProject: false });
+    const brands = new Map([
+      ['brand-a', brandA],
+      ['brand-b', brandB],
+    ]);
+
+    const responses = [
+      makeWorkRow({
+        id: 'r1',
+        run_id: 'run-older',
+        created_at: '2025-12-23T10:00:00.000Z',
+        created_at_iso_date: '2025-12-23',
+        brand_ids_ranking: ['brand-b', 'brand-a'],
+      }),
+      makeWorkRow({
+        id: 'r2',
+        run_id: 'run-stale',
+        created_at: '2026-01-01T10:00:00.000Z',
+        created_at_iso_date: '2026-01-01',
+        brand_ids_ranking: ['brand-a', 'brand-b'],
+      }),
+    ];
+
+    const result = await getRankingsSummary(brands, responses);
+    expect(result[0].brandId).toBe('brand-a');
+  });
+
+  it('picks the later run when two runs share the same day', async () => {
+    const brandA = makeBrandInfo({ brandId: 'brand-a', label: 'A' });
+    const brandB = makeBrandInfo({ brandId: 'brand-b', label: 'B', isProject: false });
+    const brands = new Map([
+      ['brand-a', brandA],
+      ['brand-b', brandB],
+    ]);
+
+    const responses = [
+      // Newest first — the DB returns rows DESC by created_at.
+      makeWorkRow({
+        id: 'r2',
+        run_id: 'run-evening',
+        created_at: '2026-01-02T16:00:00.000Z',
+        created_at_iso_date: '2026-01-02',
+        brand_ids_ranking: ['brand-a', 'brand-b'],
+      }),
+      makeWorkRow({
+        id: 'r1',
+        run_id: 'run-morning',
+        created_at: '2026-01-02T08:00:00.000Z',
+        created_at_iso_date: '2026-01-02',
+        brand_ids_ranking: ['brand-b', 'brand-a'],
+      }),
+    ];
+
+    const result = await getRankingsSummary(brands, responses);
+    expect(result[0].brandId).toBe('brand-a');
+  });
+
+  it('groups responses without a run id by their day', async () => {
+    const brandA = makeBrandInfo({ brandId: 'brand-a', label: 'A' });
+    const brandB = makeBrandInfo({ brandId: 'brand-b', label: 'B', isProject: false });
+    const brands = new Map([
+      ['brand-a', brandA],
+      ['brand-b', brandB],
+    ]);
+
+    const responses = [
+      makeWorkRow({
+        id: 'r1',
+        prompt_id: 'prompt-1',
+        run_id: null,
+        created_at: '2026-01-02T08:00:00.000Z',
+        created_at_iso_date: '2026-01-02',
+        brand_ids_ranking: ['brand-a', 'brand-b'],
+      }),
+      makeWorkRow({
+        id: 'r2',
+        prompt_id: 'prompt-2',
+        run_id: null,
+        created_at: '2026-01-02T16:00:00.000Z',
+        created_at_iso_date: '2026-01-02',
+        brand_ids_ranking: ['brand-b', 'brand-a'],
+      }),
+      makeWorkRow({
+        id: 'r3',
+        prompt_id: 'prompt-1',
+        run_id: null,
+        created_at: '2026-01-01T08:00:00.000Z',
+        created_at_iso_date: '2026-01-01',
+        brand_ids_ranking: ['brand-b'],
+      }),
+    ];
+
+    const result = await getRankingsSummary(brands, responses);
+    // Both 01-02 rows are counted (a tie), and the 01-01 row does not decide the order.
+    expect(result).toHaveLength(2);
+
+    const withFlip = [
+      ...responses,
+      makeWorkRow({
+        id: 'r4',
+        prompt_id: 'prompt-1',
+        run_id: null,
+        created_at: '2026-01-03T08:00:00.000Z',
+        created_at_iso_date: '2026-01-03',
+        brand_ids_ranking: ['brand-b', 'brand-a'],
+      }),
+    ];
+    const resultWithFlip = await getRankingsSummary(brands, withFlip);
+    // A further day-keyed group (01-03) both includes its own row and excludes the earlier ones.
+    expect(resultWithFlip[0].brandId).toBe('brand-b');
   });
 
   it('handles a single brand that appears in every response', async () => {

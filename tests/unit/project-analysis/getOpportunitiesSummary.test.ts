@@ -42,6 +42,7 @@ function makeWorkRow(overrides: Partial<PromptResponseWorkRow> = {}): PromptResp
     chatbot_id: ChatbotId.ChatGPT,
     prompt_id: 'prompt-1',
     created_at: '2026-01-01T00:00:00.000Z',
+    run_id: null,
     key: '2026-01-01-prompt-1-chatgpt',
     created_at_iso_date: '2026-01-01',
     ...overrides,
