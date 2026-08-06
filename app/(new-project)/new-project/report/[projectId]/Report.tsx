@@ -9,9 +9,9 @@ import useSWRImmutable from 'swr/immutable';
 import { useMemo } from 'react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { VisualContainer } from '@/app/(private)/project/[projectId]/overview/components/VisualContainer';
-import BrandsRankingTodayRadial, {
-  getBrandsRankingTodayRadialData,
-} from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingTodayRadial';
+import BrandsRankingRadial, {
+  getBrandsRankingRadialData,
+} from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingRadial';
 import { NewProjectLayoutColumn } from '@/app/(new-project)/layout';
 import { ArrowRight, RefreshCcw01 } from '@untitledui/icons';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
@@ -49,7 +49,7 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
 
   const [rankingsSummaryRadialData, visibilityScoreBarListData, mentionsTotal] = useMemo(
     () => [
-      getBrandsRankingTodayRadialData(data),
+      getBrandsRankingRadialData(data),
       getVisibilityScoresBarChartData(data),
       getMentionsTotal(data),
     ],
@@ -137,7 +137,7 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
             info="How your brand ranks against your competitors."
             className="min-w-60"
           >
-            <BrandsRankingTodayRadial data={rankingsSummaryRadialData} highlightId={projectId} />
+            <BrandsRankingRadial data={rankingsSummaryRadialData} highlightId={projectId} />
           </VisualContainer>
 
           {!!mentionsTotal && (
