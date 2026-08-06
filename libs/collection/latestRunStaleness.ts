@@ -6,34 +6,44 @@ import { COLLECTION_CADENCE_DAYS } from './constants';
 import {
   countDaysBetween,
   getISODateString,
+  getLocalISODateString,
   ISODateString,
 } from '@/libs/database/shared/ISODateString';
 
-/** Whether the overview's in-context staleness notice should render (issue 14, criteria 9-10).
- * Pure and DOM-free, the pattern `deriveCollectionCadenceState` / `deriveCadenceSurfaces`
- * establish. */
+/** Whether the overview's in-context staleness notice should render (issue 14, criteria 9-10;
+ * findings 2, 3, 4, 5). Pure and DOM-free, the pattern `deriveCollectionCadenceState` /
+ * `deriveCadenceSurfaces` establish. */
 export function getShouldShowLatestRunNotice(input: {
-  /** `OverviewData.latestRun?.date ?? null` — the date of the latest collection group in range. */
   latestRunDate: ISODateString | null;
-  /** The selected range's end date. */
+  latestRunFinishedAt: string | null;
+  latestRunId: string | null;
   rangeEndDate: ISODateString;
-  /** `lastCompletedRunFinishedAt` from `GET /api/collection-runs/cadence`; null/undefined when
-   * unknown or when no Run has ever completed. */
   lastCompletedRunFinishedAt: string | null | undefined;
+  lastCompletedRunId: string | null | undefined;
+  appWideStale: boolean;
   now: number;
 }): boolean {
-  const { latestRunDate, rangeEndDate, lastCompletedRunFinishedAt, now } = input;
+  const {
+    latestRunDate, latestRunFinishedAt, latestRunId, rangeEndDate,
+    lastCompletedRunFinishedAt, lastCompletedRunId, appWideStale, now,
+  } = input;
   if (!latestRunDate) return false;
 
-  const todayISO = getISODateString(new Date(now));
-  // A deliberate historical view must not nag — criterion 10. (Both are zero-padded YYYY-MM-DD,
-  // so the string comparison is chronological.)
+  if (appWideStale) return false;
+
+  const todayISO = getLocalISODateString(new Date(now));
   if (rangeEndDate < todayISO) return false;
 
-  // (a) the latest run in range finished 7+ days ago
-  if (countDaysBetween(latestRunDate, todayISO) >= COLLECTION_CADENCE_DAYS) return true;
+  const latestLocalDate = latestRunFinishedAt
+    ? getLocalISODateString(new Date(latestRunFinishedAt))
+    : latestRunDate;
+  if (countDaysBetween(latestLocalDate, todayISO) >= COLLECTION_CADENCE_DAYS) return true;
 
-  // (b) a completed Collection Run exists that is newer than this Project's latest data
   if (!lastCompletedRunFinishedAt) return false;
+  if (Number.isNaN(Date.parse(lastCompletedRunFinishedAt))) return false;
+
+  if (latestRunId !== null && lastCompletedRunId) {
+    return lastCompletedRunId !== latestRunId;
+  }
   return getISODateString(lastCompletedRunFinishedAt) > latestRunDate;
 }

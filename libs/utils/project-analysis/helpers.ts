@@ -18,6 +18,7 @@ export interface PromptResponseWorkRow extends PromptResponseSummaryRow {
 export type CollectionGroup = {
   runId: string | null;
   date: ISODateString;
+  finishedAt: string;
   responses: PromptResponseWorkRow[];
 };
 
@@ -30,7 +31,7 @@ export function getLatestCollectionGroup(
 ): CollectionGroup | null {
   if (!promptResponses.length) return null;
 
-  type WorkGroup = CollectionGroup & { newestCreatedAt: string };
+  type WorkGroup = Omit<CollectionGroup, 'finishedAt'> & { newestCreatedAt: string };
   const groups = new Map<string, WorkGroup>();
   promptResponses.forEach((response) => {
     const key = response.run_id
@@ -62,7 +63,7 @@ export function getLatestCollectionGroup(
       if (!latest || group.newestCreatedAt > latest.newestCreatedAt) latest = group;
     });
   if (!latest) return null;
-  return { runId: latest.runId, date: latest.date, responses: latest.responses };
+  return { runId: latest.runId, date: latest.date, finishedAt: latest.newestCreatedAt, responses: latest.responses };
 }
 
 type SourceRowInput = SourceSummaryRow & Partial<Pick<SourceRow, 'raw_url' | 'description' | 'headings'>>;

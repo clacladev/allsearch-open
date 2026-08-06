@@ -142,7 +142,12 @@ export default function ProjectOverview({
       )}
 
       {overviewData.latestRun && (
-        <LatestRunNotice latestRunDate={overviewData.latestRun.date} rangeEndDate={endDate} />
+        <LatestRunNotice
+          latestRunDate={overviewData.latestRun.date}
+          latestRunFinishedAt={overviewData.latestRun.finishedAt}
+          latestRunId={overviewData.latestRun.runId}
+          rangeEndDate={endDate}
+        />
       )}
 
       <div className="flex items-center gap-2">
