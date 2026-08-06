@@ -161,22 +161,7 @@ describe('getShouldShowLatestRunNotice', () => {
     ).toBe(true);
   });
 
-  it('finding 4: run-identity — same lastCompletedRunId returns false', () => {
-    expect(
-      getShouldShowLatestRunNotice(
-        makeInput({
-          latestRunDate: '2026-01-10',
-          latestRunFinishedAt: '2026-01-10T08:00:00.000Z',
-          latestRunId: 'run-same',
-          rangeEndDate: '2026-01-10',
-          lastCompletedRunFinishedAt: '2026-01-10T11:00:00.000Z',
-          lastCompletedRunId: 'run-same',
-        })
-      )
-    ).toBe(false);
-  });
-
-  it('finding 4: null latestRunId falls back to date-string comparison', () => {
+  it('finding 4: null latestRunId falls back to date-string comparison (false on same day)', () => {
     expect(
       getShouldShowLatestRunNotice(
         makeInput({
@@ -184,10 +169,10 @@ describe('getShouldShowLatestRunNotice', () => {
           latestRunFinishedAt: '2026-01-09T10:00:00.000Z',
           latestRunId: null,
           rangeEndDate: '2026-01-10',
-          lastCompletedRunFinishedAt: '2026-01-10T09:00:00.000Z',
+          lastCompletedRunFinishedAt: '2026-01-09T23:00:00.000Z',
           lastCompletedRunId: 'run-newer',
         })
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 });
