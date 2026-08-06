@@ -51,6 +51,7 @@ const SUMMARY_COLUMNS = {
   chatbot_id: promptResponses.chatbot_id,
   prompt_id: promptResponses.prompt_id,
   created_at: promptResponses.created_at,
+  run_id: promptResponses.run_id,
 };
 
 export async function getPromptResponseSummaryRowsWithProjectIdInDateRange(
