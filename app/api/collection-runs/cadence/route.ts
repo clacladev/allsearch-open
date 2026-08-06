@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  getCollectionCadenceAnchorTimestamp,
+  getCollectionCadenceAnchor,
   getLatestTerminalCollectionRunRow,
 } from '@/libs/database/CollectionRuns/queries';
 import { countDistinctFailedPromptsForRun } from '@/libs/database/CollectionRunItems/queries';
@@ -13,7 +13,9 @@ export const runtime = 'nodejs';
 // shared progress hook (CollectionRunContext).
 export async function GET() {
   try {
-    const lastCompletedRunFinishedAt = await getCollectionCadenceAnchorTimestamp();
+    const anchor = await getCollectionCadenceAnchor();
+    const lastCompletedRunFinishedAt = anchor?.finishedAt ?? null;
+    const lastCompletedRunId = anchor?.runId ?? null;
     const terminalRun = await getLatestTerminalCollectionRunRow();
 
     let failedRun: CollectionCadenceResponse['failedRun'] = null;
@@ -22,7 +24,7 @@ export async function GET() {
       if (failedPromptCount > 0) failedRun = { runId: terminalRun.id, failedPromptCount };
     }
 
-    const body: CollectionCadenceResponse = { lastCompletedRunFinishedAt, failedRun };
+    const body: CollectionCadenceResponse = { lastCompletedRunFinishedAt, lastCompletedRunId, failedRun };
     return NextResponse.json(body);
   } catch (error) {
     console.error(error);

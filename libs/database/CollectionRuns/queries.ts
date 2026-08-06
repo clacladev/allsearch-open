@@ -196,12 +196,12 @@ export async function getActiveCollectionRunRow(): Promise<CollectionRunRow | un
  * with `scope = 'all'`. Falls back to the most recent `completed` Run of any scope when no
  * app-wide Run has ever completed, so a freshly onboarded install (whose only Run was the
  * per-Project one fired at Project creation) is not immediately told its data is stale. Returns
- * null when no Run has ever completed. `finished_at` holds `new Date().toISOString()` values, so
- * lexicographic DESC ordering is chronological. */
-export async function getCollectionCadenceAnchorTimestamp(): Promise<string | null> {
+ * null when no Run has ever completed, alongside that run's id. `finished_at` holds
+ * `new Date().toISOString()` values, so lexicographic DESC ordering is chronological. */
+export async function getCollectionCadenceAnchor(): Promise<{ runId: string; finishedAt: string } | null> {
   const db = await getDatabase();
   const [scopedRow] = await db
-    .select({ finished_at: collectionRuns.finished_at })
+    .select({ id: collectionRuns.id, finished_at: collectionRuns.finished_at })
     .from(collectionRuns)
     .where(
       and(
@@ -212,15 +212,15 @@ export async function getCollectionCadenceAnchorTimestamp(): Promise<string | nu
     )
     .orderBy(desc(collectionRuns.finished_at))
     .limit(1);
-  if (scopedRow) return scopedRow.finished_at;
+  if (scopedRow) return { runId: scopedRow.id, finishedAt: scopedRow.finished_at! };
 
   const [anyScopeRow] = await db
-    .select({ finished_at: collectionRuns.finished_at })
+    .select({ id: collectionRuns.id, finished_at: collectionRuns.finished_at })
     .from(collectionRuns)
     .where(and(eq(collectionRuns.status, 'completed'), isNotNull(collectionRuns.finished_at)))
     .orderBy(desc(collectionRuns.finished_at))
     .limit(1);
-  return anyScopeRow?.finished_at ?? null;
+  return anyScopeRow ? { runId: anyScopeRow.id, finishedAt: anyScopeRow.finished_at! } : null;
 }
 
 /** The most recently finished terminal Run (`completed | failed | cancelled`), regardless of

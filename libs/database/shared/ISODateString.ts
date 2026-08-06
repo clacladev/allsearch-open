@@ -22,6 +22,16 @@ export function getTodayISODateString(): ISODateString {
   return getISODateString(new Date());
 }
 
+/** Normalizes a Date to an ISODateString (YYYY-MM-DD) using the LOCAL timezone — the same
+ * axis the @internationalized/date date-range picker uses. Use this (not getISODateString)
+ * for any "today" comparison against a picker-supplied range boundary. */
+export function getLocalISODateString(date: Date): ISODateString {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}` as ISODateString;
+}
+
 export function countDaysBetween(startDate: ISODateString, endDate: ISODateString): number {
   return Math.floor(
     (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)

@@ -22,6 +22,7 @@ export const MAX_TOP_OPPORTUNITIES = 6;
 export type LatestRunInfo = {
   runId: string | null;
   date: ISODateString;
+  finishedAt: string;
 };
 
 export type OverviewData = {
@@ -105,7 +106,7 @@ export async function getOverviewData(
     visibilityScores,
     rankingsSummary,
     latestRun: latestCollectionGroup
-      ? { runId: latestCollectionGroup.runId, date: latestCollectionGroup.date }
+      ? { runId: latestCollectionGroup.runId, date: latestCollectionGroup.date, finishedAt: latestCollectionGroup.finishedAt }
       : null,
     topSourceDomainsSummary,
     topSourceContentSummary,

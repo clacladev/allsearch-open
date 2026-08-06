@@ -10,6 +10,7 @@ import { RouteHelper } from '@/libs/routes';
 import { AlertFloating } from '@/components/application/alerts/alerts';
 import { showErrorAlertToast } from '@/components/Alerts';
 import { getShouldShowLatestRunNotice } from '@/libs/collection/latestRunStaleness';
+import { deriveCollectionCadenceState } from '@/libs/collection/cadence';
 import type { ISODateString } from '@/libs/database/shared/ISODateString';
 import type { CollectionCadenceResponse } from '@/app/api/collection-runs/cadence/types';
 
@@ -19,9 +20,13 @@ dayjs.extend(LocalizedFormat);
  * behind the app's latest collected data (issue 14, criteria 9, 11). */
 export function LatestRunNotice({
   latestRunDate,
+  latestRunFinishedAt,
+  latestRunId,
   rangeEndDate,
 }: {
   latestRunDate: ISODateString;
+  latestRunFinishedAt: string;
+  latestRunId: string | null;
   rangeEndDate: ISODateString;
 }) {
   // Mount-time snapshot; the decision is day-granular so no interval is needed. Must be a lazy
@@ -55,8 +60,16 @@ export function LatestRunNotice({
   if (
     !getShouldShowLatestRunNotice({
       latestRunDate,
+      latestRunFinishedAt,
+      latestRunId,
       rangeEndDate,
       lastCompletedRunFinishedAt: data?.lastCompletedRunFinishedAt ?? null,
+      lastCompletedRunId: data?.lastCompletedRunId ?? null,
+      appWideStale:
+        deriveCollectionCadenceState({
+          lastCompletedRunFinishedAt: data?.lastCompletedRunFinishedAt ?? null,
+          now,
+        }).kind === 'stale',
       now,
     })
   ) {
