@@ -18,7 +18,7 @@ import {
   finishCollectionRunRow,
   finishRunningCollectionRunRow,
   getActiveCollectionRunRow,
-  getCollectionCadenceAnchorTimestamp,
+  getCollectionCadenceAnchor,
   getCollectionRunRowWithId,
   getLatestTerminalCollectionRunRow,
   getOldestPendingCollectionRunRow,
@@ -348,12 +348,12 @@ describe('CollectionRuns queries', () => {
     expect((await getActiveCollectionRunRow())?.id).not.toBe(running.id);
   });
 
-  describe('getCollectionCadenceAnchorTimestamp', () => {
+  describe('getCollectionCadenceAnchor', () => {
     it('returns null when no Runs exist', async () => {
-      expect(await getCollectionCadenceAnchorTimestamp()).toBeNull();
+      expect(await getCollectionCadenceAnchor()).toBeNull();
     });
 
-    it('returns the latest completed scope=all run finished_at', async () => {
+    it('returns the latest completed scope=all run finished_at and id', async () => {
       await insertCollectionRunRow({
         status: 'completed',
         scope: 'all',
@@ -375,7 +375,10 @@ describe('CollectionRuns queries', () => {
         error: null,
       });
 
-      expect(await getCollectionCadenceAnchorTimestamp()).toBe(latest.finished_at);
+      expect(await getCollectionCadenceAnchor()).toEqual({
+        runId: latest.id,
+        finishedAt: latest.finished_at!,
+      });
     });
 
     it('ignores a more recent completed scope=projects run', async () => {
@@ -400,7 +403,10 @@ describe('CollectionRuns queries', () => {
         error: null,
       });
 
-      expect(await getCollectionCadenceAnchorTimestamp()).toBe(allRun.finished_at);
+      expect(await getCollectionCadenceAnchor()).toEqual({
+        runId: allRun.id,
+        finishedAt: allRun.finished_at!,
+      });
     });
 
     it('ignores failed and cancelled runs even when more recent', async () => {
@@ -435,7 +441,10 @@ describe('CollectionRuns queries', () => {
         error: null,
       });
 
-      expect(await getCollectionCadenceAnchorTimestamp()).toBe(completedRun.finished_at);
+      expect(await getCollectionCadenceAnchor()).toEqual({
+        runId: completedRun.id,
+        finishedAt: completedRun.finished_at!,
+      });
     });
 
     it('falls back to the latest completed any-scope run when no scope=all run has ever completed', async () => {
@@ -450,7 +459,10 @@ describe('CollectionRuns queries', () => {
         error: null,
       });
 
-      expect(await getCollectionCadenceAnchorTimestamp()).toBe(projectsRun.finished_at);
+      expect(await getCollectionCadenceAnchor()).toEqual({
+        runId: projectsRun.id,
+        finishedAt: projectsRun.finished_at!,
+      });
     });
   });
 

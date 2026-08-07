@@ -14,6 +14,7 @@ function makeSummaryRow(
     chatbot_id: ChatbotId.ChatGPT,
     prompt_id: 'prompt-1',
     created_at: '2026-01-01T12:00:00.000Z',
+    run_id: null,
     ...overrides,
   };
 }

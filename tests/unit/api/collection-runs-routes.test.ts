@@ -187,7 +187,7 @@ describe('GET /api/collection-runs/cadence', () => {
   it('returns null anchor and null failedRun on an empty DB', async () => {
     const res = await getCadence();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ lastCompletedRunFinishedAt: null, failedRun: null });
+    expect(await res.json()).toEqual({ lastCompletedRunFinishedAt: null, lastCompletedRunId: null, failedRun: null });
   });
 
   it('anchors on the completed scope=all run', async () => {

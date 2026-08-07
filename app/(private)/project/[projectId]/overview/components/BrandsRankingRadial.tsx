@@ -5,9 +5,9 @@ import { cx } from '@/utils/cx';
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { getBrandColor, PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
 
-export function getBrandsRankingTodayRadialData(
+export function getBrandsRankingRadialData(
   data: OverviewData | undefined
-): BrandsRankingTodayRadialItem[] {
+): BrandsRankingRadialItem[] {
   if (!data || !data.brands.length) return [];
   const brandsCount = data.brands.length;
   const positionWeight = 100 / brandsCount;
@@ -20,7 +20,7 @@ export function getBrandsRankingTodayRadialData(
   }));
 }
 
-export type BrandsRankingTodayRadialItem = {
+export type BrandsRankingRadialItem = {
   id: string;
   ranking: number;
   brand: string;
@@ -28,11 +28,11 @@ export type BrandsRankingTodayRadialItem = {
   fill: string;
 };
 
-export default function BrandsRankingTodayRadial({
+export default function BrandsRankingRadial({
   data,
   highlightId,
 }: {
-  data: BrandsRankingTodayRadialItem[];
+  data: BrandsRankingRadialItem[];
   highlightId?: string;
 }) {
   const highlightItem = data.find((item) => item.id === highlightId);
@@ -55,7 +55,7 @@ export default function BrandsRankingTodayRadial({
               isAnimationActive={false}
               isRadialChart
               formatter={(_, __, item) => {
-                const radialItem: BrandsRankingTodayRadialItem = item?.payload.payload;
+                const radialItem: BrandsRankingRadialItem = item?.payload.payload;
                 return `${radialItem.brand}: ${toOrdinal(radialItem.ranking + 1)}`;
               }}
               label="Ranking"
