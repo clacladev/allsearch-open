@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { AlertFloating } from '@/components/application/alerts/alerts';
 import { LatestRunNotice } from './components/LatestRunNotice';
+import { CollectionRunCoverageBanner } from './components/CollectionRunCoverageBanner';
 import { VisualContainer } from './components/VisualContainer';
 import VisibilityChart from './components/VisibilityChart';
 import { DateRangePickerCard } from './components/DateRangePickerCard';
@@ -162,6 +163,8 @@ export default function ProjectOverview({
           </span>
         )}
       </div>
+
+      <CollectionRunCoverageBanner runCount={overviewData.collectionRunCount} />
 
       <div className="flex flex-col gap-2 md:flex-row">
         {chartType === 'sentiment' && hasSentimentData ? (

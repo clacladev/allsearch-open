@@ -6,6 +6,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
   YAxis,
 } from 'recharts';
 import {
@@ -13,7 +14,7 @@ import {
   ChartTooltipContent,
 } from '@/components/application/charts/charts-base';
 import { cx } from '@/utils/cx';
-import { SentimentDataset } from '@/libs/utils/project-analysis/getSentimentDataset';
+import type { SentimentDataset } from '@/libs/utils/project-analysis/getSentimentDataset';
 
 const SENTIMENT_LABELS: Record<number, string> = {
   [-2]: 'Very Negative',
@@ -88,16 +89,23 @@ export default function SentimentChart({
           strokeDasharray="4 4"
         />
 
+        {/* Real time scale: points are spaced by elapsed time, not by array position, so a fortnight
+            gap looks like a fortnight. Hidden, matching today's chart which renders no x labels.
+            The explicit domain is required — a numeric XAxis defaults to [0, 'auto'], which would
+            squash every epoch-ms timestamp against the right edge. */}
+        <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} hide />
+
         <Tooltip
           content={<ChartTooltipContent />}
-          labelFormatter={(index) =>
-            data[index]?.date
-              ? new Date(data[index].date).toLocaleString(undefined, {
+          labelFormatter={(_label, payload) => {
+            const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
+            return date
+              ? new Date(date).toLocaleString(undefined, {
                   month: 'long',
                   day: 'numeric',
                 })
-              : 'N/A'
-          }
+              : 'N/A';
+          }}
           cursor={{ className: 'stroke-utility-brand-600 stroke-2' }}
           wrapperStyle={{ zIndex: 1 }}
         />
@@ -122,6 +130,8 @@ export default function SentimentChart({
                 type="natural"
                 stroke={brandColor ?? 'currentColor'}
                 strokeWidth={2}
+                connectNulls={false}
+                dot={{ r: 3, fill: brandColor ?? 'currentColor', stroke: 'none' }}
                 className={
                   brandColor
                     ? '[&_.recharts-area-area]:translate-y-[6px] [&_.recharts-area-area]:[clip-path:inset(0_0_6px_0)]'
