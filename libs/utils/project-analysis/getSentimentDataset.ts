@@ -1,51 +1,47 @@
-import { getISODateString, ISODateString } from '@/libs/database/shared/ISODateString';
-import { PromptResponseWorkRow } from './helpers';
+import { ISODateString } from '@/libs/database/shared/ISODateString';
+import { CollectionGroup } from './helpers';
+import { insertGapBreakEntries } from './collectionSeries';
 import { BrandInfo } from './types';
 
-// E.g. { date: '2026-01-09', Hoka: '-0.5', Nike: '1.2' }
-type SentimentDataEntry = {
-  date: string; // Date in format YYYY-MM-DD
-  [key: string]: string; // Brand name: average sentiment score
+// E.g. { timestamp: 1736380800000, date: '2026-01-09', isGap: false, Hoka: '-0.5', Nike: '1.2' }
+export type SentimentDataEntry = {
+  /** Epoch ms of the Collection Run group this point describes. The chart's x value. */
+  timestamp: number;
+  /** ISO day of the group; null on synthetic gap-break entries. */
+  date: ISODateString | null;
+  /** True only on the synthetic entry inserted to break the line across a >14-day gap. */
+  isGap: boolean;
+  /** Brand label -> average sentiment score as a string; null on gap entries. */
+  [brandLabel: string]: string | number | boolean | null;
 };
 
 export type SentimentDataset = SentimentDataEntry[];
 
 export async function getSentimentDataset(
-  startDate: ISODateString,
-  endDate: ISODateString,
   brandsIdInfoMap: Map<string, BrandInfo>,
-  promptResponses: PromptResponseWorkRow[]
+  collectionGroups: CollectionGroup[]
 ): Promise<SentimentDataset> {
-  const dataset: SentimentDataset = [];
+  const entries = collectionGroups.map((group) =>
+    getSentimentDatasetEntry(group, brandsIdInfoMap)
+  );
+  const brandLabels = brandsIdInfoMap
+    .values()
+    .toArray()
+    .map((info) => info.label ?? 'Unknown');
 
-  const date = new Date(startDate);
-  while (date <= new Date(endDate)) {
-    const entry = getSentimentDatasetEntry(
-      getISODateString(date),
-      brandsIdInfoMap,
-      promptResponses
-    );
-    if (entry) dataset.push(entry);
-    date.setDate(date.getDate() + 1);
-  }
-
-  return dataset;
+  return insertGapBreakEntries(entries, brandLabels);
 }
 
 function getSentimentDatasetEntry(
-  targetDate: ISODateString,
-  brandsIdInfoMap: Map<string, BrandInfo>,
-  promptResponses: PromptResponseWorkRow[]
-): SentimentDataEntry | undefined {
-  const filteredResponses = promptResponses.filter(
-    (response) => response.created_at_iso_date === targetDate
-  );
-  if (!filteredResponses.length) return;
+  group: CollectionGroup,
+  brandsIdInfoMap: Map<string, BrandInfo>
+): SentimentDataEntry {
+  const responses = group.responses;
 
   // Collect sentiment values per brand
   const brandSentimentSums = new Map<string, { sum: number; count: number }>();
 
-  filteredResponses.forEach((response) => {
+  responses.forEach((response) => {
     if (!response.sentiment) return;
     brandsIdInfoMap.forEach((_, brandId) => {
       const score = response.sentiment?.[brandId];
@@ -63,5 +59,5 @@ function getSentimentDatasetEntry(
     brandAverages[label] = stats ? (stats.sum / stats.count).toFixed(1) : '0.0';
   });
 
-  return { date: targetDate, ...brandAverages };
+  return { timestamp: Date.parse(group.finishedAt), date: group.date, isGap: false, ...brandAverages };
 }

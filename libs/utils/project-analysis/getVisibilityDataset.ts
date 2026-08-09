@@ -1,53 +1,48 @@
-import { getISODateString, ISODateString } from '@/libs/database/shared/ISODateString';
-import { PromptResponseWorkRow } from './helpers';
+import { ISODateString } from '@/libs/database/shared/ISODateString';
+import { CollectionGroup } from './helpers';
+import { insertGapBreakEntries } from './collectionSeries';
 import { BrandInfo } from './types';
 
-// E.g. { date: '2026-01-09', Hoka: '33', Nike: '22' }
-type VisibilityDataEntry = {
-  date: string; // Date in format YYYY-MM-DD
-  [key: string]: string; // Brand name: visibility percentage (e.g. Hoka: '33')
+// E.g. { timestamp: 1736380800000, date: '2026-01-09', isGap: false, Hoka: '33', Nike: '22' }
+export type VisibilityDataEntry = {
+  /** Epoch ms of the Collection Run group this point describes. The chart's x value. */
+  timestamp: number;
+  /** ISO day of the group; null on synthetic gap-break entries. */
+  date: ISODateString | null;
+  /** True only on the synthetic entry inserted to break the line across a >14-day gap. */
+  isGap: boolean;
+  /** Brand label -> visibility percentage as a string; null on gap entries. */
+  [brandLabel: string]: string | number | boolean | null;
 };
 
 export type VisibilityDataset = VisibilityDataEntry[];
 
 export async function getVisibilityDataset(
-  startDate: ISODateString,
-  endDate: ISODateString,
   brandsIdInfoMap: Map<string, BrandInfo>,
-  promptResponses: PromptResponseWorkRow[]
+  collectionGroups: CollectionGroup[]
 ): Promise<VisibilityDataset> {
-  const visibilityDataset: VisibilityDataset = [];
+  const entries = collectionGroups.map((group) =>
+    getVisibilityDatasetEntry(group, brandsIdInfoMap)
+  );
+  const brandLabels = brandsIdInfoMap
+    .values()
+    .toArray()
+    .map((info) => info.label ?? 'Unknown');
 
-  const date = new Date(startDate);
-  while (date <= new Date(endDate)) {
-    const entry = getVisibilityDatasetEntry(
-      getISODateString(date),
-      brandsIdInfoMap,
-      promptResponses
-    );
-    if (entry) visibilityDataset.push(entry);
-    date.setDate(date.getDate() + 1);
-  }
-
-  return visibilityDataset;
+  return insertGapBreakEntries(entries, brandLabels);
 }
 
 function getVisibilityDatasetEntry(
-  targetDate: ISODateString,
-  brandsIdInfoMap: Map<string, BrandInfo>,
-  promptResponses: PromptResponseWorkRow[]
-): VisibilityDataEntry | undefined {
-  // Keep only responses for the current date
-  const filteredResponses = promptResponses.filter(
-    (response) => response.created_at_iso_date === targetDate
-  );
-  const filteredResponsesCount = filteredResponses.length;
-  if (!filteredResponsesCount) return;
+  group: CollectionGroup,
+  brandsIdInfoMap: Map<string, BrandInfo>
+): VisibilityDataEntry {
+  const responses = group.responses;
+  const responsesCount = responses.length;
 
   // Count brand mentions in the responses
   const brandsVisibilityCount: Map<string, number> = new Map();
   brandsIdInfoMap.forEach((_, brandId) => brandsVisibilityCount.set(brandId, 0));
-  filteredResponses.forEach((response) => {
+  responses.forEach((response) => {
     response.brand_ids_ranking.forEach((brandId) => {
       if (!brandsIdInfoMap.has(brandId)) return;
       brandsVisibilityCount.set(brandId, (brandsVisibilityCount.get(brandId) || 0) + 1);
@@ -59,11 +54,13 @@ function getVisibilityDatasetEntry(
     .toArray()
     .map(([brandId, count]) => ({
       brandId,
-      avg: Math.round((count / filteredResponsesCount) * 100).toString(),
+      avg: Math.round((count / responsesCount) * 100).toString(),
     }));
 
   return {
-    date: targetDate,
+    timestamp: Date.parse(group.finishedAt),
+    date: group.date,
+    isGap: false,
     ...brandsVisibilityAvg.reduce((acc, { brandId, avg }) => {
       const info = brandsIdInfoMap.get(brandId);
       const label = info?.label ?? 'Unknown';

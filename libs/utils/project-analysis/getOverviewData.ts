@@ -13,6 +13,7 @@ import { getSentimentDataset, SentimentDataset } from './getSentimentDataset';
 import { getSentimentScores, SentimentScores } from './getSentimentScores';
 import { BrandInfo, Opportunity } from './types';
 import { getPromptResponsesWorkRows, getLatestCollectionGroup } from './helpers';
+import { getCollectionGroupsInRange } from './collectionSeries';
 import { Summary } from '@/libs/utils/Summary';
 
 export const MAX_TOP_SOURCE_DOMAINS = 6;
@@ -38,6 +39,7 @@ export type OverviewData = {
   topOpportunitiesSummary: Summary<Opportunity>;
   sentimentDataset: SentimentDataset;
   sentimentScores: SentimentScores;
+  collectionRunCount: number;
 };
 
 export async function getOverviewData(
@@ -77,6 +79,11 @@ export async function getOverviewData(
   // The collection the headline latest-run figures describe; null when the range holds no responses.
   const latestCollectionGroup = getLatestCollectionGroup(promptResponsesWorkRows);
 
+  // Every Collection Run (or legacy no-run_id day group) the selected range covers. Both trend
+  // datasets and the coverage banner are derived from this one array, so the banner's count can
+  // never disagree with the number of points plotted.
+  const collectionGroups = getCollectionGroupsInRange(promptResponsesWorkRows, startDate, endDate);
+
   // Get the different analyses
   const [
     visibilityDataset,
@@ -88,13 +95,13 @@ export async function getOverviewData(
     sentimentDataset,
     sentimentScores,
   ] = await Promise.all([
-    getVisibilityDataset(startDate, endDate, brandsIdInfoMap, promptResponsesWorkRows),
+    getVisibilityDataset(brandsIdInfoMap, collectionGroups),
     getVisibilityScores(brandsIdInfoMap, promptResponsesWorkRows),
     getRankingsSummary(brandsIdInfoMap, promptResponsesWorkRows),
     getSourceDomainsSummary(project, promptResponsesWorkRows, MAX_TOP_SOURCE_DOMAINS),
     getSourceContentSummary(project, promptResponsesWorkRows, MAX_TOP_SOURCE_CONTENTS),
     getOpportunitiesSummary(project, promptResponsesWorkRows, MAX_TOP_OPPORTUNITIES),
-    getSentimentDataset(startDate, endDate, brandsIdInfoMap, promptResponsesWorkRows),
+    getSentimentDataset(brandsIdInfoMap, collectionGroups),
     getSentimentScores(brandsIdInfoMap, promptResponsesWorkRows),
   ]);
 
@@ -113,5 +120,6 @@ export async function getOverviewData(
     topOpportunitiesSummary,
     sentimentDataset,
     sentimentScores,
+    collectionRunCount: collectionGroups.length,
   };
 }
