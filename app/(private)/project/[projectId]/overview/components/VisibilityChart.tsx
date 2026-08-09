@@ -1,17 +1,10 @@
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
   ChartLegendContent,
   ChartTooltipContent,
 } from '@/components/application/charts/charts-base';
 import { cx } from '@/utils/cx';
-
-// Example: `{ date: '2025-11-24', Hoka: '33', Nike: '70', Puma: '12', Adidas: '42' }`
-export type VisibilityChartDataEntry = {
-  date: string; // Date in format YYYY-MM-DD
-  [key: string]: string; // Brand name: visibility percentage (e.g. Hoka: '33')
-};
-
-export type VisibilityChartDataset = VisibilityChartDataEntry[];
+import type { VisibilityDataset } from '@/libs/utils/project-analysis/getVisibilityDataset';
 
 export default function VisibilityChart({
   data,
@@ -19,7 +12,7 @@ export default function VisibilityChart({
   highlightKey,
   colorMap,
 }: {
-  data: VisibilityChartDataset;
+  data: VisibilityDataset;
   displayKeys: string[];
   highlightKey?: string;
   /** Maps brand label → brand color (oklch string). Used to color each brand's line. */
@@ -61,16 +54,23 @@ export default function VisibilityChart({
 
         <CartesianGrid vertical={false} stroke="currentColor" className="text-utility-neutral-100" />
 
+        {/* Real time scale: points are spaced by elapsed time, not by array position, so a fortnight
+            gap looks like a fortnight. Hidden, matching today's chart which renders no x labels.
+            The explicit domain is required — a numeric XAxis defaults to [0, 'auto'], which would
+            squash every epoch-ms timestamp against the right edge. */}
+        <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} hide />
+
         <Tooltip
           content={<ChartTooltipContent formatter={(value) => `${value}%`} />}
-          labelFormatter={(index) =>
-            data[index].date
-              ? new Date(data[index].date).toLocaleString(undefined, {
+          labelFormatter={(_label, payload) => {
+            const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
+            return date
+              ? new Date(date).toLocaleString(undefined, {
                   month: 'long',
                   day: 'numeric',
                 })
-              : 'N/A'
-          }
+              : 'N/A';
+          }}
           cursor={{ className: 'stroke-utility-brand-600 stroke-2' }}
           wrapperStyle={{ zIndex: 1 }}
         />
@@ -95,6 +95,8 @@ export default function VisibilityChart({
                 type="natural"
                 stroke={brandColor ?? 'currentColor'}
                 strokeWidth={2}
+                connectNulls={false}
+                dot={{ r: 3, fill: brandColor ?? 'currentColor', stroke: 'none' }}
                 className={
                   brandColor
                     ? '[&_.recharts-area-area]:translate-y-[6px] [&_.recharts-area-area]:[clip-path:inset(0_0_6px_0)]'
