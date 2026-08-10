@@ -200,7 +200,12 @@ export default function TopicsForm() {
         )}
 
         {topicsIdeasAiErrorCode ? (
-          <AiFailureState code={topicsIdeasAiErrorCode} provider="google" variant="compact" />
+          <AiFailureState
+            code={topicsIdeasAiErrorCode}
+            provider="google"
+            variant="compact"
+            fixDestination="keys"
+          />
         ) : (
           topicsIdeasError && (
             <div className="text-error-800 ml-0.5 text-xs">{topicsIdeasError?.message}</div>
