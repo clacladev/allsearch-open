@@ -73,43 +73,7 @@ const MOCK_DONE_FRAME = {
   ],
 };
 
-const MOCK_REPORT_DATA = {
-  startDate: '2026-03-02',
-  endDate: '2026-03-02',
-  brands: [
-    {
-      brandId: MOCK_PROJECT_ID,
-      label: 'Nike',
-      iconUrl: 'https://example.com/nike-favicon.ico',
-      isProject: true,
-    },
-    {
-      brandId: 'competitor-adidas-id',
-      label: 'Adidas',
-      isProject: false,
-    },
-  ],
-  visibilityDataset: [],
-  visibilityScores: [
-    { brandId: MOCK_PROJECT_ID, percentage: 75 },
-    { brandId: 'competitor-adidas-id', percentage: 50 },
-  ],
-  rankingsSummary: [
-    {
-      brandId: MOCK_PROJECT_ID,
-      label: 'Nike',
-      iconUrl: 'https://example.com/nike-favicon.ico',
-      isProject: true,
-    },
-    { brandId: 'competitor-adidas-id', label: 'Adidas', isProject: false },
-  ],
-  topSourceDomainsSummary: { data: [], totalCount: 0 },
-  topSourceContentSummary: { data: [], totalCount: 0 },
-  topOpportunitiesSummary: { data: [], totalCount: 0 },
-};
-
 test('shows streaming Collection Run progress, then swaps to the report', async ({ page }) => {
-  let reportRequestCount = 0;
   let streamRequestCount = 0;
 
   await page.route('**/api/collection-runs/*/stream', (route) => {
@@ -129,15 +93,6 @@ test('shows streaming Collection Run progress, then swaps to the report', async 
     });
   });
 
-  await page.route('**/api/new-project/report**', (route) => {
-    reportRequestCount++;
-    return route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(MOCK_REPORT_DATA),
-    });
-  });
-
   await page.goto(`/new-project/report/${MOCK_PROJECT_ID}?runId=${MOCK_RUN_ID}`);
 
   // --- The progress surface, fed by the mocked `progress` frame from the first stream request ---
@@ -146,11 +101,13 @@ test('shows streaming Collection Run progress, then swaps to the report', async 
   await expect(progressSurface.getByTestId('collection-run-progress-count')).toHaveText('1 of 2');
   await expect(progressSurface.getByTestId('collection-run-progress-cancel')).toBeVisible();
   await expect(progressSurface.getByText('ChatGPT').first()).toBeVisible();
-  expect(reportRequestCount).toBe(0);
 
   // --- The EventSource reconnects on its own once the first response ends; the second stream
-  // request's `done` frame swaps the surface for the finished report ---
-  await expect(page.getByText('Your Brand AI Visibility Report')).toBeVisible();
+  // request's `done` frame flips `isRunInProgress` to false and the Report component stops
+  // rendering the collecting surface. The actual report content (the "Your Brand AI Visibility
+  // Report" panel) is server-rendered from `getOverviewPageData`, which the mocked `MOCK_PROJECT_ID`
+  // is not backed by a real DB row (issue 17); asserting the report content belongs to the
+  // DB-seeded fresh-install suite (issue 21). What we assert here is just the streaming protocol. ---
+  await expect(progressSurface).not.toBeVisible();
   expect(streamRequestCount).toBeGreaterThanOrEqual(2);
-  expect(reportRequestCount).toBe(1);
 });

@@ -5,8 +5,8 @@ import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { Button } from '@/components/base/buttons/button';
 import { RouteHelper } from '@/libs/routes';
 import FormHeader from '../../components/FormHeader';
-import useSWRImmutable from 'swr/immutable';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { VisualContainer } from '@/app/(private)/project/[projectId]/overview/components/VisualContainer';
 import BrandsRankingRadial, {
@@ -21,7 +21,6 @@ import VisibilityScoresBarChart, {
 import { MetricsSimple } from '@/components/application/metrics/metrics';
 import { CollectionRunProgress } from '@/components/collection-run/CollectionRunProgress';
 import { useCollectionRunProgress } from '@/components/collection-run/useCollectionRunProgress';
-import { appFetch } from '@/hooks/appFetch';
 import { formatCollectionRunProgressSummary } from '@/libs/collection/progress';
 
 dayjs.extend(LocalizedFormat);
@@ -34,18 +33,28 @@ function getMentionsTotal(data: OverviewData | undefined) {
   );
 }
 
-export default function Report({ projectId, runId }: { projectId: string; runId?: string }) {
+export default function Report({
+  projectId,
+  runId,
+  initialData,
+}: {
+  projectId: string;
+  runId?: string;
+  initialData: OverviewData | undefined;
+}) {
+  const router = useRouter();
   const { progress, isRunInProgress, isReconnecting, cancel, isCancelling } =
     useCollectionRunProgress(runId);
 
-  // Request the report only once the stream says the Run is done (or that there is no Run).
-  const {
-    data,
-    error: reportError,
-    mutate: retryReport,
-  } = useSWRImmutable(isRunInProgress === false ? ['new-project-report', projectId] : null, () =>
-    appFetch<OverviewData>(RouteHelper.Api.NewProject.getReport(projectId))
-  );
+  // When the Run lands in a terminal state ask the server to recompute. The page's
+  // async server component re-runs (router.refresh) and re-mounts this component
+  // with fresh `initialData`. The hook keeps the streaming panel mounted across the
+  // pass, so users see Collecting → Report without a flash.
+  useEffect(() => {
+    if (isRunInProgress === false) router.refresh();
+  }, [isRunInProgress, router]);
+
+  const data = initialData;
 
   const [rankingsSummaryRadialData, visibilityScoreBarListData, mentionsTotal] = useMemo(
     () => [
@@ -85,21 +94,17 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
   if (!data) {
     return (
       <NewProjectLayoutColumn size="lg">
-        {reportError ? (
-          <>
-            <div className="text-error-800 text-sm">{reportError.message}</div>
-            <Button
-              size="lg"
-              color="secondary"
-              iconLeading={RefreshCcw01}
-              onClick={() => retryReport()}
-            >
-              Retry
-            </Button>
-          </>
-        ) : (
-          <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
-        )}
+        <div className="text-error-800 text-sm">
+          Could not load the report. Check the project and run state, then retry.
+        </div>
+        <Button
+          size="lg"
+          color="secondary"
+          iconLeading={RefreshCcw01}
+          onClick={() => router.refresh()}
+        >
+          Retry
+        </Button>
       </NewProjectLayoutColumn>
     );
   }
@@ -124,10 +129,6 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
         <div className="text-tertiary -mt-4 ml-0.5 text-xs">
           {formatCollectionRunProgressSummary(progress)}
         </div>
-      )}
-
-      {reportError && (
-        <div className="text-error-800 -mt-4 ml-0.5 text-xs">{reportError?.message}</div>
       )}
 
       <div className="flex flex-col gap-4 md:flex-row">
@@ -162,7 +163,6 @@ export default function Report({ projectId, runId }: { projectId: string; runId?
       <Button
         size="lg"
         href={RouteHelper.Project.getOverview(projectId)}
-        isDisabled={reportError}
         iconTrailing={ArrowRight}
       >
         Start Improving Your Visibility

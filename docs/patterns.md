@@ -17,17 +17,18 @@ All route constants live in `ROUTES` (`libs/routes.ts`).
 
 ## Environment Detection
 
-Use helpers from `libs/env.ts` — never check `process.env.NODE_ENV` directly:
+There is one environment. `isDevEnv` (from `libs/env.ts`) gates developer-only
+surfaces on `NODE_ENV !== 'production'`; never reach for `process.env.NODE_ENV`
+directly:
 
 ```ts
-import { isProdEnv, isDevEnv, isPreviewEnv } from '@/libs/env';
+import { isDevEnv } from '@/libs/env';
 ```
 
 ## Database Access
 
 - Queries and types are organized by table under `/libs/database/`.
-- Use the Supabase client from `/libs/supabase/` (separate server and browser clients).
-- Migrations live in `/supabase/migrations/`.
+- Data access goes through Drizzle on SQLite (ADR 0006).
 
 ## UI Pattern Reuse
 
