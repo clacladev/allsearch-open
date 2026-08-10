@@ -10,8 +10,10 @@ import type { RedactedProviderKey } from '@/libs/database/Settings/types';
 
 export default function KeysForm({
   initialProviderKeys,
+  isFixMode,
 }: {
   initialProviderKeys: RedactedProviderKey[];
+  isFixMode?: boolean;
 }) {
   const router = useRouter();
   const [providerKeys, setProviderKeys] = useState(initialProviderKeys);
@@ -23,8 +25,12 @@ export default function KeysForm({
     <NewProjectLayoutColumn>
       <div className="flex flex-col gap-5">
         <FormHeader
-          title="Connect an AI provider"
-          description="Google is required — it alone powers Chatbot answers, sentiment, topic and prompt ideas, competitor discovery, and article generation."
+          title={isFixMode ? 'Fix your API key' : 'Connect an AI provider'}
+          description={
+            isFixMode
+              ? 'Your Google key was rejected or is rate limited. Replace it below and we will drop you back where you left off.'
+              : 'Google is required — it alone powers Chatbot answers, sentiment, topic and prompt ideas, competitor discovery, and article generation.'
+          }
         />
 
         <div className="flex flex-col gap-2">
@@ -32,7 +38,7 @@ export default function KeysForm({
             provider="google"
             storedKey={findKey('google')}
             onChange={setProviderKeys}
-            onSaved={() => router.push(ROUTES.ORGANIZATION)}
+            onSaved={() => router.push(isFixMode ? ROUTES.NEW_PROJECT.INDEX : ROUTES.ORGANIZATION)}
           />
           <a
             href="https://aistudio.google.com/apikey"

@@ -292,7 +292,12 @@ export default function CompetitorsForm() {
         </div>
 
         {competitorsAiErrorCode ? (
-          <AiFailureState code={competitorsAiErrorCode} provider="google" variant="compact" />
+          <AiFailureState
+            code={competitorsAiErrorCode}
+            provider="google"
+            variant="compact"
+            fixDestination="keys"
+          />
         ) : (
           error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>
         )}

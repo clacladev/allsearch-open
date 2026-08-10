@@ -161,6 +161,16 @@ export function useNewProjectContext() {
 
 // --- Utilities ---
 
+/** Where a restored draft resumes. `getCorrectStep()` answers "first step whose data is missing",
+ * which is what the mid-flow forward guards want; on entry it needs one clamp: Save is not a form
+ * but an auto-submitting side effect, and a draft that merely *reached* the competitors screen
+ * already has competitors in it (CompetitorsForm stores them when the fetch resolves, not on
+ * Finish). Resuming into Save would create a project and start a Collection Run the user never
+ * confirmed. */
+export function resumeStepForDraft(correctStep: NewProjectStep): NewProjectStep {
+  return correctStep > NewProjectStep.Competitors ? NewProjectStep.Competitors : correctStep;
+}
+
 export function routeForStep(step: NewProjectStep) {
   switch (step) {
     case NewProjectStep.Brand:

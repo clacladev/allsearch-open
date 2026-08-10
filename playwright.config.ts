@@ -29,7 +29,7 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: /collection-run-progress\.spec\.ts/,
+      testIgnore: /(collection-run-progress|first-run)\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile,
@@ -51,6 +51,18 @@ export default defineConfig({
       // `https://localhost:3000`, what `bun run dev` serves.
       name: 'chromium-no-auth',
       testMatch: /collection-run-progress\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // tests/e2e/first-run.spec.ts asserts DB-gated redirects (no provider key, no organization)
+      // for a fresh-install state the seeded suite database used by the other projects can never
+      // be in — it needs its own dev server pointed at a throwaway `ALLSEARCH_DB_PATH` that this
+      // project's tests are free to wipe. No auth, no `storageState`, no `dependencies`, same
+      // hand-started-dev-server convention as `chromium-no-auth` above. Run it with:
+      //   ALLSEARCH_DB_PATH=/tmp/allsearch-e2e/allsearch.db bun run dev
+      //   ALLSEARCH_DB_PATH=/tmp/allsearch-e2e/allsearch.db bunx playwright test --project=chromium-fresh-install
+      name: 'chromium-fresh-install',
+      testMatch: /first-run\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],

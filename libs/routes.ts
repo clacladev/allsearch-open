@@ -91,8 +91,7 @@ export const ROUTES = {
       SOURCES: '/api/project/:projectId/sources',
       PROCESS_PROMPTS: '/api/process-prompts/:projectId',
       PROMPT_ARTICLES: '/api/project/:projectId/prompts/:promptId/prompt-articles',
-      PROMPT_ARTICLE:
-        '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId',
+      PROMPT_ARTICLE: '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId',
       PROMPT_ARTICLE_BODY:
         '/api/project/:projectId/prompts/:promptId/prompt-articles/:promptArticleId/article',
       PROMPT_ARTICLE_BODY_DOWNLOAD_HTML:
@@ -106,6 +105,12 @@ export const ROUTES = {
 } as const;
 
 export const RouteHelper = {
+  Keys: {
+    /** `/keys` bounces to the next onboarding step when a key already exists; `fix=1` keeps the
+     * form up so a rejected or rate-limited key can be replaced mid-onboarding (issue 16). */
+    getFix: () => `${ROUTES.KEYS}?fix=1`,
+  },
+
   NewProject: {
     getReport: (projectId: string, runId?: string) =>
       ROUTES.NEW_PROJECT.REPORT.replace(':projectId', projectId) + getUrlParamsString({ runId }),
@@ -125,7 +130,14 @@ export const RouteHelper = {
       filters?: Record<string, string | undefined>
     ) =>
       ROUTES.PROJECT.SOURCES_CONTENTS.replace(':projectId', projectId) +
-      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+      getUrlParamsString({
+        startDate,
+        endDate,
+        pageNo: pageNo?.toString(),
+        sortBy,
+        sortDir,
+        ...filters,
+      }),
     getSourcesDomains: (
       projectId: string,
       startDate?: string,
@@ -136,7 +148,14 @@ export const RouteHelper = {
       filters?: Record<string, string | undefined>
     ) =>
       ROUTES.PROJECT.SOURCES_DOMAINS.replace(':projectId', projectId) +
-      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+      getUrlParamsString({
+        startDate,
+        endDate,
+        pageNo: pageNo?.toString(),
+        sortBy,
+        sortDir,
+        ...filters,
+      }),
     getSourceDetails: (
       projectId: string,
       sourceId: string,
@@ -158,7 +177,14 @@ export const RouteHelper = {
       filters?: Record<string, string | undefined>
     ) =>
       ROUTES.PROJECT.OPPORTUNITIES.replace(':projectId', projectId) +
-      getUrlParamsString({ startDate, endDate, pageNo: pageNo?.toString(), sortBy, sortDir, ...filters }),
+      getUrlParamsString({
+        startDate,
+        endDate,
+        pageNo: pageNo?.toString(),
+        sortBy,
+        sortDir,
+        ...filters,
+      }),
     getOpportunityDetails: (
       projectId: string,
       opportunityId: string,
@@ -242,10 +268,7 @@ export const RouteHelper = {
       getOthers: (projectId: string) =>
         ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'others'),
       getDeveloper: (projectId: string) =>
-        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(
-          ':tabId',
-          'developer'
-        ),
+        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'developer'),
     },
   },
 
@@ -310,8 +333,7 @@ export const RouteHelper = {
         getUrlParamsString({ startDate, endDate, showArchived }),
       getPromptsArchive: (projectId: string) =>
         ROUTES.API.PROJECT.PROMPTS_ARCHIVE.replace(':projectId', projectId),
-      getTopics: (projectId: string) =>
-        ROUTES.API.PROJECT.TOPICS.replace(':projectId', projectId),
+      getTopics: (projectId: string) => ROUTES.API.PROJECT.TOPICS.replace(':projectId', projectId),
       getCompetitors: (projectId: string) =>
         ROUTES.API.PROJECT.COMPETITORS.replace(':projectId', projectId),
       getSources: (
