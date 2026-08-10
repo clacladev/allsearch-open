@@ -2,9 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { getAiFailureStateCopy } from '@/app/components/AiFailureState';
 import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
 import { AppFetchError } from '@/hooks/appFetch';
-import {
-  getChatbotCoverageCaption,
-} from '@/app/(private)/components/ChatbotCoverageCaption';
+import { getChatbotCoverageCaption } from '@/app/(private)/components/ChatbotCoverageCaption';
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import {
   encodeStreamError,
@@ -38,6 +36,43 @@ describe('getAiFailureStateCopy', () => {
     expect(getAiFailureStateCopy('NO_KEY', 'google').iconColor).toBe('warning');
     expect(getAiFailureStateCopy('INVALID_KEY', 'google').iconColor).toBe('error');
     expect(getAiFailureStateCopy('RATE_LIMITED', 'google').iconColor).toBe('warning');
+  });
+});
+
+describe('getAiFailureStateCopy — keys destination', () => {
+  it('produces distinct copy per code', () => {
+    const noKey = getAiFailureStateCopy('NO_KEY', 'google', 'keys');
+    const invalidKey = getAiFailureStateCopy('INVALID_KEY', 'google', 'keys');
+    const rateLimited = getAiFailureStateCopy('RATE_LIMITED', 'google', 'keys');
+
+    const titles = [noKey.title, invalidKey.title, rateLimited.title];
+    expect(new Set(titles).size).toBe(3);
+    const descriptions = [noKey.description, invalidKey.description, rateLimited.description];
+    expect(new Set(descriptions).size).toBe(3);
+  });
+
+  it('does not mention Settings, unlike the settings destination', () => {
+    for (const code of ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'] as const) {
+      expect(getAiFailureStateCopy(code, 'google', 'keys').description).not.toContain('Settings');
+      expect(getAiFailureStateCopy(code, 'google', 'settings').description).toContain('Settings');
+    }
+  });
+
+  it('uses a keys-specific actionTitle, distinct from the settings actionTitle', () => {
+    expect(getAiFailureStateCopy('NO_KEY', 'google', 'settings').actionTitle).toBe(
+      'Go to Settings'
+    );
+    for (const code of ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'] as const) {
+      expect(getAiFailureStateCopy(code, 'google', 'keys').actionTitle).not.toBe('Go to Settings');
+    }
+  });
+
+  it('keeps the same iconColor per code across destinations', () => {
+    for (const code of ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'] as const) {
+      expect(getAiFailureStateCopy(code, 'google', 'keys').iconColor).toBe(
+        getAiFailureStateCopy(code, 'google', 'settings').iconColor
+      );
+    }
   });
 });
 
