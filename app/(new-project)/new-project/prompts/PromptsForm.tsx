@@ -257,7 +257,12 @@ export default function PromptsForm() {
           </div>
         )}
         {promptIdeasAiErrorCode ? (
-          <AiFailureState code={promptIdeasAiErrorCode} provider="google" variant="compact" />
+          <AiFailureState
+            code={promptIdeasAiErrorCode}
+            provider="google"
+            variant="compact"
+            fixDestination="keys"
+          />
         ) : (
           promptIdeasError && (
             <div className="text-error-800 ml-0.5 text-xs">{promptIdeasError?.message}</div>
