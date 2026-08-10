@@ -1,6 +1,5 @@
 'use client';
 
-import { config } from '@/config';
 import { BarChart11, Eye, FaceSmile } from '@untitledui/icons';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
@@ -130,15 +129,8 @@ export default function ProjectOverview({
         <AlertFloating
           color="warning"
           title="This project is paused"
-          description="Prompt tracking is currently disabled for this project. Get in touch with our team to subscribe or extend your trial."
-          confirmLabel="Get in touch now"
-          onConfirm={() => {
-            const body = `Hello AllSearch team,\n\nI'm writing about the project ${currentProject.name} (${currentProject.id}).\nProject URL: ${currentProject.hostname}\n\nI would like to [start my subscription / extend my trial]. How should we proceed?\n\nThank you very much.`;
-            window.open(
-              `mailto:${config.email.supportEmail}?subject=${encodeURIComponent('Trial extension or subscription start')}&body=${encodeURIComponent(body)}`,
-              '_blank'
-            );
-          }}
+          description="Prompt tracking is currently disabled for this project."
+          confirmLabel=""
         />
       )}
 

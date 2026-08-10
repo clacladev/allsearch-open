@@ -27,9 +27,9 @@ proxy.ts          # Vercel dev proxy configuration
 
 | File / Folder         | Purpose                                                  |
 | --------------------- | -------------------------------------------------------- |
-| `config.ts`           | Central app config — name, domain, auth URLs, plan IDs  |
+| `config.ts`           | Central app config — name, description, brand colour, SEO keywords |
 | `libs/routes.ts`      | All route constants (`ROUTES`) and `RouteHelper`         |
-| `libs/env.ts`         | Environment detection helpers (`isProdEnv`, `isDevEnv`)  |
+| `libs/env.ts`         | `isDevEnv` — gates developer-only surfaces on `NODE_ENV`  |
 | `libs/database/`      | Table-scoped Supabase query files and TypeScript types   |
 | `libs/supabase/`      | Supabase client instances (server + browser)             |
 | `supabase/migrations/`| SQL migration files                                      |

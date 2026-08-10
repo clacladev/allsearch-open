@@ -40,13 +40,8 @@ export const ROUTES = {
 
   // APIs
   API: {
-    // Main
-    AUTH_CALLBACK: '/api/auth/callback',
-    OPENGRAPH_IMAGE: '/api/opengraph-image',
-
     // Tools
     AI_CRAWL_CHECKER: '/api/tools/ai-crawl-checker',
-    AI_PRODUCT_PROMPT_IDEAS: '/api/tools/ai-product-prompt-ideas',
 
     // Organization
     ORGANIZATION: '/api/organization',
@@ -76,7 +71,6 @@ export const ROUTES = {
       PROMPT_IDEAS: '/api/new-project/prompt-ideas',
       COMPETITORS: '/api/new-project/competitors',
       SAVE: '/api/new-project/save',
-      REPORT: '/api/new-project/report',
     },
 
     // Project
@@ -305,8 +299,6 @@ export const RouteHelper = {
           categories: JSON.stringify(categories),
           targetLocation,
         }),
-      getReport: (projectId: string) =>
-        ROUTES.API.NEW_PROJECT.REPORT + getUrlParamsString({ projectId }),
     },
 
     CollectionRuns: {
