@@ -27,11 +27,6 @@ export const SETTINGS_TABS: Tab[] = [
     label: 'Others',
     getRoute: (projectId: string) => RouteHelper.Project.Settings.getOthers(projectId),
   },
-  {
-    id: 'developer',
-    label: 'Developer',
-    getRoute: (projectId: string) => RouteHelper.Project.Settings.getDeveloper(projectId),
-  },
 ];
 
 type Competitor = {

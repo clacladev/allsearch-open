@@ -10,7 +10,7 @@ import { Favicon } from '@/app/(private)/components/Favicon';
 import { Input, InputBase } from '@/components/base/input/input';
 import { Button } from '@/components/base/buttons/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import SettingsFormHeader from './SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';

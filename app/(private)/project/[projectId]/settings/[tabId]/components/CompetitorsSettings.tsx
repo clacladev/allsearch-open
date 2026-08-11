@@ -8,7 +8,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Favicon } from '@/app/(private)/components/Favicon';
 import { Input, InputBase } from '@/components/base/input/input';
 import { Button } from '@/components/base/buttons/button';
-import SettingsFormHeader from './SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { RouteHelper } from '@/libs/routes';
 import { Check, ChevronDown, Minus, Plus } from '@untitledui/icons';

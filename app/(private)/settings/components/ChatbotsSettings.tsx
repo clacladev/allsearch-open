@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
 import type { RadioGroupItemType } from '@/components/base/radio-groups/radio-group-radio-button';
-import SettingsFormHeader from '@/app/(private)/project/[projectId]/settings/[tabId]/components/SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { showErrorAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
 import { ROUTES } from '@/libs/routes';

@@ -1,3 +1,5 @@
+'use client';
+
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { useDebounce } from 'use-debounce';
 import { useEffect, useState } from 'react';
@@ -9,7 +11,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Favicon } from '@/app/(private)/components/Favicon';
 import { Input, InputBase } from '@/components/base/input/input';
 import { Button } from '@/components/base/buttons/button';
-import SettingsFormHeader from './SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { OrganizationRow, OrganizationType } from '@/libs/database/Organizations/types';
@@ -18,7 +20,10 @@ import { RadioGroupRadioButton } from '@/components/base/radio-groups/radio-grou
 import { appFetch } from '@/hooks/appFetch';
 import { isValidUrl } from '@/libs/utils/urls';
 
-export default function OrganizationSettings() {
+/** The Organization is a single settings row describing who the operator is, not a tenant
+ * (ADR 0003). It is edited from two places — the app-level Settings screen and the per-Project
+ * settings tab — so the form lives here rather than under either route. */
+export default function OrganizationSettingsForm() {
   const { organization, setOrganization } = usePrivateLayoutContext();
   const [organizationType, setOrganizationType] = useState<OrganizationType | undefined>();
   const [agencyName, setAgencyName] = useState('');
