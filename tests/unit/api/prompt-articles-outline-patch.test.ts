@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 const mockOutlineRow = {
   id: 'outline-123',
   project_id: 'project-123',
@@ -44,7 +46,13 @@ mock.module('@/libs/posthog', () => ({
   searchParamsToObject: () => ({}),
 }));
 
-mock.module('@/libs/database/PromptArticles/queries', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so this stub would otherwise stay installed for
+// every file that runs after this one — see tests/unit/moduleMocks.ts. (`@/libs/posthog` above
+// keeps a raw `mock.module`: it is a hosted-AllSearch module that does not exist in this port, so
+// there is nothing to snapshot and nothing real to leak in front of.)
+await mockModuleForSuite('@/libs/database/PromptArticles/queries', (actual) => ({
+  ...actual,
   getPromptArticleRowWithId: mockGetPromptArticleRowWithId,
   updatePromptArticleOutlineEdits: mockUpdateArticleOutlineUserEdits,
 }));

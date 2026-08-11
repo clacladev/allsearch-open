@@ -1,6 +1,7 @@
 import { mock } from 'bun:test';
 
 import { ChatbotId } from '@/libs/database/shared/ChatbotId';
+import { mockModuleForSuite } from '../moduleMocks';
 
 const PROJECT = {
   id: 'project-1',
@@ -17,28 +18,30 @@ const PROJECT = {
   target_location: null,
 };
 
-const actualProjectQueries = await import('@/libs/database/Projects/queries');
-// Snapshotted into its own binding rather than read off `actualProjectQueries` lazily below: Bun's
-// mock.module mutates the module namespace object in place, so a closure that reads
-// `actualProjectQueries.getProjectRowWithId` at call time (after the mock.module call below has
-// already overwritten that property) would recurse into itself infinitely.
-const realGetProjectRowWithId = actualProjectQueries.getProjectRowWithId;
-mock.module('@/libs/database/Projects/queries', () => ({
-  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
-  // export namespace, so a stub exporting only `getProjectRowWithId` would make `getProjectRows`
-  // and `updateProjectRow` cease to exist for any other module linked against this one for the
-  // rest of the test process. `getProjectRowWithId` only short-circuits for this file's own fixture
-  // id — any other id (including one this mock leaks in front of, e.g. a real project id from a
-  // DB-backed suite that loads after this one) falls through to the real, DB-backed function
-  // instead of a blanket `undefined`, so a leaked registration cannot make a real Project look like
-  // it doesn't exist.
-  ...actualProjectQueries,
-  getProjectRowWithId: async (id: string) =>
-    id === PROJECT.id ? PROJECT : realGetProjectRowWithId(id),
-}));
-mock.module('@/libs/database/Competitors/queries', () => ({
-  getActiveCompetitorRowsWithProjectId: async () => [],
-}));
+// `mockModuleForSuite` (rather than a raw `mock.module`) throughout this file: Bun's module
+// registry is process-wide and `mock.restore()` does not undo `mock.module`, so every stub below
+// would otherwise stay live for the rest of the test run — see tests/unit/moduleMocks.ts.
+//
+// Each partial stub still spreads the real namespace the helper hands it, because `mock.module`
+// swaps the whole export namespace: a stub exporting only `getProjectRowWithId` would make
+// `getProjectRows` and `updateProjectRow` cease to exist for any other module linked against this
+// one while the stub is installed. `getProjectRowWithId` also short-circuits only for this file's
+// own fixture id, so a real, DB-backed Project never reads as missing.
+await mockModuleForSuite<typeof import('@/libs/database/Projects/queries')>(
+  '@/libs/database/Projects/queries',
+  (actual) => ({
+    ...actual,
+    getProjectRowWithId: async (id: string) =>
+      id === PROJECT.id ? PROJECT : actual.getProjectRowWithId(id),
+  })
+);
+await mockModuleForSuite<typeof import('@/libs/database/Competitors/queries')>(
+  '@/libs/database/Competitors/queries',
+  (actual) => ({
+    ...actual,
+    getActiveCompetitorRowsWithProjectId: async () => [],
+  })
+);
 
 // Records every row `storePromptResponses` (a private function in the module under test) attempts
 // to insert, so tests can assert brand_ids_ranking/sentiment/run_id stayed positionally
@@ -49,15 +52,23 @@ let insertedRows: Array<{
   sentiment: unknown;
   run_id: string | null;
 }> = [];
-mock.module('@/libs/database/PromptResponses/queries', () => ({
-  insertPromptResponseRows: mock(async (inputs: any[]) => {
-    insertedRows = inputs;
-    return inputs.map((input, index) => ({ ...input, id: `row-${index}` }));
-  }),
-}));
-mock.module('@/libs/database/Sources/queries', () => ({
-  insertSourceRows: mock(async () => []),
-}));
+await mockModuleForSuite<typeof import('@/libs/database/PromptResponses/queries')>(
+  '@/libs/database/PromptResponses/queries',
+  (actual) => ({
+    ...actual,
+    insertPromptResponseRows: mock(async (inputs: any[]) => {
+      insertedRows = inputs;
+      return inputs.map((input, index) => ({ ...input, id: `row-${index}` }));
+    }),
+  })
+);
+await mockModuleForSuite<typeof import('@/libs/database/Sources/queries')>(
+  '@/libs/database/Sources/queries',
+  (actual) => ({
+    ...actual,
+    insertSourceRows: mock(async () => []),
+  })
+);
 
 // One mock per Chatbot's AI call so a test can assert only the requested Chatbots are ever called.
 const mockChatGPT = mock(async () => ({
@@ -75,35 +86,35 @@ const mockPerplexity = mock(async () => ({
   sources: [],
   toolResults: [],
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
   getPromptResponseWithChatGPT: mockChatGPT,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
   getPromptResponseWithGoogleAIMode: mockGoogleAIMode,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
   getPromptResponseWithPerplexity: mockPerplexity,
 }));
 
 // Distinguishing, deterministic stand-ins for the real analysis functions: each echoes back
 // something derived from the response text it was given, so a test can tell which response a
 // stored row's ranking/sentiment actually came from.
-mock.module('@/libs/ai/sentimentAnalysis', () => ({
+await mockModuleForSuite('@/libs/ai/sentimentAnalysis', (actual) => ({
+  ...actual,
   analyzeResponseSentiment: mock(async (text: string) => ({ [text]: 1 })),
 }));
-mock.module('@/libs/utils/brandIdsRanking', () => ({
+await mockModuleForSuite('@/libs/utils/brandIdsRanking', (actual) => ({
+  ...actual,
   getBrandIdsRankingsInText: mock((text: string) => [text]),
 }));
-mock.module('@/libs/collection/analyseSources', () => ({
+await mockModuleForSuite('@/libs/collection/analyseSources', (actual) => ({
+  ...actual,
   analysePromptResponseSources: async () => [],
 }));
 
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
-
-// mock.module is process-wide in Bun: the mocks above stay registered for the rest of the test
-// process, deliberately not reversed.
 
 beforeEach(() => {
   // `providerCooldown` is a module-level singleton shared by every caller of `callAiWithRetry` in

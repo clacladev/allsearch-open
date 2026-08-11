@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 class MockNoObjectGeneratedError extends Error {
   text = '';
   cause = undefined;
@@ -22,7 +24,12 @@ const mockGenerateText = mock(async (_params: any): Promise<any> => ({
   },
 }));
 
-mock.module('ai', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so these stubs would otherwise stay installed for
+// every file that runs after this one — see tests/unit/moduleMocks.ts. Each stub also spreads the
+// real namespace it is handed, because `mock.module` swaps the whole export namespace.
+await mockModuleForSuite('ai', (actual) => ({
+  ...actual,
   generateText: mockGenerateText,
   NoObjectGeneratedError: MockNoObjectGeneratedError,
   Output: {
@@ -31,13 +38,13 @@ mock.module('ai', () => ({
   },
 }));
 
-// Partial stub (no openaiModel/perplexityModel/getProviderKey) that leaks process-wide via
-// Bun's mock.module() — see tests/unit/ai/models.test.ts for the full explanation.
-mock.module('@/libs/ai/models', () => ({
+await mockModuleForSuite('@/libs/ai/models', (actual) => ({
+  ...actual,
   googleModel: async (modelId: string) => `mock-model-${modelId}`,
 }));
 
-mock.module('@/libs/ai/utils', () => ({
+await mockModuleForSuite('@/libs/ai/utils', (actual) => ({
+  ...actual,
   getPrompt: async () => 'mock system prompt',
   logNoObjectGeneratedError: () => {},
 }));

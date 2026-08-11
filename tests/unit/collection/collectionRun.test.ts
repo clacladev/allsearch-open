@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // Per the issue 10 harness, only the AI seams are faked here — the query layer, the limiter,
 // the retry/cooldown logic, claiming, counters and persistence all run for real against a real
 // temp SQLite database (set up below). `aiDelayMs` lets individual tests make the fakes resolve
@@ -49,22 +51,27 @@ const mockPerplexity = mock(defaultPerplexityImpl);
 const mockSentiment = mock(defaultSentimentImpl);
 const mockSources = mock(defaultSourcesImpl);
 
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so these AI fakes would otherwise stay installed
+// for every file that runs after this one — see tests/unit/moduleMocks.ts.
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
   getPromptResponseWithChatGPT: mockChatGPT,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
   getPromptResponseWithGoogleAIMode: mockGoogleAIMode,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
   getPromptResponseWithPerplexity: mockPerplexity,
 }));
-mock.module('@/libs/ai/sentimentAnalysis', () => ({
+await mockModuleForSuite('@/libs/ai/sentimentAnalysis', (actual) => ({
+  ...actual,
   analyzeResponseSentiment: mockSentiment,
 }));
 // Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
 // page is fetched. Mocked at the leaf module `libs/collection/analyseSources.ts`, which is what
 // `executePrompt.ts` calls.
-mock.module('@/libs/collection/analyseSources', () => ({
+await mockModuleForSuite('@/libs/collection/analyseSources', (actual) => ({
+  ...actual,
   analysePromptResponseSources: mockSources,
 }));
 
@@ -125,8 +132,6 @@ afterAll(() => {
   delete process.env.ALLSEARCH_DB_PATH;
   closeDatabase(db);
   cleanupTempDbPath(dbPath);
-  // mock.module is process-wide in Bun and does not undo itself when this file finishes.
-  mock.restore();
 });
 
 beforeEach(async () => {

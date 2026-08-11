@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // Note: next/server is mocked globally in tests/setup.ts
 
 const mockProjectRow = {
@@ -28,33 +30,40 @@ const mockGetTopicRowWithId = mock(async () => mockTopicRow);
 const mockFindOrCreateCustomTopic = mock(async () => mockTopicRow);
 const mockGetProjectRowWithId = mock(async () => mockProjectRow);
 
+// Raw `mock.module`, not `mockModuleForSuite`: `@/libs/posthog` and `@/libs/subscriptions` below
+// are hosted-AllSearch modules that do not exist in this port, so there is nothing to snapshot —
+// and nothing real for the stub to leak in front of either.
 mock.module('@/libs/posthog', () => ({
   getPostHogServer: () => ({ captureException: () => {} }),
   searchParamsToObject: () => ({}),
 }));
 
-mock.module('@/libs/database/Prompts/queries', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so these query-layer stubs would otherwise stay
+// installed for every file that runs after this one — see tests/unit/moduleMocks.ts. Each stub
+// also spreads the real namespace it is handed, because `mock.module` swaps the whole export
+// namespace: a partial stub would make this module's other exports cease to exist for any suite
+// linked against the real module while the stub is installed.
+await mockModuleForSuite('@/libs/database/Prompts/queries', (actual) => ({
+  ...actual,
   getPromptRowsWithProjectId: mockGetPromptRowsWithProjectId,
   getPromptRowWithId: mockGetPromptRowWithId,
   insertPromptRow: mockInsertPromptRow,
   updatePromptRowWithId: mockUpdatePromptRowWithId,
 }));
 
-mock.module('@/libs/database/Topics/queries', () => ({
+await mockModuleForSuite('@/libs/database/Topics/queries', (actual) => ({
+  ...actual,
   getTopicRowWithId: mockGetTopicRowWithId,
 }));
 
-mock.module('@/app/api/project/[projectId]/prompts/helpers', () => ({
+await mockModuleForSuite('@/app/api/project/[projectId]/prompts/helpers', (actual) => ({
+  ...actual,
   findOrCreateCustomTopic: mockFindOrCreateCustomTopic,
 }));
 
-const actualProjectQueries = await import('@/libs/database/Projects/queries');
-mock.module('@/libs/database/Projects/queries', () => ({
-  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
-  // export namespace, so a stub exporting only `getProjectRowWithId` would make this module's
-  // other exports (e.g. `getProjectRows`, `updateProjectRow`) cease to exist for any other suite
-  // linked against the real module for the rest of the test process.
-  ...actualProjectQueries,
+await mockModuleForSuite('@/libs/database/Projects/queries', (actual) => ({
+  ...actual,
   getProjectRowWithId: mockGetProjectRowWithId,
 }));
 
@@ -62,7 +71,7 @@ mock.module('@/libs/subscriptions', () => ({
   MAX_PROMPTS_DURING_TRIAL: 25,
 }));
 
-import { describe, expect, it, afterAll, beforeEach } from 'bun:test';
+import { describe, expect, it, beforeEach } from 'bun:test';
 import { POST, PATCH } from '@/app/api/project/[projectId]/prompts/route';
 
 // Extend Request with nextUrl so the route's error handler can access searchParams
@@ -288,10 +297,4 @@ describe('PATCH /api/project/[projectId]/prompts', () => {
     const body = await res.json();
     expect(body.error).toContain('prompt');
   });
-});
-
-// `mock.module` is process-wide in Bun and is not undone when this file finishes, so without this
-// the query-layer mocks above leak into every test file that runs later.
-afterAll(() => {
-  mock.restore();
 });
