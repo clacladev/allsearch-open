@@ -1,40 +1,36 @@
 # Common Commands
 
 ```bash
-bun dev              # Start dev server (https://localhost:3000)
-bun dev:debug        # Start dev server with Node.js inspector attached
-bun build            # Build for production
-bun lint             # Run ESLint
-bun prettier         # Format code with Prettier
-bun test             # Run tests
-bun test --watch     # Run tests in watch mode
-bun test:coverage    # Run tests with coverage report
-bun test:e2e         # Run Playwright e2e tests (requires dev server running)
-bun test:e2e:ui      # Run Playwright e2e tests with interactive UI
-bun webhooks:listen  # Expose local server via ngrok for webhook testing
+bun install           # Install dependencies
+bun dev               # Start dev server (https://localhost:3000)
+bun dev:debug         # Dev server with Node.js inspector
+bun build             # Production build
+bun start             # Serve production build
+bun lint              # ESLint
+bun tsc               # Typecheck (tsc --noEmit)
+bun prettier          # Format with Prettier
+bun test              # Unit tests (bun test)
+bun test:watch        # Unit tests in watch mode
+bun test:coverage     # Unit tests with coverage
+bun test:e2e          # Playwright e2e (dev server running)
+bun test:e2e:ui       # Playwright interactive UI
+bun run verify:providers  # Smoke-check AI providers
 ```
 
-> **Note:** `bun dev` uses `--experimental-https`. SSL certificates must exist in `/certificates/`.
-> Generate them with `mkcert localhost` and place the key/cert files there.
+> **Note:** `bun dev` uses `--experimental-https`. Prefer trusting Next’s local certs or [mkcert](https://github.com/FiloSottile/mkcert).
 
 ## Database
 
 ```bash
-supabase migration new <name>  # Create a new migration file
-supabase db push               # Apply pending migrations locally
-./supabase/clean_seed.sh       # Clean seed.sql (remove auth logs, old responses, empty sections)
+bun run db:generate              # drizzle-kit generate from libs/database/schema.ts
+bun run db:seed:demo             # migrate + load scripts/fixtures/demo-data.json
+bun run db:seed:demo -- --force  # wipe user data, then re-seed
+bun run db:snapshot              # snapshot current DB into the demo fixture
 ```
 
-## Import Project from Dump
+- Default DB path: platform app-data dir (`…/AllSearch/allsearch.db`). Override with `ALLSEARCH_DB_PATH`.
+- Migrations also run automatically when the Next server starts (`instrumentation.ts`).
 
-Import a project from a production database dump into the local dev Supabase instance:
+## Environment
 
-```bash
-./import_project.sh <dump_file> <source_project_id> <new_author_id>
-```
-
-- `dump_file` — Path to the SQL dump file (from `backup_dump.sh`)
-- `source_project_id` — UUID of the project to import
-- `new_author_id` — UUID of the local dev user who should own the imported project
-
-The script loads the dump into a temporary schema, copies the target project's data (projects, topics, prompts, competitors, prompt_responses) with remapped ownership, then cleans up.
+Copy only what you need from `.env.example`. Provider API keys are **not** env vars — they are stored in Settings (SQLite). For Playwright, optional `PLAYWRIGHT_BASE_URL` (default `https://localhost:3000`).
