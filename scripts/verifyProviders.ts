@@ -25,6 +25,7 @@ import { GenerateTextResult } from 'ai';
 import { getPromptResponseWithChatGPT } from '../libs/ai/projectPrompt/getPromptResponseWithChatGPT';
 import { getPromptResponseWithGoogleAIMode } from '../libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode';
 import { getPromptResponseWithPerplexity } from '../libs/ai/projectPrompt/getPromptResponseWithPerplexity';
+import { getWebSearchQueries } from '../libs/ai/grounding';
 import { getSourcesFromResponse } from '../libs/ai/responseSources';
 import { analyzeResponseSentiment } from '../libs/ai/sentimentAnalysis';
 import { getProviderKey, MissingProviderKeyError, ProviderId } from '../libs/ai/models';
@@ -92,6 +93,13 @@ async function verifyChatbot(
 
     console.log(`Model:          ${response.response.modelId}`);
     console.log(`Text length:    ${response.text.length}`);
+    // Google only. Printed rather than asserted because `getPromptResponseWithGoogleAIMode` now
+    // throws on zero (issue 25) — so a Google run that reaches this line grounded, and the number
+    // is here to compare grounding reliability between models across repeated runs.
+    const webSearchQueries = getWebSearchQueries(response.providerMetadata);
+    if (webSearchQueries.length) {
+      console.log(`Search queries: ${webSearchQueries.length} (${webSearchQueries.join(', ')})`);
+    }
     console.log(`Cited sources:  ${citedCount}`);
     console.log(`Used-not-cited: ${usedNotCitedCount}`);
     console.log(`First 2 URLs:   ${firstUrls.length ? firstUrls.join(', ') : '(none)'}`);

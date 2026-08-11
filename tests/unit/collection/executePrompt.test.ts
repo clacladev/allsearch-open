@@ -77,9 +77,14 @@ const mockChatGPT = mock(async () => ({
   sources: [],
   toolResults: [],
 }));
-const mockGoogleAIMode = mock(async () => {
+// Google's behaviour varies per test (down, ungrounded, healthy), so the mock delegates to a
+// swappable implementation that `beforeEach` puts back to the default — `mockClear()` resets call
+// records but not the implementation, and this file's mocks are installed once at module scope.
+const defaultGoogleAIModeImpl = async () => {
   throw new Error('Google AI Mode is down');
-});
+};
+let googleAIModeImpl: () => Promise<unknown> = defaultGoogleAIModeImpl;
+const mockGoogleAIMode = mock(async () => googleAIModeImpl());
 const mockPerplexity = mock(async () => ({
   response: { modelId: 'perplexity-model' },
   text: 'perplexity response text',
@@ -113,6 +118,8 @@ await mockModuleForSuite('@/libs/collection/analyseSources', (actual) => ({
 }));
 
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { UngroundedResponseError } from '@/libs/ai/grounding';
+import { MAX_ITEM_ATTEMPTS } from '@/libs/collection/constants';
 import { executePrompt } from '@/libs/collection/executePrompt';
 import { clearProviderCooldowns } from '@/libs/collection/providerCooldown';
 
@@ -122,6 +129,7 @@ beforeEach(() => {
   // would otherwise make this file's real, uninjected `sleep` wait it out.
   clearProviderCooldowns();
   insertedRows = [];
+  googleAIModeImpl = defaultGoogleAIModeImpl;
   mockChatGPT.mockClear();
   mockGoogleAIMode.mockClear();
   mockPerplexity.mockClear();
@@ -206,6 +214,62 @@ describe('executePrompt', () => {
     expect(insertedRows).toHaveLength(2);
     expect(insertedRows.some((row) => row.text === 'chatgpt response text')).toBe(true);
     expect(insertedRows.some((row) => row.text === 'perplexity response text')).toBe(true);
+  });
+
+  it('never stores an ungrounded Google response, and reports it failed after bounded retries', async () => {
+    // Issue 25: the model answered from training data instead of searching. The text is long and
+    // fluent, so nothing downstream would flag it — the only defence is refusing to persist it.
+    googleAIModeImpl = async () => {
+      throw new UngroundedResponseError('gemini-3.1-flash-lite');
+    };
+
+    const outcomes = await executePrompt({
+      promptId: 'prompt-1',
+      promptName: 'my prompt',
+      projectId: PROJECT.id,
+      chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview],
+      runId: 'run-1',
+    });
+
+    const googleOutcome = outcomes.find(
+      (outcome) => outcome.chatbotId === ChatbotId.GoogleAIOverview
+    );
+    expect(googleOutcome?.isCompleted).toBe(false);
+    expect(googleOutcome?.attempts).toBe(MAX_ITEM_ATTEMPTS);
+    expect(googleOutcome?.error).toContain('without searching the web');
+    expect(mockGoogleAIMode).toHaveBeenCalledTimes(MAX_ITEM_ATTEMPTS);
+
+    // Only ChatGPT's row is persisted — no Prompt Response, and therefore no Visibility
+    // contribution, comes from the ungrounded answer.
+    expect(insertedRows).toHaveLength(1);
+    expect(insertedRows[0].text).toBe('chatgpt response text');
+  });
+
+  it('stores a Google response that grounded on a retry', async () => {
+    let attempts = 0;
+    googleAIModeImpl = async () => {
+      attempts += 1;
+      if (attempts === 1) throw new UngroundedResponseError('gemini-3.1-flash-lite');
+      return {
+        response: { modelId: 'google-model' },
+        text: 'grounded google response text',
+        sources: [],
+        toolResults: [],
+      };
+    };
+
+    const outcomes = await executePrompt({
+      promptId: 'prompt-1',
+      promptName: 'my prompt',
+      projectId: PROJECT.id,
+      chatbotIds: [ChatbotId.GoogleAIOverview],
+      runId: 'run-1',
+    });
+
+    expect(outcomes[0].isCompleted).toBe(true);
+    expect(outcomes[0].attempts).toBe(2);
+    expect(insertedRows).toHaveLength(1);
+    expect(insertedRows[0].text).toBe('grounded google response text');
   });
 
   it('carries the run id into run_id', async () => {

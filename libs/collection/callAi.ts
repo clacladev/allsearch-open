@@ -1,5 +1,6 @@
 import { APICallError } from '@ai-sdk/provider';
 import { toAiError } from '@/libs/ai/errors';
+import { isUngroundedResponseError } from '@/libs/ai/grounding';
 import type { ProviderId } from '@/libs/database/shared/ProviderId';
 import { aiCallLimiter } from './concurrencyLimiter';
 import { MAX_ITEM_ATTEMPTS, RATE_LIMIT_BACKOFF_BASE_MS } from './constants';
@@ -44,7 +45,8 @@ function getRetryAfterMs(error: unknown): number | undefined {
 
 /** Every LLM call in a Collection Run goes through here: provider cooldown, then the global
  *  limiter, then classification via `toAiError()`. `RATE_LIMITED` retries with exponential
- *  backoff up to `maxAttempts` and opens a cooldown for that provider; anything else fails on the
+ *  backoff up to `maxAttempts` and opens a cooldown for that provider; an ungrounded Google
+ *  response (issue 25) retries immediately, also up to `maxAttempts`; anything else fails on the
  *  first attempt with no retry. Returns an outcome rather than throwing so the caller can record
  *  an honest `attempts` and `error` on the item row. */
 export async function callAiWithRetry<T>(
@@ -81,6 +83,12 @@ export async function callAiWithRetry<T>(
         await sleep(RATE_LIMIT_BACKOFF_BASE_MS * 2 ** (attempt - 1));
         continue;
       }
+      // An ungrounded response is a per-call coin flip by the model, not a sign the provider is
+      // unhealthy: no cooldown (that would stall every other Google item behind a provider that is
+      // answering fine) and no backoff (waiting changes nothing about the next roll). `maxAttempts`
+      // is the cap the issue asks for — retries are billed to the user's own key, so exhausting it
+      // leaves the item `failed` and retryable rather than looping.
+      if (isUngroundedResponseError(rawError) && attempt < maxAttempts) continue;
       const error = aiError ?? (rawError instanceof Error ? rawError : new Error(String(rawError)));
       return { isCompleted: false, error, attempts: attempt };
     }
