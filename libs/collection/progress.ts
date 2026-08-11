@@ -7,7 +7,13 @@ import { CollectionRunItemStatus } from '@/libs/database/CollectionRunItems/type
 import { CollectionRunStatus } from '@/libs/database/CollectionRuns/types';
 import type { CollectionRunItemProgressRow } from '@/libs/database/CollectionRunItems/queries';
 
-export type CollectionRunProgressChatbot = { chatbotId: ChatbotId; status: CollectionRunItemStatus };
+export type CollectionRunProgressChatbot = {
+  chatbotId: ChatbotId;
+  status: CollectionRunItemStatus;
+  /** Failure reason for a `failed` item, `null` otherwise — what the UI shows so a dropped item
+   * says why (an ungrounded Google answer reads very differently from a rate limit, issue 25). */
+  error: string | null;
+};
 
 export type CollectionRunProgressPrompt = {
   promptId: string;
@@ -69,7 +75,11 @@ export function buildCollectionRunProgress(
       prompt = { promptName: row.promptName, chatbots: [] };
       project.promptsById.set(row.promptId, prompt);
     }
-    prompt.chatbots.push({ chatbotId: row.chatbotId, status: row.status });
+    prompt.chatbots.push({
+      chatbotId: row.chatbotId,
+      status: row.status,
+      error: row.status === 'failed' ? (row.error ?? null) : null,
+    });
   }
 
   const projects: CollectionRunProgressProject[] = [];

@@ -827,6 +827,7 @@ describe('CollectionRunItems queries', () => {
         promptName: 'Prompt',
         chatbotId: ChatbotId.ChatGPT,
         status: 'pending',
+        error: null,
       },
       {
         projectId: project.id,
@@ -835,6 +836,7 @@ describe('CollectionRunItems queries', () => {
         promptName: 'Prompt',
         chatbotId: ChatbotId.Perplexity,
         status: 'completed',
+        error: null,
       },
     ]);
   });
