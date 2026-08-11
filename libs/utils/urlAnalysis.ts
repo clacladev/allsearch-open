@@ -2,7 +2,7 @@ import * as Cheerio from 'cheerio';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
-import { Agent } from 'undici';
+import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 import { resolve4, resolve6 } from 'node:dns/promises';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
@@ -22,6 +22,13 @@ const customDispatcher = new Agent({
   bodyTimeout: DEFAULT_FETCH_TIMEOUT,
   maxHeaderSize: 64 * 1024,
 });
+
+// Node's fetch() silently drops response headers (and therefore redirect handling) when a
+// `dispatcher` is passed as a per-call fetch option — see undici/nodejs fetch interaction.
+// Swapping the process-wide dispatcher for the duration of the request is the only way to get
+// the header-size bump without that breakage; we restore the previous dispatcher immediately
+// after so unrelated fetches elsewhere in the app aren't affected by these timeouts.
+const MAX_REDIRECTS = 5;
 
 export type DomainMetadata = {
   url: string;
@@ -144,25 +151,45 @@ async function assertPublicHostname(hostname: string): Promise<void> {
 
 async function getUrlHtml(inputUrl: string) {
   const urlObj = getSafeNewUrl(inputUrl);
-  await assertPublicHostname(urlObj.hostname);
-  const controller = new AbortController();
-  const response = await withTimeout(
-    fetch(urlObj.href, {
-      headers: { ...DEFAULT_USER_AGENT_HEADER },
-      signal: controller.signal,
-      // @ts-expect-error - dispatcher is supported in Node.js fetch (undici) but not in standard types
-      dispatcher: customDispatcher,
-    }),
-    _fetchTimeoutMs,
-    inputUrl
-  );
-  if (!response.ok) {
-    controller.abort();
-    throw new Error(`Failed to fetch ${inputUrl}. Status: ${response.status}`);
+
+  const previousDispatcher = getGlobalDispatcher();
+  setGlobalDispatcher(customDispatcher);
+  try {
+    let currentUrl = urlObj;
+    let response: Response;
+    let hop = 0;
+    while (true) {
+      await assertPublicHostname(currentUrl.hostname);
+      response = await withTimeout(
+        fetch(currentUrl.href, {
+          headers: { ...DEFAULT_USER_AGENT_HEADER },
+          redirect: 'manual',
+        }),
+        _fetchTimeoutMs,
+        inputUrl
+      );
+
+      if (response.status < 300 || response.status >= 400) break;
+
+      if (hop >= MAX_REDIRECTS) {
+        throw new Error(`Too many redirects fetching ${inputUrl}`);
+      }
+      const location = response.headers.get('location');
+      if (!location) {
+        throw new Error(`Redirect from ${currentUrl.href} is missing a Location header`);
+      }
+      currentUrl = new URL(location, currentUrl);
+      hop++;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${inputUrl}. Status: ${response.status}`);
+    }
+    const html = await withTimeout(response.text(), _fetchTimeoutMs, `body:${inputUrl}`);
+    return { url: urlObj, resolvedUrl: currentUrl, html };
+  } finally {
+    setGlobalDispatcher(previousDispatcher);
   }
-  const html = await withTimeout(response.text(), _fetchTimeoutMs, `body:${inputUrl}`);
-  const resolvedUrl = getSafeNewUrl(response.url);
-  return { url: urlObj, resolvedUrl, html };
 }
 
 function extractPageMetadata(html: string, currentUrl: string, loadedCheerio?: Cheerio.CheerioAPI) {

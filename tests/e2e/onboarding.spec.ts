@@ -51,41 +51,6 @@ const MOCK_SAVE_RESPONSE = {
   runId: 'mock-run-id-12345',
 };
 
-const MOCK_REPORT_DATA = {
-  startDate: '2026-03-02',
-  endDate: '2026-03-02',
-  brands: [
-    {
-      brandId: MOCK_PROJECT_ID,
-      label: 'Nike',
-      iconUrl: 'https://example.com/nike-favicon.ico',
-      isProject: true,
-    },
-    {
-      brandId: 'competitor-adidas-id',
-      label: 'Adidas',
-      isProject: false,
-    },
-  ],
-  visibilityDataset: [],
-  visibilityScores: [
-    { brandId: MOCK_PROJECT_ID, percentage: 75 },
-    { brandId: 'competitor-adidas-id', percentage: 50 },
-  ],
-  rankingsSummary: [
-    {
-      brandId: MOCK_PROJECT_ID,
-      label: 'Nike',
-      iconUrl: 'https://example.com/nike-favicon.ico',
-      isProject: true,
-    },
-    { brandId: 'competitor-adidas-id', label: 'Adidas', isProject: false },
-  ],
-  topSourceDomainsSummary: { data: [], totalCount: 0 },
-  topSourceContentSummary: { data: [], totalCount: 0 },
-  topOpportunitiesSummary: { data: [], totalCount: 0 },
-};
-
 // ---------------------------------------------------------------------------
 // Test
 // ---------------------------------------------------------------------------
@@ -131,14 +96,6 @@ test('can complete onboarding flow for a new Nike brand project', async ({ page 
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(MOCK_SAVE_RESPONSE),
-    })
-  );
-
-  await page.route('**/api/new-project/report**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(MOCK_REPORT_DATA),
     })
   );
 
@@ -245,12 +202,12 @@ test('can complete onboarding flow for a new Nike brand project', async ({ page 
   await page.waitForURL(`**/new-project/report/${MOCK_PROJECT_ID}`, { timeout: 10000 });
 
   // --- Step 9: Report page ---
-  await expect(page.getByText('Your Brand AI Visibility Report')).toBeVisible();
-
-  // Click the CTA to enter the project dashboard
-  await page.getByRole('link', { name: 'Start Improving Your Visibility' }).click();
-
-  // --- Step 10: Land on the newly created project overview ---
-  await page.waitForURL(`/project/${MOCK_PROJECT_ID}`);
-  await expect(page).toHaveURL(`/project/${MOCK_PROJECT_ID}`);
+  // The report page is now a Server Component that fetches `getOverviewPageData` against the
+  // local SQLite DB directly (issue 17 deleted the `/api/new-project/report` route). The mocked
+  // save above returns a fake `projectId`, so no real Project row exists for it here, and the
+  // server-side fetch surfaces the project's not-found state — meaning we can only assert the
+  // navigation landed on the report route at this layer. End-to-end happy-path assertions on
+  // the rendered report content (the "Your Brand AI Visibility Report" heading, the "Start
+  // Improving Your Visibility" CTA, the redirect to `/project/:projectId`) belong to the
+  // DB-seeded fresh-install suite (issue 21), which is the proper home for them now.
 });
