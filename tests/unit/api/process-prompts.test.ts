@@ -1,15 +1,14 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // This suite drives real POST requests against a real, migrated temp SQLite database (set up
-// below) rather than stubbing `@/libs/collection` (the engine barrel). Bun's `mock.module` is
-// process-wide and `mock.restore()` does NOT undo it (verified against Bun 1.3.14) — stubbing the
-// barrel here would leak `createCollectionRun`/`ensureCollectionRunLoopIsRunning` fakes into every
-// suite that imports the real engine for the rest of the test process (e.g.
-// tests/unit/collection/collectionRun.test.ts). Only the AI-provider leaf modules are faked below,
-// per the harness tests/unit/collection/collectionRun.test.ts and
+// below) rather than stubbing `@/libs/collection` (the engine barrel): only the AI-provider leaf
+// modules are faked below, per the harness tests/unit/collection/collectionRun.test.ts and
 // tests/unit/collection/executePrompt.test.ts also use, so this suite's real, DB-backed Runs can
 // actually be driven to completion by the real Collection Run loop with no AI call ever made and
-// no provider spend.
+// no provider spend. The fakes go through `mockModuleForSuite` because Bun's `mock.module` is
+// process-wide and `mock.restore()` does NOT undo it — see tests/unit/moduleMocks.ts.
 const mockChatGPT = mock(async () => ({
   response: { modelId: 'chatgpt-model' },
   text: 'chatgpt response',
@@ -31,21 +30,23 @@ const mockPerplexity = mock(async () => ({
 const mockSentiment = mock(async () => ({}));
 const mockSources = mock(async () => []);
 
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithChatGPT', () => ({
   getPromptResponseWithChatGPT: mockChatGPT,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithGoogleAIMode', () => ({
   getPromptResponseWithGoogleAIMode: mockGoogleAIMode,
 }));
-mock.module('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
+await mockModuleForSuite('@/libs/ai/projectPrompt/getPromptResponseWithPerplexity', () => ({
   getPromptResponseWithPerplexity: mockPerplexity,
 }));
-mock.module('@/libs/ai/sentimentAnalysis', () => ({
+await mockModuleForSuite('@/libs/ai/sentimentAnalysis', (actual) => ({
+  ...actual,
   analyzeResponseSentiment: mockSentiment,
 }));
 // Not an AI call, but hits the network (page crawling) if left real — faked per the harness so no
 // page is fetched.
-mock.module('@/libs/collection/analyseSources', () => ({
+await mockModuleForSuite('@/libs/collection/analyseSources', (actual) => ({
+  ...actual,
   analysePromptResponseSources: mockSources,
 }));
 
@@ -86,9 +87,6 @@ afterAll(() => {
   delete process.env.ALLSEARCH_DB_PATH;
   closeDatabase(db);
   cleanupTempDbPath(dbPath);
-  // mock.module is process-wide in Bun: the AI-leaf mocks above stay registered for whatever file
-  // runs next in this process; that file's own top-level mock.module calls (the same pattern this
-  // file uses) are what actually take over.
 });
 
 afterEach(async () => {
@@ -113,10 +111,9 @@ function makeParams(projectId: string) {
 }
 
 // Writes provider keys straight to the `settings` table, bypassing `@/libs/database/Settings/queries`'s
-// `setProviderKey` entirely: that module is a magnet for other suites' `mock.module` calls (e.g.
-// tests/unit/api/settings-provider-keys-route.test.ts replaces the whole module and never restores
-// it — Bun's `mock.module` is process-wide, per finding 2/the harness note above), and this file
-// must not gamble on which of those happens to still be live when it runs.
+// `setProviderKey` entirely: that module is a magnet for other suites' module stubs (e.g.
+// tests/unit/api/settings-provider-keys-route.test.ts replaces it), and this file has no reason to
+// depend on the write path when the rows are what it actually asserts on.
 async function setAllProviderKeys() {
   const validatedAt = new Date().toISOString();
   await db.insert(settings).values({

@@ -1,4 +1,6 @@
-import { describe, expect, it, beforeAll, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, expect, it, beforeAll, beforeEach, afterEach } from 'bun:test';
+
+import { mockModuleForSuite } from '../moduleMocks';
 import type * as ModelsModule from '@/libs/ai/models';
 
 const ENV_VARS = {
@@ -8,26 +10,23 @@ const ENV_VARS = {
 } as const;
 
 // `getProviderKey` reads storage before the env var (see libs/ai/models.ts). Stubbed here rather
-// than exercised against a real database: this file already works around mock.module's
-// process-wide, irreversible pollution (below) via the fresh import above, so
-// tests/unit/database/settings.test.ts — which needs the REAL implementation — takes the same
-// defensive fresh-import precaution against the stub this line installs.
+// than exercised against a real database. Scoped to this file via `mockModuleForSuite` (see
+// tests/unit/moduleMocks.ts) so it cannot reach tests/unit/database/settings.test.ts, which needs
+// the REAL implementation.
 let storedProviderKey: string | undefined;
-mock.module('@/libs/database/Settings/queries', () => ({
+await mockModuleForSuite('@/libs/database/Settings/queries', (actual) => ({
+  ...actual,
   getProviderKeyFromStorage: async () => storedProviderKey,
 }));
 
-// Other test files in this suite call mock.module('@/libs/ai/models', ...) at
-// file scope (e.g. to stub `googleModel`) and never restore it — Bun's
-// mock.module() patches the shared module registry entry in place for the
-// rest of the process, keyed by resolved path, and a static import of
-// '@/libs/ai/models' in this file would just bind to whatever that entry
-// currently holds. So this file cannot assume it sees the real module via a
-// normal import. Make it immune instead: fetch a fresh, unpolluted copy once
-// via a cache-busted dynamic import (a distinct query string is a distinct
-// module instance in Bun, verified empirically) and call through that
-// instance directly in every test below, regardless of what any other file
-// already did to '@/libs/ai/models'.
+// Other test files in this suite stub '@/libs/ai/models' at file scope (e.g. to replace
+// `googleModel`). Those stubs are now file-scoped via `mockModuleForSuite`, so they no longer
+// reach this file — but Bun's mock.module() still patches the shared module registry entry in
+// place, keyed by resolved path, so a static import here would bind to whatever that entry holds
+// at the time. Keep this file immune by construction rather than by test order: fetch a fresh,
+// unpolluted copy once via a cache-busted dynamic import (a distinct query string is a distinct
+// module instance in Bun, verified empirically) and call through that instance in every test
+// below.
 let models: typeof ModelsModule;
 
 beforeAll(async () => {
