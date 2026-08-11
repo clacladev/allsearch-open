@@ -57,7 +57,11 @@ _Avoid_: Engine, Model, Platform, Provider
 
 **Prompt Response**:
 One Chatbot's answer to one Prompt within one Collection Run. Carries the answer
-text, the Brand Ranking and the Sentiment.
+text, the Brand Ranking and the Sentiment. Always **grounded**: an answer the
+Chatbot wrote from training data without searching the web is not a Prompt
+Response and is never stored — it still names Brands, so counting it would bias
+Visibility towards whatever was popular in the training data rather than
+measuring what is being said online.
 
 **Source**:
 A URL that appeared in a Prompt Response. Either *cited* (the Chatbot presented

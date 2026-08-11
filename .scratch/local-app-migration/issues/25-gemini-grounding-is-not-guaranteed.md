@@ -64,3 +64,53 @@ partial result honestly rather than looping.
 - A Collection Run that hits this reports the affected items as failed and
   retryable, not as complete.
 - The retry cap is bounded and the user can see how many items were dropped.
+
+## Comments
+
+**Implemented.**
+
+- **Detection** is `libs/ai/grounding.ts`: `getWebSearchQueries()` reads
+  `providerMetadata.google.groundingMetadata.webSearchQueries`, and
+  `assertResponseIsGrounded()` throws `UngroundedResponseError` when it is empty.
+  Google omits the key entirely rather than sending `[]` when the model did not
+  search, and has been seen sending a null `groundingMetadata`, so all three
+  shapes are treated as "never searched".
+
+- **The check runs inside `getPromptResponseWithGoogleAIMode`**, not at the call
+  site, so it covers `bun run verify:providers` as well as the Collection Run and
+  cannot be forgotten by a future caller. Throwing (rather than returning a
+  response the caller must remember to inspect) is what routes it into the
+  existing failure path: `executePrompt` only persists the completed subset, so
+  an ungrounded answer never reaches `insertPromptResponseRows`.
+
+  That function also had to start awaiting `generateText` instead of returning
+  its promise. Its `try`/`catch` was dead code before — an async rejection
+  escaped a `try` that returned a promise, so the `NoObjectGeneratedError`
+  logging branch could never fire.
+
+- **The retry cap is `MAX_ITEM_ATTEMPTS` (3)**, the item budget that already
+  existed, rather than a second knob. `callAiWithRetry` retries an ungrounded
+  response with *no* provider cooldown and *no* backoff, unlike a 429: the
+  provider is answering fine, so cooling Google down would stall every other
+  Google item behind a healthy API, and waiting does not change the model's next
+  decision. An item that exhausts the budget ends `failed`, which the existing
+  retry endpoint already reopens.
+
+- **Visibility of what was dropped**: the run summary already reported
+  `N failed`, but not why. `CollectionRunItemProgressRow` now carries the item's
+  `error` (only for `failed` items — a stale message on a row that later
+  succeeded must not show), and the progress UI renders it as the failed badge's
+  tooltip. That distinguishes "Gemini answered without searching" from a rate
+  limit or a missing key, which ADR 0007 already says every AI-dependent screen
+  must handle.
+
+- **`gemini-3-flash` was not evaluated**, so the model was left at
+  `gemini-3.1-flash-lite`. The comparison the issue suggests needs repeated live
+  calls on a real key, which this change cannot do; `verify:providers` now prints
+  the search-query count on a grounded Google run so the measurement is a matter
+  of running it a few times per model. Swapping the model on an untested hunch
+  would have been the worse call given the grounding fee dominates either way.
+
+- **Verified**: `bun lint`, `bun tsc`, `bun test` (632 pass / 0 fail) and the
+  `chromium-no-auth` Playwright project (the Collection Run progress spec, which
+  covers the badge markup that changed).

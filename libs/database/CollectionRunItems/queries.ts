@@ -157,6 +157,9 @@ export type CollectionRunItemProgressRow = {
   promptName: string;
   chatbotId: ChatbotId;
   status: CollectionRunItemStatus;
+  /** Why a `failed` item failed, verbatim from the item row, so the UI can say what was dropped
+   * and not just how much (issue 25). `null` for every non-failed status. */
+  error: string | null;
 };
 
 /** One query for a whole Run's progress: item rows joined to their Prompt and Project names.
@@ -176,6 +179,7 @@ export async function getCollectionRunItemProgressRowsForRun(
       promptName: prompts.name,
       chatbotId: collectionRunItems.chatbot_id,
       status: collectionRunItems.status,
+      error: collectionRunItems.error,
     })
     .from(collectionRunItems)
     .leftJoin(prompts, eq(collectionRunItems.prompt_id, prompts.id))
@@ -195,6 +199,7 @@ export async function getCollectionRunItemProgressRowsForRun(
     promptName: row.promptName ?? '',
     chatbotId: row.chatbotId,
     status: row.status as CollectionRunItemStatus,
+    error: row.error ?? null,
   }));
 }
 
