@@ -1,8 +1,9 @@
 'use client';
 
+import type { FC, HTMLAttributes } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { Placement } from 'react-aria';
-import { ChevronSelectorVertical, Plus } from '@untitledui/icons';
+import { ChevronSelectorVertical, Plus, Settings02 } from '@untitledui/icons';
 import { useFocusManager } from 'react-aria';
 import type { DialogProps as AriaDialogProps } from 'react-aria-components';
 import {
@@ -34,6 +35,36 @@ export type NavProjectType = {
   iconUrl: string | undefined;
   /** Status of the project. */
   status: ProjectStatus;
+};
+
+const NavProjectCardMenuItem = ({
+  icon: Icon,
+  label,
+  ...buttonProps
+}: {
+  icon?: FC<{ className?: string }>;
+  label: string;
+} & HTMLAttributes<HTMLButtonElement>) => {
+  return (
+    <button
+      {...buttonProps}
+      className={cx(
+        'group/item w-full cursor-pointer px-1.5 focus:outline-hidden',
+        buttonProps.className
+      )}
+    >
+      <div
+        className={cx(
+          'group-hover/item:bg-primary_hover flex w-full items-center gap-2 rounded-md p-2',
+          'outline-focus-ring group-focus-visible/item:outline-2 group-focus-visible/item:outline-offset-2'
+        )}
+      >
+        <div className="text-secondary group-hover/item:text-secondary_hover flex gap-2 text-sm font-semibold">
+          {Icon && <Icon className="text-fg-quaternary size-5" />} {label}
+        </div>
+      </div>
+    </button>
+  );
 };
 
 export const NavProjectMenu = ({
@@ -135,6 +166,17 @@ export const NavProjectMenu = ({
                 New project
               </Button>
             </div>
+          </div>
+
+          <div className="pt-1 pb-1.5">
+            <NavProjectCardMenuItem
+              label="App Settings"
+              icon={Settings02}
+              onClick={() => {
+                router.push(ROUTES.SETTINGS);
+                close();
+              }}
+            />
           </div>
         </>
       )}
