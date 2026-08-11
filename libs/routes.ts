@@ -34,6 +34,7 @@ export const ROUTES = {
     PROMPT_DETAILS: '/project/:projectId/prompts/:promptId',
     PROMPT_NEW_ARTICLE: '/project/:projectId/prompts/:promptId/new-article',
     BRANDS: '/project/:projectId/brands',
+    CRAWL_HEALTH: '/project/:projectId/crawl-health',
     SETTINGS: '/project/:projectId/settings',
     SETTINGS_TAB: '/project/:projectId/settings/:tabId',
   },
@@ -244,6 +245,8 @@ export const RouteHelper = {
         sortDir,
         ...filters,
       }),
+    getCrawlHealth: (projectId: string) =>
+      ROUTES.PROJECT.CRAWL_HEALTH.replace(':projectId', projectId),
     getSettings: (projectId: string) => ROUTES.PROJECT.SETTINGS.replace(':projectId', projectId),
 
     Settings: {

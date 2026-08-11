@@ -7,6 +7,7 @@ import {
   Globe01,
   Home02,
   MessageCircle01,
+  PasscodeLock,
   Settings02,
 } from '@untitledui/icons';
 import type { NavItemType } from '@/components/application/app-navigation/config';
@@ -73,6 +74,11 @@ export const Sidebar = () => {
               label: 'Brands',
               href: RouteHelper.Project.getBrands(currentProject.id, startDate, endDate),
               icon: Building06,
+            },
+            {
+              label: 'Crawl health',
+              href: RouteHelper.Project.getCrawlHealth(currentProject.id),
+              icon: PasscodeLock,
             },
             {
               label: 'Settings',

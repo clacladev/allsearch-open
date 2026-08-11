@@ -1,6 +1,6 @@
 # 18 — Promote the AI crawl checker into the dashboard
 
-Status: ready-for-agent
+Status: ready-for-human
 Milestone: 6 — Feature moves
 Blocked by: 17
 
@@ -38,3 +38,8 @@ explains an otherwise inexplicable zero.
 - The check runs from a Project and reports per-bot access.
 - `tests/unit/aiCrawlChecker.test.ts` still passes.
 - The public route and page are gone; SSRF guards remain.
+
+
+## Comments
+
+- Implemented: project Crawl health page, rate limit removed, e2e public page spec deleted.
