@@ -43,6 +43,7 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
     // Project-specific ignores:
+    'dist/**', // `bun run build:cli` output — bundled, not authored.
     'node_modules/**',
     '.vercel/**',
 
