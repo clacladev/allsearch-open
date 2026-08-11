@@ -9,6 +9,8 @@
     "start": "next start",
     "tsc": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
+    "db:snapshot": "bun scripts/dbSnapshot.ts",
+    "db:seed:demo": "bun scripts/dbSeedDemo.ts",
     "lint": "eslint .",
     "prettier": "prettier --write .",
     "test": "bun test",
