@@ -1,15 +1,16 @@
 # Tech Stack
 
-| Layer           | Technology                                          |
-| --------------- | --------------------------------------------------- |
-| Language        | TypeScript                                          |
-| Framework       | Next.js 16 (App Router)                             |
-| UI              | React 19                                            |
-| Styling         | Tailwind CSS v4 + UntitledUI React components       |
-| Icons           | UntitledUI icons (primary), Lucide React (fallback) |
-| AI              | Vercel AI SDK (`ai`) with Google + OpenAI adapters  |
-| Backend/DB      | Supabase (database + auth)                          |
-| Payments        | LemonSqueezy                                        |
-| Analytics       | PostHog                                             |
-| Deployment      | Vercel                                              |
-| Package Manager | `bun`                                               |
+| Layer           | Technology                                                         |
+| --------------- | ------------------------------------------------------------------ |
+| Language        | TypeScript                                                         |
+| Framework       | Next.js 16 (App Router)                                            |
+| UI              | React 19                                                           |
+| Styling         | Tailwind CSS v4 + Untitled UI / React Aria Components              |
+| Icons           | `@untitledui/icons`                                                |
+| AI              | Vercel AI SDK (`ai`) with direct OpenAI, Google, Perplexity keys   |
+| Database        | SQLite via Drizzle (`drizzle-orm` / `drizzle-kit` 1.0.0-rc.4)      |
+| Runtime         | Node 22+ for the server; Bun for install, scripts, and unit tests  |
+| E2E             | Playwright                                                         |
+| Package Manager | `bun`                                                              |
+
+No hosted Supabase, billing, or product telemetry in this port. See ADRs 0003–0006 and 0010.
