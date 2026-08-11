@@ -3,10 +3,10 @@ import { APICallError } from '@ai-sdk/provider';
 import { AiError, aiErrorCodeToStatus, aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
 
 // Deliberately does NOT import MissingProviderKeyError from '@/libs/ai/models': several other test
-// files replace that module wholesale via `mock.module()` and never restore it (see
-// tests/unit/ai/models.test.ts:10-27), which would break a static import of that class here. This
-// file instead builds a look-alike with the same `.name`, matching how libs/ai/errors.ts itself
-// classifies it (by name, not `instanceof`) for exactly that reason.
+// files stub that module at file scope, and while those stubs are now file-scoped (see
+// tests/unit/moduleMocks.ts), a look-alike with the same `.name` keeps this file independent of
+// them entirely — and matches how libs/ai/errors.ts itself classifies the error (by name, not
+// `instanceof`) for exactly that reason.
 class FakeMissingProviderKeyError extends Error {
   constructor(public readonly provider: string) {
     super(`No API key configured for ${provider}. Add one in Settings.`);

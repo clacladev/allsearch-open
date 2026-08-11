@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // Note: next/server is mocked globally in tests/setup.ts
 
 // Held in a closure so each test can control exactly what the "current" stored
@@ -13,7 +15,12 @@ let storedIdsToReturn: any = null;
 const mockSetStoredEnabledChatbotIds = mock(async () => undefined);
 const mockGetStoredEnabledChatbotIds = mock(async () => storedIdsToReturn);
 
-mock.module('@/libs/database/Settings/queries', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so this stub would otherwise stay installed for
+// every file that runs after this one — see tests/unit/moduleMocks.ts. It also spreads the real
+// namespace it is handed, because `mock.module` swaps the whole export namespace.
+await mockModuleForSuite('@/libs/database/Settings/queries', (actual) => ({
+  ...actual,
   setStoredEnabledChatbotIds: mockSetStoredEnabledChatbotIds,
   getStoredEnabledChatbotIds: mockGetStoredEnabledChatbotIds,
 }));

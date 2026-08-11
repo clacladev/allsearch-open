@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // Note: next/server is mocked globally in tests/setup.ts
 
 const mockProjectRow = {
@@ -85,41 +87,49 @@ const mockGenerateOutline = mock(async (): Promise<any> => ({
   ],
 }));
 
-const actualProjectQueries = await import('@/libs/database/Projects/queries');
-mock.module('@/libs/database/Projects/queries', () => ({
-  // Spreads the real module rather than replacing it wholesale: Bun's mock.module swaps the whole
-  // export namespace, so a stub exporting only `getProjectRowWithId` would make this module's
-  // other exports (e.g. `getProjectRows`, `updateProjectRow`) cease to exist for any other suite
-  // linked against the real module for the rest of the test process.
-  ...actualProjectQueries,
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so these stubs would otherwise stay installed for
+// every file that runs after this one — see tests/unit/moduleMocks.ts. Each stub also spreads the
+// real namespace it is handed, because `mock.module` swaps the whole export namespace: a partial
+// stub would make the module's other exports cease to exist for any suite linked against the real
+// module while the stub is installed.
+await mockModuleForSuite('@/libs/database/Projects/queries', (actual) => ({
+  ...actual,
   getProjectRowWithId: mockGetProjectRowWithId,
 }));
 
-mock.module('@/libs/database/Prompts/queries', () => ({
+await mockModuleForSuite('@/libs/database/Prompts/queries', (actual) => ({
+  ...actual,
   getPromptRowWithId: mockGetPromptRowWithId,
 }));
 
-mock.module('@/libs/database/PromptResponses/queries', () => ({
+await mockModuleForSuite('@/libs/database/PromptResponses/queries', (actual) => ({
+  ...actual,
   getPromptResponseRowsWithProjectIdInDateRange: mockGetPromptResponseRows,
 }));
 
-mock.module('@/libs/database/Sources/queries', () => ({
+await mockModuleForSuite('@/libs/database/Sources/queries', (actual) => ({
+  ...actual,
   getSourceRowsWithProjectIdInDateRange: mockGetSourceRows,
 }));
 
-mock.module('@/libs/database/PromptArticles/queries', () => ({
+await mockModuleForSuite('@/libs/database/PromptArticles/queries', (actual) => ({
+  ...actual,
   insertPromptArticleRow: mockInsertPromptArticleRow,
 }));
 
-mock.module('@/libs/utils/project-analysis/helpers', () => ({
+await mockModuleForSuite('@/libs/utils/project-analysis/helpers', (actual) => ({
+  ...actual,
   getPromptResponsesWorkRows: mockGetPromptResponsesWorkRows,
 }));
 
-mock.module('@/libs/utils/project-analysis/getOpportunitiesSummary', () => ({
+await mockModuleForSuite('@/libs/utils/project-analysis/getOpportunitiesSummary', (actual) => ({
+  ...actual,
   getOpportunitiesSummary: mockGetOpportunitiesSummary,
 }));
 
-mock.module('@/libs/ai/promptArticles/generateOutline', () => ({
+await mockModuleForSuite('@/libs/ai/promptArticles/generateOutline', (actual) => ({
+  ...actual,
   generateOutline: mockGenerateOutline,
   OUTLINE_MODEL_ID: 'gemini-3-flash',
 }));
