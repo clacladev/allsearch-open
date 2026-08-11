@@ -6,7 +6,7 @@ import { ConfirmArchiveProjectModal } from './ConfirmArchiveProjectModal';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/libs/routes';
 import { SectionLabel } from '@/components/application/section-headers/section-label';
-import SettingsFormHeader from './SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { useMessagesContext } from '@/app/(private)/components/MessagesContext';
 import { showSuccessAlertToast } from '@/components/Alerts';
 
