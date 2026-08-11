@@ -114,14 +114,6 @@ export const Sidebar = () => {
           key="collection-cadence-sidebar-card"
           hasProjects={(projects?.length ?? 0) > 0}
         />,
-
-        // TODO: Cleanup when subscription is implemented
-        // !hiddenMessagesIds.includes(TRIAL_SIDEBAR_CARD_ID) && (
-        //   <TrialSidebarCard
-        //     key={TRIAL_SIDEBAR_CARD_ID}
-        //     onClose={() => hideMessage(TRIAL_SIDEBAR_CARD_ID)}
-        //   />
-        // ),
       ]}
       hideBorder
     />

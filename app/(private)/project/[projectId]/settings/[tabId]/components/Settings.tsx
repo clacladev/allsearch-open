@@ -3,11 +3,10 @@
 import { TabList, Tabs } from '@/components/application/tabs/tabs';
 import { NativeSelect } from '@/components/base/select/select-native';
 import BrandSettings from './BrandSettings';
-import OrganizationSettings from './OrganizationSettings';
+import OrganizationSettingsForm from '@/components/settings/OrganizationSettingsForm';
 import { useRouter } from 'next/navigation';
 import { SETTINGS_TABS } from './helpers';
 import CompetitorsSettings from './CompetitorsSettings';
-import DeveloperTools from './DeveloperTools';
 import Others from './Others';
 
 export default function Settings({
@@ -53,9 +52,8 @@ export default function Settings({
       <section>
         {selectedSettingsTabId === 'competitors' && <CompetitorsSettings />}
         {selectedSettingsTabId === 'brand' && <BrandSettings />}
-        {selectedSettingsTabId === 'organization' && <OrganizationSettings />}
+        {selectedSettingsTabId === 'organization' && <OrganizationSettingsForm />}
         {selectedSettingsTabId === 'others' && <Others />}
-        {selectedSettingsTabId === 'developer' && <DeveloperTools />}
       </section>
     </div>
   );

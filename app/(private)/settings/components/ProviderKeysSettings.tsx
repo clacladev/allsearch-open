@@ -1,5 +1,5 @@
 import { SectionLabel } from '@/components/application/section-headers/section-label';
-import SettingsFormHeader from '@/app/(private)/project/[projectId]/settings/[tabId]/components/SettingsFormHeader';
+import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { ProviderKeyField } from '@/app/components/ProviderKeyField';
 import type { ProviderId } from '@/libs/database/shared/ProviderId';
 import type { RedactedProviderKey } from '@/libs/database/Settings/types';
