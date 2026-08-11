@@ -1,6 +1,7 @@
 import { generateText, NoObjectGeneratedError } from 'ai';
 import { google } from '@ai-sdk/google';
 import { googleModel } from '../models';
+import { assertResponseIsGrounded } from '../grounding';
 import { logNoObjectGeneratedError } from '../utils';
 
 // Models: https://ai.google.dev/gemini-api/docs/models
@@ -16,7 +17,10 @@ const MODEL_ID = 'gemini-3.1-flash-lite';
 
 export async function getPromptResponseWithGoogleAIMode(prompt: string) {
   try {
-    return generateText({
+    // Awaited, not returned as a bare promise: the grounding check below needs the resolved
+    // result, and it also puts an async rejection back inside this try — a returned promise
+    // escaped it, so the `NoObjectGeneratedError` branch could never actually fire.
+    const response = await generateText({
       model: await googleModel(MODEL_ID),
       prompt,
       temperature: 1.0, // Recommended by Google for optimal grounding results
@@ -27,12 +31,17 @@ export async function getPromptResponseWithGoogleAIMode(prompt: string) {
         // is no way to force it. Dynamic retrieval, where a threshold controlled the
         // decision, was a Gemini 1.5 feature and is gone; the only knobs left here are
         // searchTypes and timeRangeFilter, and OpenAI's toolChoice has no equivalent.
-        // An ungrounded answer comes from training data and must not be stored as a
-        // Prompt Response — providerMetadata.google.groundingMetadata.webSearchQueries
-        // is how you tell the difference.
         google_search: google.tools.googleSearch({}),
       },
     });
+
+    // Which is why every call is checked afterwards instead: an ungrounded answer comes from
+    // training data and must never be stored as a Prompt Response (issue 25). Throwing here —
+    // rather than returning a response the caller has to remember to inspect — is what routes it
+    // into the same bounded retry and `failed`-item path as any other Chatbot failure.
+    assertResponseIsGrounded(response);
+
+    return response;
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error)) logNoObjectGeneratedError(error);
     throw error;

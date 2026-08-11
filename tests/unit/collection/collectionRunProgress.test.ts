@@ -19,6 +19,7 @@ function makeRow(
     promptId: 'prompt-1',
     promptName: 'Prompt 1',
     chatbotId: ChatbotId.ChatGPT,
+    error: null,
     ...overrides,
   };
 }
@@ -133,6 +134,27 @@ describe('buildCollectionRunProgress', () => {
     }
   });
 
+  it('carries the failure reason for a failed item and drops it for every other status', () => {
+    const rows: CollectionRunItemProgressRow[] = [
+      makeRow({
+        chatbotId: ChatbotId.GoogleAIOverview,
+        status: 'failed',
+        error: 'gemini-3.1-flash-lite answered without searching the web',
+      }),
+      // A stale error left on a row that later succeeded (a retry completes without clearing it)
+      // must not be shown next to a `completed` badge.
+      makeRow({ chatbotId: ChatbotId.ChatGPT, status: 'completed', error: 'an earlier failure' }),
+    ];
+
+    const chatbots = buildCollectionRunProgress({ id: 'run-1', status: 'completed' }, rows)
+      .projects[0].prompts[0].chatbots;
+
+    expect(chatbots.find((chatbot) => chatbot.status === 'failed')?.error).toBe(
+      'gemini-3.1-flash-lite answered without searching the web'
+    );
+    expect(chatbots.find((chatbot) => chatbot.status === 'completed')?.error).toBeNull();
+  });
+
   it('exposes only the allowed keys at every level, with no cost/estimate/answer content (ADR 0007)', () => {
     const rows: CollectionRunItemProgressRow[] = [makeRow({ status: 'completed' })];
     const progress = buildCollectionRunProgress({ id: 'run-1', status: 'completed' }, rows);
@@ -170,8 +192,11 @@ describe('buildCollectionRunProgress', () => {
     const prompt = project.prompts[0];
     expect(Object.keys(prompt).sort()).toEqual(['promptId', 'promptName', 'chatbots'].sort());
 
+    // `error` is the failure reason for a `failed` item — one of the three failure states ADR 0007
+    // says every AI-dependent screen must handle, plus the ungrounded-Google drop from issue 25.
+    // It is a failure message, never Prompt Response content or a cost figure.
     const chatbot = prompt.chatbots[0];
-    expect(Object.keys(chatbot).sort()).toEqual(['chatbotId', 'status'].sort());
+    expect(Object.keys(chatbot).sort()).toEqual(['chatbotId', 'status', 'error'].sort());
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { APICallError } from '@ai-sdk/provider';
+import { UngroundedResponseError } from '@/libs/ai/grounding';
 import { callAiWithRetry } from '@/libs/collection/callAi';
 import { aiCallLimiter } from '@/libs/collection/concurrencyLimiter';
 import { clearProviderCooldowns, getRemainingCooldownMs } from '@/libs/collection/providerCooldown';
@@ -139,6 +140,57 @@ describe('callAiWithRetry', () => {
     expect(callCount).toBe(3);
     // 1s Retry-After, well under the 30s PROVIDER_COOLDOWN_MS fallback.
     expect(getRemainingCooldownMs('openai')).toBeLessThan(1_500);
+  });
+
+  it('retries an ungrounded Google response up to maxAttempts, then fails without a cooldown', async () => {
+    let callCount = 0;
+    const outcome = await callAiWithRetry(
+      'google',
+      async () => {
+        callCount += 1;
+        throw new UngroundedResponseError('gemini-3.1-flash-lite');
+      },
+      { sleep: noopSleep }
+    );
+
+    expect(outcome.isCompleted).toBe(false);
+    if (outcome.isCompleted) throw new Error('unreachable');
+    // Bounded: retries are billed to the user's own key, so this must stop at the item cap
+    // rather than loop until the model decides to search (issue 25).
+    expect(callCount).toBe(3);
+    expect(outcome.attempts).toBe(3);
+    expect(outcome.error.message).toContain('without searching the web');
+    // Ungrounded is a per-call coin flip, not an unhealthy provider: cooling Google down would
+    // stall every other Google item behind an API that is answering fine.
+    expect(getRemainingCooldownMs('google')).toBe(0);
+  });
+
+  it('succeeds as soon as a retried Google call actually grounds', async () => {
+    let callCount = 0;
+    const outcome = await callAiWithRetry(
+      'google',
+      async () => {
+        callCount += 1;
+        if (callCount === 1) throw new UngroundedResponseError('gemini-3.1-flash-lite');
+        return 'a grounded response';
+      },
+      { sleep: noopSleep }
+    );
+
+    expect(outcome.isCompleted).toBe(true);
+    if (!outcome.isCompleted) throw new Error('unreachable');
+    expect(outcome.value).toBe('a grounded response');
+    expect(outcome.attempts).toBe(2);
+  });
+
+  it('does not sleep between ungrounded retries', async () => {
+    // Waiting changes nothing about the model's next decision, so the retry must be immediate —
+    // asserted by passing no `sleep` override at all, which leaves the real timer in place.
+    const start = Date.now();
+    await callAiWithRetry('google', async () => {
+      throw new UngroundedResponseError('gemini-3.1-flash-lite');
+    });
+    expect(Date.now() - start).toBeLessThan(200);
   });
 
   it('runs entirely in milliseconds when sleep is injected as a no-op', async () => {
