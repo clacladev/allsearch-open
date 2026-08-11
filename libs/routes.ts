@@ -52,6 +52,7 @@ export const ROUTES = {
     SETTINGS: {
       PROVIDER_KEYS: '/api/settings/provider-keys',
       CHATBOTS: '/api/settings/chatbots',
+      DATABASE_REVEAL: '/api/settings/database/reveal',
     },
 
     // Collection Runs
@@ -78,6 +79,9 @@ export const ROUTES = {
     PROJECT: {
       PROJECT: '/api/project/:projectId',
       PROJECT_ARCHIVE: '/api/project/:projectId/archive',
+      PROJECT_CLONE: '/api/project/:projectId/clone',
+      PROJECT_PAUSE: '/api/project/:projectId/pause',
+      PROJECT_DELETE: '/api/project/:projectId/delete',
       PROJECT_FILL_PROMPT_RESPONSES: '/api/project/:projectId/fill-prompt-responses',
       PROMPTS: '/api/project/:projectId/prompts',
       PROMPTS_ARCHIVE: '/api/project/:projectId/prompts/archive',
@@ -264,8 +268,6 @@ export const RouteHelper = {
         ),
       getOthers: (projectId: string) =>
         ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'others'),
-      getDeveloper: (projectId: string) =>
-        ROUTES.PROJECT.SETTINGS_TAB.replace(':projectId', projectId).replace(':tabId', 'developer'),
     },
   },
 
@@ -273,12 +275,21 @@ export const RouteHelper = {
     getOrganization: (organizationId: string) =>
       ROUTES.API.ORGANIZATION_WITH_ID.replace(':organizationId', organizationId),
 
-    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, so the
-    // clone/pause/delete routes survive ungated (ADR 0003), but only the backfill action is
-    // actually wired into the Developer tab today.
+    // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, so these
+    // survive ungated (ADR 0003) as the Developer section of the app-level Settings screen.
     Developer: {
       getProjectFillPromptResponses: (projectId: string) =>
         ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),
+      getProjectClone: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT_CLONE.replace(':projectId', projectId),
+      getProjectPause: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT_PAUSE.replace(':projectId', projectId),
+      getProjectDelete: (projectId: string) =>
+        ROUTES.API.PROJECT.PROJECT_DELETE.replace(':projectId', projectId),
+    },
+
+    Settings: {
+      getDatabaseReveal: () => ROUTES.API.SETTINGS.DATABASE_REVEAL,
     },
 
     NewProject: {
