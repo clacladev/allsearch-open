@@ -24,14 +24,12 @@ import { NavItemBase } from '@/components/application/app-navigation/base-compon
 import { MobileNavigationHeader } from '@/components/application/app-navigation/base-components/mobile-header';
 import { AppLogo } from '@/components/AppLogo';
 import { usePrivateLayoutContext } from '../PrivateLayoutContext';
-import { BOOK_DEMO_SIDEBAR_CARD_ID, BookDemoSidebarCard } from './Cards/BookDemoSidebarCard';
-import { HIDE_MESSAGE_ONE_DAY_MS, useMessagesContext } from '../MessagesContext';
+import { CollectionCadenceSidebarCard } from './Cards/CollectionCadenceSidebarCard';
 import { useDateRangeParams } from '@/hooks/useDateRangeParams';
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const { projects, currentProject } = usePrivateLayoutContext();
-  const { hideMessage, getIsMessageHidden } = useMessagesContext();
   const { startDate, endDate } = useDateRangeParams();
 
   const navProjects: NavProjectType[] = useMemo(
@@ -106,12 +104,10 @@ export const Sidebar = () => {
       items={navItems}
       logo={<ProjectSelectorCard selectedProjectId={currentProject?.id} projects={navProjects} />}
       cards={[
-        !getIsMessageHidden(BOOK_DEMO_SIDEBAR_CARD_ID) && (
-          <BookDemoSidebarCard
-            key={BOOK_DEMO_SIDEBAR_CARD_ID}
-            onClose={() => hideMessage(BOOK_DEMO_SIDEBAR_CARD_ID, HIDE_MESSAGE_ONE_DAY_MS)}
-          />
-        ),
+        <CollectionCadenceSidebarCard
+          key="collection-cadence-sidebar-card"
+          hasProjects={(projects?.length ?? 0) > 0}
+        />,
 
         // TODO: Cleanup when subscription is implemented
         // !hiddenMessagesIds.includes(TRIAL_SIDEBAR_CARD_ID) && (
