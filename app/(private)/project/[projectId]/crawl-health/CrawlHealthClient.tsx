@@ -196,8 +196,8 @@ export function CrawlHealthClient({ projectId, projectName, url }: Props) {
                       <span
                         className={
                           bot.allowed
-                            ? 'shrink-0 font-medium text-primary'
-                            : 'shrink-0 text-primary'
+                            ? 'shrink-0 font-medium text-success-primary'
+                            : 'shrink-0 font-medium text-error-primary'
                         }
                       >
                         {bot.allowed ? 'Allowed' : 'Blocked'}
