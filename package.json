@@ -1,12 +1,30 @@
 {
   "name": "allsearch",
   "version": "0.1.0",
-  "private": true,
+  "description": "Track how AI chatbots talk about your brand. Runs entirely on your own machine, against your own AI provider keys.",
+  "license": "UNLICENSED",
+  "bin": {
+    "allsearch": "./dist/cli.mjs"
+  },
+  "files": [
+    ".next/standalone",
+    "dist",
+    "drizzle",
+    "README.md",
+    "CONTEXT.md"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "next dev --experimental-https",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev --experimental-https",
     "build": "next build",
+    "build:cli": "bun scripts/buildCli.ts",
+    "build:package": "bun run build && bun run build:cli",
+    "prepack": "bun run build:package",
     "start": "next start",
+    "start:cli": "node dist/cli.mjs",
     "tsc": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:snapshot": "bun scripts/dbSnapshot.ts",

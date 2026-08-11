@@ -54,3 +54,6 @@ tests/e2e/.auth/
 
 # conductor personal settings (shared ones live in .conductor/settings.toml)
 .conductor/settings.local.toml
+
+# CLI bundle (bun run build:cli)
+/dist

@@ -4,8 +4,11 @@
 bun install           # Install dependencies
 bun dev               # Start dev server (https://localhost:3000)
 bun dev:debug         # Dev server with Node.js inspector
-bun build             # Production build
+bun build             # Production build (Next.js standalone output)
 bun start             # Serve production build
+bun run build:package # Production build + CLI bundle + standalone asset copy
+bun run build:cli     # CLI bundle + standalone asset copy (after bun build)
+bun run start:cli     # Run the built CLI exactly as `bunx allsearch` would
 bun lint              # ESLint
 bun tsc               # Typecheck (tsc --noEmit)
 bun prettier          # Format with Prettier
@@ -30,6 +33,29 @@ bun run db:snapshot              # snapshot current DB into the demo fixture
 
 - Default DB path: platform app-data dir (`…/AllSearch/allsearch.db`). Override with `ALLSEARCH_DB_PATH`.
 - Migrations also run automatically when the Next server starts (`instrumentation.ts`).
+
+## Shipping the CLI
+
+```bash
+bun run build:package   # what `prepack` runs: next build, then scripts/buildCli.ts
+npm pack                # tarball containing .next/standalone, dist/, drizzle/
+```
+
+`build:cli` bundles `cli/` to `dist/cli.mjs`, copies `.next/static` and `public/` into
+`.next/standalone/` (Next leaves them out, assuming a CDN), and prunes everything else out of the
+standalone tree — the file tracer copies the whole repository in, for the reason documented in
+`next.config.ts`.
+
+```bash
+allsearch                # free port, opens your browser
+allsearch --port 4000    # exact port, or fail if it is taken
+allsearch --no-open      # print the URL only
+allsearch --version
+```
+
+The server binds `127.0.0.1` only, and a second instance against the same database is refused via
+a lock file next to it (two writers is a corruption route). Ctrl-C returns any in-flight
+Collection Run to `pending` so it resumes on the next start.
 
 ## Environment
 
