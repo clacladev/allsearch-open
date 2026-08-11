@@ -15,10 +15,10 @@ import { cleanupTempDbPath, closeDatabase, createTempDbPath } from './testHelper
 // getDatabase() exactly once, in beforeAll, and shares one migrated database across every test
 // below, resetting its one row between tests instead of recreating the database.
 //
-// tests/unit/ai/models.test.ts mocks '@/libs/database/Settings/queries' at file scope, and that
-// mock leaks process-wide via Bun's mock.module() (see that file's own comment on the same
-// mechanism for '@/libs/ai/models'). A fresh, cache-busted import dodges it, regardless of
-// whether that other file happens to run before or after this one.
+// Several suites stub '@/libs/database/Settings/queries' at file scope. Those stubs are now
+// file-scoped via `mockModuleForSuite` (tests/unit/moduleMocks.ts) so none of them reaches this
+// file, which needs the REAL implementation — but a fresh, cache-busted import keeps that true by
+// construction rather than by test order, whichever of those files happens to run first.
 let queries: typeof SettingsQueriesModule;
 
 let dbPath: string;

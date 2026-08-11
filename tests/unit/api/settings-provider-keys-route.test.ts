@@ -1,5 +1,7 @@
 import { mock } from 'bun:test';
 
+import { mockModuleForSuite } from '../moduleMocks';
+
 // Note: next/server is mocked globally in tests/setup.ts
 
 const mockRedactedKeys = [
@@ -16,11 +18,19 @@ const mockGetRedactedProviderKeys = mock(async () => mockRedactedKeys);
 const mockSetProviderKey = mock(async () => undefined);
 const mockRemoveProviderKey = mock(async () => undefined);
 
-mock.module('@/libs/ai/validateProviderKey', () => ({
+// `mockModuleForSuite` rather than a raw `mock.module`: Bun's module registry is process-wide and
+// `mock.restore()` does not undo `mock.module`, so these stubs would otherwise stay installed for
+// every file that runs after this one — see tests/unit/moduleMocks.ts. Each stub also spreads the
+// real namespace it is handed, because `mock.module` swaps the whole export namespace: a partial
+// stub would make the module's other exports cease to exist for any suite linked against the real
+// module while the stub is installed.
+await mockModuleForSuite('@/libs/ai/validateProviderKey', (actual) => ({
+  ...actual,
   validateProviderKey: mockValidateProviderKey,
 }));
 
-mock.module('@/libs/database/Settings/queries', () => ({
+await mockModuleForSuite('@/libs/database/Settings/queries', (actual) => ({
+  ...actual,
   getRedactedProviderKeys: mockGetRedactedProviderKeys,
   setProviderKey: mockSetProviderKey,
   removeProviderKey: mockRemoveProviderKey,
