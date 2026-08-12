@@ -5,27 +5,32 @@ import { useDebounce } from 'use-debounce';
 import { useEffect, useState } from 'react';
 import { useTransition } from 'react';
 import { useDomainMetadata } from '@/app/(new-project)/new-project/components/useDomainMetadata';
-import { Form } from '@/components/base/form/form';
-import { InputGroup } from '@/components/base/input/input-group';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Favicon } from '@/app/(private)/components/Favicon';
-import { Input, InputBase } from '@/components/base/input/input';
-import { Button } from '@/components/base/buttons/button';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { OrganizationRow, OrganizationType } from '@/libs/database/Organizations/types';
 import { ORGANIZATION_TYPES } from '@/app/(new-project)/organization/helpers';
-import { RadioGroupRadioButton } from '@/components/base/radio-groups/radio-group-radio-button';
 import { appFetch } from '@/hooks/appFetch';
 import { isValidUrl } from '@/libs/utils/urls';
+import { Button } from '@/components/ui/button';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Spinner } from '@/components/ui/spinner';
 
 /** The Organization is a single settings row describing who the operator is, not a tenant
  * (ADR 0003). It is edited from two places — the app-level Settings screen and the per-Project
  * settings tab — so the form lives here rather than under either route. */
 export default function OrganizationSettingsForm() {
   const { organization, setOrganization } = usePrivateLayoutContext();
-  const [organizationType, setOrganizationType] = useState<OrganizationType | undefined>();
+  const [organizationType, setOrganizationType] = useState<OrganizationType>(OrganizationType.Agency);
   const [agencyName, setAgencyName] = useState('');
   const [shouldFetchDomainMetadata, setShouldFetchDomainMetadata] = useState(false);
   const [url, setUrl] = useState('');
@@ -57,7 +62,7 @@ export default function OrganizationSettingsForm() {
     setShouldFetchDomainMetadata(true);
   };
 
-  const onSave = (e: React.FormEvent<HTMLFormElement | HTMLButtonElement>) => {
+  const onSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !organization ||
@@ -104,72 +109,90 @@ export default function OrganizationSettingsForm() {
 
   return (
     <div className="max-w-md">
-      <Form className="flex flex-col gap-5" onSubmit={onSave}>
+      <form className="flex flex-col gap-5" onSubmit={onSave}>
         <SettingsFormHeader
           title="Your Organization"
           description="Information about who you are."
         />
 
-        <RadioGroupRadioButton
+        <RadioGroup
           aria-label="Account type"
           value={organizationType}
-          onChange={(value) => setOrganizationType(value as OrganizationType)}
-          items={ORGANIZATION_TYPES}
-          className="mb-6"
-        />
+          onValueChange={(value) => setOrganizationType(value)}
+          className="mb-6 gap-3"
+        >
+          {ORGANIZATION_TYPES.map((organizationTypeOption) => {
+            const inputId = `organization-type-${organizationTypeOption.value}`;
+
+            return (
+              <Field
+                key={organizationTypeOption.value}
+                orientation="horizontal"
+                onClick={() => setOrganizationType(organizationTypeOption.value)}
+                className="has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 dark:has-data-checked:border-shadcn-primary/20 dark:has-data-checked:bg-shadcn-primary/10 cursor-pointer rounded-lg border p-4"
+              >
+                <RadioGroupItem id={inputId} value={organizationTypeOption.value} />
+                <FieldContent>
+                  <FieldLabel htmlFor={inputId}>{organizationTypeOption.title}</FieldLabel>
+                  <FieldDescription>{organizationTypeOption.description}</FieldDescription>
+                </FieldContent>
+              </Field>
+            );
+          })}
+        </RadioGroup>
 
         {organizationType === OrganizationType.Agency && (
           <>
-            <InputGroup
-              value={url}
-              onChange={onUrlChange}
-              isInvalid={isUrlInvalid}
-              isRequired
-              label="Agency URL"
-              name="agencyUrl"
-              size="md"
-              trailingAddon={
-                isLoadingDomainMetadata ? (
-                  <InputGroup.Prefix>
-                    <LoadingIndicator size="xxs" />
-                  </InputGroup.Prefix>
-                ) : iconUrl ? (
-                  <InputGroup.Prefix>
-                    <Favicon url={iconUrl} alt={agencyName} className="size-6" />
-                  </InputGroup.Prefix>
-                ) : null
-              }
-              className="border-r-0"
-            >
-              <InputBase type="url" placeholder="https://agency.com" />
-            </InputGroup>
+            <Field data-invalid={isUrlInvalid || undefined}>
+              <FieldLabel htmlFor="agency-url">Agency URL</FieldLabel>
+              <div className="flex">
+                <Input
+                  id="agency-url"
+                  value={url}
+                  onChange={(event) => onUrlChange(event.target.value)}
+                  aria-describedby={error ? 'agency-url-error' : undefined}
+                  aria-invalid={isUrlInvalid || undefined}
+                  required
+                  type="url"
+                  name="agencyUrl"
+                  placeholder="https://agency.com"
+                  className="rounded-r-none"
+                />
+                {(isLoadingDomainMetadata || iconUrl) && (
+                  <div className="border-input flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 bg-transparent">
+                    {isLoadingDomainMetadata ? (
+                      <Spinner aria-label="Loading agency details" />
+                    ) : (
+                      <Favicon url={iconUrl} alt={agencyName} className="size-6" />
+                    )}
+                  </div>
+                )}
+              </div>
+              <FieldError id="agency-url-error">{error}</FieldError>
+            </Field>
 
-            {error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>}
-
-            <Input
-              value={agencyName}
-              onChange={setAgencyName}
-              isInvalid={isNameInvalid}
-              isRequired
-              label="Agency Name"
-              type="text"
-              name="agencyName"
-              placeholder="Superstar"
-              size="md"
-            />
+            <Field data-invalid={isNameInvalid || undefined}>
+              <FieldLabel htmlFor="agency-name">Agency Name</FieldLabel>
+              <Input
+                id="agency-name"
+                value={agencyName}
+                onChange={(event) => setAgencyName(event.target.value)}
+                aria-invalid={isNameInvalid || undefined}
+                required
+                type="text"
+                name="agencyName"
+                placeholder="Superstar"
+              />
+              {isNameInvalid && <FieldError>Agency name is required</FieldError>}
+            </Field>
           </>
         )}
 
-        <Button
-          type="submit"
-          size="lg"
-          isDisabled={!canSave || isSaving}
-          isLoading={isSaving}
-          onClick={onSave}
-        >
+        <Button type="submit" size="lg" disabled={!canSave || isSaving}>
+          {isSaving && <Spinner aria-hidden="true" />}
           Save
         </Button>
-      </Form>
+      </form>
     </div>
   );
 }
