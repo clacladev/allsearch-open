@@ -6,6 +6,11 @@ Blocked by: 21
 
 **This is a hard gate on the repository ever becoming public** (ADR 0005).
 
+The approved migration approach is maintained in
+`.scratch/untitled-ui-to-shadcn/spec.md`. That spec selects shadcn/ui's Base UI
+implementation, defines the clean-source and coexistence rules, and provides the
+candidate deliverable sequence. This issue remains the parent public-release gate.
+
 `components/` is 17,040 lines of vendored **Untitled UI PRO**, a commercially
 licensed library, with no LICENSE file anywhere in the repo. Shipping AllSearch
 MIT with that source in a public repository would redistribute components other
