@@ -10,7 +10,7 @@ import { stringToNumber } from '@/libs/utils/stringToNumber';
 import { RouteHelper } from '@/libs/routes';
 import Link from 'next/link';
 import { PromptAnalysis } from '@/app/api/project/[projectId]/prompts/getPromptsAnalysis';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { BrandPositionBadge } from '@/app/(private)/project/[projectId]/sources/components/BrandPositionBadge';
 import { SentimentIcon } from '@/app/(private)/project/[projectId]/components/SentimentIcon';
 import { BrandsIconsStackWithTooltip } from '@/app/(private)/project/[projectId]/sources/components/BrandsIconsStack';

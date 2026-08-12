@@ -1,6 +1,6 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import Link from 'next/link';
 import { PromptRow } from '@/libs/database/Prompts/types';
 import {
