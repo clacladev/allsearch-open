@@ -8,7 +8,7 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
-import { Check, ChevronDown } from '@untitledui/icons';
+import { Check, ChevronDown } from 'lucide-react';
 import { cx } from '@/utils/cx';
 import { Dot } from '@/components/foundations/dot-icon';
 

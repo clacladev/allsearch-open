@@ -1,9 +1,9 @@
 'use client';
 
-import { ButtonGroup, ButtonGroupItem } from '@/components/base/button-group/button-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SourcesType } from '@/app/(private)/project/[projectId]/sources/components/types';
-import { Dot } from '@/components/foundations/dot-icon';
-import { cx } from '@/utils/cx';
+import { Circle } from 'lucide-react';
+import { cn } from '@/libs/utils/cn';
 
 const TABLE_VARIANT: { sourceType: SourcesType; label: string }[] = [
   { sourceType: 'contents', label: 'Contents' },
@@ -20,24 +20,32 @@ export default function SourcesTypeButtonGroup({
   onSourceTypeChangeAction: (sourceType: SourcesType) => void;
 }) {
   return (
-    <ButtonGroup selectedKeys={[sourceType]} size={size}>
+    <ToggleGroup
+      value={[sourceType]}
+      onValueChange={(value) => {
+        const nextSourceType = value[0] as SourcesType | undefined;
+        if (nextSourceType) onSourceTypeChangeAction(nextSourceType);
+      }}
+      variant="outline"
+      size={size === 'xs' ? 'sm' : 'default'}
+      spacing={0}
+      aria-label="Source type"
+    >
       {TABLE_VARIANT.map((item) => (
-        <ButtonGroupItem
+        <ToggleGroupItem
           key={item.sourceType}
-          id={item.sourceType}
-          iconLeading={
-            <Dot
-              className={cx(
-                'mx-0.75 size-2',
-                sourceType === item.sourceType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
-              )}
-            />
-          }
-          onClick={() => onSourceTypeChangeAction(item.sourceType)}
+          value={item.sourceType}
         >
+          <Circle
+            aria-hidden="true"
+            className={cn(
+                'mr-1 size-2 fill-current',
+                sourceType === item.sourceType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
+            )}
+          />
           {item.label}
-        </ButtonGroupItem>
+        </ToggleGroupItem>
       ))}
-    </ButtonGroup>
+    </ToggleGroup>
   );
 }

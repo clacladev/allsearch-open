@@ -3,7 +3,7 @@
 import { RouteHelper } from '@/libs/routes';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import * as Paginations from '@/components/application/pagination/pagination';
+import { DataTablePagination } from '@/components/shared/data-table-pagination';
 import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
 import { parseDate } from '@internationalized/date';
 import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
@@ -269,9 +269,9 @@ export function Opportunities({
           sortDescriptor={sortDescriptor}
           onSortChange={onSortChange}
           tableFooter={
-            <Paginations.PaginationPageDefault
+            <DataTablePagination
               page={opportunitiesData.currentPage + 1}
-              total={opportunitiesData.totalPages}
+              totalPages={opportunitiesData.totalPages}
               onPageChange={onPageChange}
               className="px-4 py-3 md:px-6 md:py-1.5"
             />
