@@ -40,6 +40,72 @@ const MOCK_SUGGESTED_PROMPTS = [
   },
 ];
 
+test.describe('Prompt editing overlays', () => {
+  test('sheets expose their names and descriptions, contain focus, and restore focus after Escape or outside interaction', async ({
+    page,
+  }) => {
+    await page.goto(PROMPTS_URL);
+
+    const newPromptTrigger = page.getByRole('button', { name: 'New Prompt' });
+    await newPromptTrigger.click();
+    const newPromptSheet = page.getByRole('dialog', { name: 'Add new prompt' });
+    await expect(newPromptSheet).toBeVisible();
+    await expect(newPromptSheet).toContainText('New prompt to monitor for your brand.');
+
+    for (let index = 0; index < 12; index += 1) await page.keyboard.press('Tab');
+    await expect
+      .poll(() => newPromptSheet.evaluate((sheet) => sheet.contains(document.activeElement)))
+      .toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(newPromptSheet).not.toBeVisible();
+    await expect(newPromptTrigger).toBeFocused();
+
+    await newPromptTrigger.click();
+    await page.mouse.click(8, 8);
+    await expect(newPromptSheet).not.toBeVisible();
+    await expect(newPromptTrigger).toBeFocused();
+
+    const topicsTrigger = page.getByRole('button', { name: 'Topics' });
+    await topicsTrigger.click();
+    const topicsSheet = page.getByRole('dialog', { name: 'Manage topics' });
+    await expect(topicsSheet).toContainText('Organize your prompts into topics.');
+    await page.keyboard.press('Escape');
+    await expect(topicsTrigger).toBeFocused();
+  });
+
+  test('a pending add prompt action cannot submit twice', async ({ page }) => {
+    let requestCount = 0;
+    let fulfillRequest: (() => void) | undefined;
+    const requestFinished = new Promise<void>((resolve) => {
+      fulfillRequest = resolve;
+    });
+
+    await page.route(`**/api/project/${TEST_PROJECT_ID}/prompts`, async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      requestCount += 1;
+      await requestFinished;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([mockPromptRow(`E2E Pending Prompt ${timestamp}`)]),
+      });
+    });
+
+    await page.goto(PROMPTS_URL);
+    await page.getByRole('button', { name: 'New Prompt' }).click();
+    await page.getByPlaceholder('New prompt text').fill(`E2E Pending Prompt ${timestamp}`);
+    const addButton = page.getByRole('dialog').getByRole('button', { name: 'Add', exact: true });
+    await addButton.click();
+    await expect(addButton).toBeDisabled();
+    await addButton.click({ force: true });
+    expect(requestCount).toBe(1);
+
+    fulfillRequest?.();
+    await expect(page.getByText('Prompt added')).toBeVisible({ timeout: 10_000 });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Suite 1: Topics management
 // ---------------------------------------------------------------------------
@@ -111,26 +177,22 @@ test.describe('Topics management', () => {
     await page.getByRole('tab', { name: 'Suggested' }).click();
 
     // Wait for suggestions to load
-    await expect(
-      page.getByRole('checkbox', { name: 'E2E Suggested Topic A' })
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('checkbox', { name: 'E2E Suggested Topic A' })).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Assert all 3 suggestions are visible
     await expect(page.getByRole('checkbox', { name: 'E2E Suggested Topic B' })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'E2E Suggested Topic C' })).toBeVisible();
 
-    // Check first two — React Aria checkboxes require clicking the label wrapper
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'E2E Suggested Topic A' })
-      .click();
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'E2E Suggested Topic B' })
-      .click();
+    await page.getByRole('checkbox', { name: 'E2E Suggested Topic A' }).click();
+    await page.getByRole('checkbox', { name: 'E2E Suggested Topic B' }).click();
 
     // Click "Add 2 selected" (use first to target the inline button; footer also has one)
-    await page.getByRole('button', { name: /Add 2 selected/i }).first().click();
+    await page
+      .getByRole('button', { name: /Add 2 selected/i })
+      .first()
+      .click();
 
     // Assert success toast (exact: true avoids matching "2 topics added" description)
     await expect(page.getByText('Topics added', { exact: true })).toBeVisible({ timeout: 10_000 });
@@ -174,18 +236,15 @@ test.describe('Topics management', () => {
     await page.getByRole('tab', { name: 'Suggested' }).click();
 
     // Wait for suggestions to load
-    await expect(
-      page.getByRole('checkbox', { name: 'E2E Suggested Topic A' })
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('checkbox', { name: 'E2E Suggested Topic A' })).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Footer should still show "Done" with nothing selected
     await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
 
     // Check one topic
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'E2E Suggested Topic A' })
-      .click();
+    await page.getByRole('checkbox', { name: 'E2E Suggested Topic A' }).click();
 
     // Footer button should now say "Add 1 selected" instead of "Done"
     await expect(dialog.getByRole('button', { name: 'Done' })).not.toBeVisible();
@@ -228,9 +287,7 @@ test.describe('Prompt management', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Fill prompt input
-    const promptInput = page
-      .getByRole('dialog')
-      .locator('input[placeholder="New prompt text"]');
+    const promptInput = page.getByRole('dialog').locator('input[placeholder="New prompt text"]');
     await promptInput.fill(`E2E Single Prompt ${timestamp}`);
 
     // Click inline "Add" button (exact match to avoid matching "Add prompts" bulk button)
@@ -272,9 +329,7 @@ test.describe('Prompt management', () => {
     await textarea.fill(bulkPrompts.join('\n'));
 
     // Assert button shows "Add 3 prompts"
-    const bulkAddBtn = page
-      .getByRole('dialog')
-      .getByRole('button', { name: /Add 3 prompt/i });
+    const bulkAddBtn = page.getByRole('dialog').getByRole('button', { name: /Add 3 prompt/i });
     await expect(bulkAddBtn).toBeVisible();
 
     // Click bulk add
@@ -323,22 +378,13 @@ test.describe('Prompt management', () => {
     await expect(page.getByText('Running Gear')).toBeVisible({ timeout: 10_000 });
 
     // Assert individual prompt checkboxes are visible
-    await expect(
-      page.getByRole('checkbox', { name: 'Best trail shoes 2024' })
-    ).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Best trail shoes 2024' })).toBeVisible();
     await expect(
       page.getByRole('checkbox', { name: 'Waterproof hiking boots review' })
     ).toBeVisible();
 
-    // Select two prompts — React Aria checkboxes require clicking the label wrapper
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'Best trail shoes 2024' })
-      .click();
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'Waterproof hiking boots review' })
-      .click();
+    await page.getByRole('checkbox', { name: 'Best trail shoes 2024' }).click();
+    await page.getByRole('checkbox', { name: 'Waterproof hiking boots review' }).click();
 
     // Assert "Add 2 selected" button is enabled (use first to target the inline button; footer also has one)
     const addSelectedBtn = page
@@ -397,10 +443,7 @@ test.describe('Prompt management', () => {
     await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
 
     // Select one prompt
-    await page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'Best trail shoes 2024' })
-      .click();
+    await page.getByRole('checkbox', { name: 'Best trail shoes 2024' }).click();
 
     // Footer button should now say "Add 1 selected" instead of "Done"
     await expect(dialog.getByRole('button', { name: 'Done' })).not.toBeVisible();
@@ -441,18 +484,16 @@ test.describe('Prompts table interactions', () => {
     await page.goto(PROMPTS_URL);
 
     // Wait for the prompts table to render
-    await expect(
-      page.getByRole('table', { name: 'Prompts List' })
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('table', { name: 'Prompts List' })).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Click the first "Edit" button (ButtonUtility with aria-label="Edit")
     await page.getByRole('button', { name: 'Edit' }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Edit the prompt name
-    const nameInput = page
-      .getByRole('dialog')
-      .locator('input[placeholder="Prompt text"]');
+    const nameInput = page.getByRole('dialog').locator('input[placeholder="Prompt text"]');
     await nameInput.clear();
     await nameInput.fill(editedName);
 
@@ -482,18 +523,16 @@ test.describe('Prompts table interactions', () => {
     await page.goto(PROMPTS_URL);
 
     // Wait for the prompts table to render
-    await expect(
-      page.getByRole('table', { name: 'Prompts List' })
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('table', { name: 'Prompts List' })).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Open edit slideout for first prompt
     await page.getByRole('button', { name: 'Edit' }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Change the name (guarantees hasChanged = true regardless of topic selection)
-    const nameInput = page
-      .getByRole('dialog')
-      .locator('input[placeholder="Prompt text"]');
+    const nameInput = page.getByRole('dialog').locator('input[placeholder="Prompt text"]');
     await nameInput.clear();
     await nameInput.fill(editedName);
 
@@ -527,9 +566,9 @@ test.describe('Prompts table interactions', () => {
     await expect(tabPanel).toBeVisible();
 
     // Wait for active topics to load
-    await expect(
-      tabPanel.locator('input[placeholder="Topic name"]').first()
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(tabPanel.locator('input[placeholder="Topic name"]').first()).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Click the first archive (Minus) button — first button in the Edit tab panel
     // corresponds to the first active topic's archive action
@@ -539,9 +578,9 @@ test.describe('Prompts table interactions', () => {
     await expect(page.getByText('Topic archived')).toBeVisible({ timeout: 10_000 });
 
     // Assert "Show archived topics" toggle appeared (topic moved to archived section)
-    await expect(
-      page.getByRole('button', { name: /Show archived topics/i })
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: /Show archived topics/i })).toBeVisible({
+      timeout: 5_000,
+    });
 
     // Expand the archived section
     await page.getByRole('button', { name: /Show archived topics/i }).click();
@@ -564,9 +603,9 @@ test.describe('Prompts table interactions', () => {
     await page.goto(PROMPTS_URL);
 
     // Wait for the prompts table to render
-    await expect(
-      page.getByRole('table', { name: 'Prompts List' })
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('table', { name: 'Prompts List' })).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Click the first "Archive" button (ButtonUtility with aria-label="Archive")
     await page.getByRole('button', { name: 'Archive' }).first().click();
@@ -576,16 +615,16 @@ test.describe('Prompts table interactions', () => {
 
     // "View archived (N)" button appears because the prompt is now archived in the DB.
     // router.refresh() re-fetches archivedPromptsCount from the real DB.
-    await expect(
-      page.getByRole('button', { name: /View archived/i })
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: /View archived/i })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.getByRole('button', { name: /View archived/i }).click();
 
     // Page navigates to ?showArchived=true — wait for archived prompts to load
     await page.waitForURL(/showArchived=true/, { timeout: 10_000 });
-    await expect(
-      page.getByRole('button', { name: 'Restore' }).first()
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Restore' }).first()).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Click "Restore" on the first archived prompt (the one we just archived)
     await page.getByRole('button', { name: 'Restore' }).first().click();
