@@ -156,8 +156,9 @@ export default function TopicsForm() {
           <>
             <div role="group" aria-label="Topics" className="flex flex-col gap-2">
               {topicsItems.map((item) => (
-                <label key={item.value} className="flex cursor-pointer items-center gap-2 text-sm">
+                <div key={item.value} className="flex items-center gap-2 text-sm">
                   <Checkbox
+                    id={`topic-${encodeURIComponent(item.value)}`}
                     checked={selectedTopics.includes(item.value)}
                     onCheckedChange={(checked) =>
                       setSelectedTopics((current) =>
@@ -168,8 +169,13 @@ export default function TopicsForm() {
                     }
                     disabled={isLoading}
                   />
-                  {item.title}
-                </label>
+                  <label
+                    htmlFor={`topic-${encodeURIComponent(item.value)}`}
+                    className="cursor-pointer"
+                  >
+                    {item.title}
+                  </label>
+                </div>
               ))}
             </div>
 

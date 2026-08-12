@@ -1,7 +1,7 @@
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { useState } from 'react';
-import { Trash01 } from '@untitledui/icons';
+import { Trash } from 'lucide-react';
 import { ConfirmArchiveProjectModal } from './ConfirmArchiveProjectModal';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/libs/routes';
@@ -48,7 +48,7 @@ export default function Others() {
           />
 
           <div className="flex w-max flex-col gap-4">
-            <Button type="button" color="secondary" onClick={onResetMessages}>
+            <Button type="button" variant="outline" onClick={onResetMessages}>
               Reset messages
             </Button>
           </div>
@@ -66,10 +66,10 @@ export default function Others() {
           <div className="flex w-max flex-col gap-4">
             <Button
               type="button"
-              color="secondary-destructive"
+              variant="destructive"
               onClick={() => setIsArchiveProjectModalOpen(true)}
-              iconLeading={Trash01}
             >
+              <Trash aria-hidden="true" />
               Archive project
             </Button>
           </div>

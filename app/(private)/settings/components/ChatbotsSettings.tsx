@@ -81,8 +81,9 @@ export default function ChatbotsSettings({
 
       <fieldset aria-label="Chatbots" className="flex flex-col gap-3">
         {items.map((item) => (
-          <label key={item.value} className="flex items-start gap-3 text-sm">
+          <div key={item.value} className="flex items-start gap-3 text-sm">
             <Checkbox
+              id={`chatbot-${item.value}`}
               checked={enabledIds.includes(item.value)}
               disabled={item.disabled || isSaving}
               onCheckedChange={(checked) =>
@@ -93,13 +94,13 @@ export default function ChatbotsSettings({
                 )
               }
             />
-            <span>
+            <label htmlFor={`chatbot-${item.value}`} className="cursor-pointer">
               <span className="block font-medium">{item.title}</span>
               {item.description && (
                 <span className="text-muted-foreground">{item.description}</span>
               )}
-            </span>
-          </label>
+            </label>
+          </div>
         ))}
       </fieldset>
     </div>
