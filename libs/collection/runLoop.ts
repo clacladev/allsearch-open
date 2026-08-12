@@ -41,7 +41,7 @@ export function ensureCollectionRunLoopIsRunning(): void {
   if (activeLoopPromise) return;
   // Detached on purpose: nothing in a request path should await a loop that can run for as long
   // as the whole Collection Run takes. This is only safe because every bit of progress is durable
-  // in SQLite (the claim UPDATEs) and `resumeInterruptedCollectionRuns()` runs at boot — a killed
+  // in SQLite (the claim UPDATEs) and `releaseRunningCollectionRuns()` runs at boot — a killed
   // process leaves no in-memory intent to lose, just `running` rows for the next boot to reset.
   // The `.catch()` is required: without it, a throw here would surface as an unhandled promise
   // rejection and could take the whole server down.
@@ -58,12 +58,22 @@ export async function waitForCollectionRunLoop(): Promise<void> {
   await activeLoopPromise;
 }
 
-/** Boot-time recovery: any item left `running` by a killed process goes back to `pending`, and any
- * Run left `running` goes back to `pending`, so the loop picks up where it stopped. A Run that was
- * being cancelled when the process died still has its already-cancelled items recorded as
+/** Returns any `running` item and any `running` Run to `pending`, so the loop picks up where it
+ * stopped. A Run that was being cancelled still has its already-cancelled items recorded as
  * `cancelled` — its freshly-reset (previously `running`) items are cancelled too, so a cancel
- * interrupted by a quit is not silently un-cancelled. */
-export async function resumeInterruptedCollectionRuns(): Promise<void> {
+ * interrupted by a quit is not silently un-cancelled.
+ *
+ * Called from both ends of the process lifetime, and the two are complementary rather than
+ * redundant. At boot (`instrumentation.ts`) it recovers from a kill that had no chance to clean
+ * up. At shutdown (Ctrl-C under `bunx allsearch`, issue 20) it stops the app from being left,
+ * possibly for a week until the user next opens it, showing a Run as `running` that no process is
+ * driving. Neither call can be dropped in favour of the other: a `kill -9` never reaches the
+ * shutdown path, and a machine that never reboots the app never reaches the boot path.
+ *
+ * Racing an in-flight `executeGroup` is safe: the worst case is a group that finishes after the
+ * reset and writes its item back to `completed`, which is the honest outcome — the work really
+ * did complete. */
+export async function releaseRunningCollectionRuns(): Promise<void> {
   await resetRunningCollectionRunItemRows();
   const resumedRuns = await resetRunningCollectionRunRows();
   for (const run of resumedRuns) {
