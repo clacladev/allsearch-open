@@ -112,7 +112,7 @@ export const EditPromptSlideoutMenu = ({
                 value={editedTopicId ?? null}
                 onValueChange={(value) => setEditedTopicId(value ?? undefined)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="Topic" className="w-full">
                   <SelectValue placeholder="Select topic" />
                 </SelectTrigger>
                 <SelectContent>

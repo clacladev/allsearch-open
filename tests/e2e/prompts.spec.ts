@@ -51,6 +51,7 @@ test.describe('Prompt editing overlays', () => {
     const newPromptSheet = page.getByRole('dialog', { name: 'Add new prompt' });
     await expect(newPromptSheet).toBeVisible();
     await expect(newPromptSheet).toContainText('New prompt to monitor for your brand.');
+    await expect(newPromptSheet.getByLabel('Topic')).toHaveCount(2);
 
     for (let index = 0; index < 12; index += 1) await page.keyboard.press('Tab');
     await expect
