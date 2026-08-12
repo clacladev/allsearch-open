@@ -8,7 +8,7 @@ import { useCollectionRunContext } from './CollectionRunContext';
 
 // Reserves space for this fixed bar via a CSS variable on the document root, so page content that
 // pins to the bottom (e.g. the sidebar's footer cards) can pad itself clear of the overlap instead
-// of being covered by it. See app/(private)/components/Sidebar/Sidebar.tsx.
+// of being covered by it. See the shared application navigation shell.
 const BAR_HEIGHT_CSS_VAR = '--collection-run-bar-height';
 
 export function CollectionRunProgressBar() {
