@@ -1,7 +1,10 @@
 @import "tailwindcss";
 @import "./theme.css";
+@import "./shadcn-theme.css";
 @import "./typography.css";
 @import "./mdx-editor.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-react-aria-components";
