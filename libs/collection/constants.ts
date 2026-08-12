@@ -24,3 +24,9 @@ export const COLLECTION_RUN_PROGRESS_RETRY_MS = 3_000;
  * calendar days, so DST transitions cannot shift it. */
 export const COLLECTION_CADENCE_DAYS = 7;
 export const COLLECTION_CADENCE_MS = COLLECTION_CADENCE_DAYS * 24 * 60 * 60 * 1000;
+
+/** How long after a Run completes before the sidebar countdown card reappears — long enough
+ *  that finishing onboarding (or a manual refresh) doesn't immediately nag for another one. */
+export const COLLECTION_CADENCE_GRACE_PERIOD_DAYS = 1;
+export const COLLECTION_CADENCE_GRACE_PERIOD_MS =
+  COLLECTION_CADENCE_GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000;
