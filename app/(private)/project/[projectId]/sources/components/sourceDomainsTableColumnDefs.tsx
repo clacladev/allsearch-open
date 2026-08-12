@@ -1,5 +1,5 @@
 import { createColumnHelper } from '@tanstack/react-table';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
 import { BadgeWithDot } from '@/components/base/badges/badges';
 import { DOMAIN_CATEGORIES_COLORS } from './helpers';
