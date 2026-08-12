@@ -5,9 +5,10 @@ import { logNoObjectGeneratedError } from '../utils';
 import { openai, OpenAIResponsesProviderOptions } from '@ai-sdk/openai';
 
 // Models: https://developers.openai.com/api/docs/models/all
-// Most realistic is gpt-5-chat-latest (input $1.25, output $10.00 per 1M tokens): https://developers.openai.com/api/docs/models/gpt-5-chat-latest
-// Good balance is gpt-5.4-nano (input $0.20, output $1.25 per 1M tokens): https://developers.openai.com/api/docs/models/gpt-5.4-nano
-const MODEL_ID = 'gpt-5.4-nano';
+// gpt-5.6-luna is the actual default model for ChatGPT Free/Go since 2026-08-06 (replacing
+// GPT-5.5 Instant), not just a same-cost-tier stand-in: https://openai.com/index/improving-gpt-5-6-sol-in-chatgpt/
+// Cost-sensitive/high-volume tier (input $0.20, output $1.20 per 1M tokens): https://developers.openai.com/api/docs/models/gpt-5.6-luna
+const MODEL_ID = 'gpt-5.6-luna';
 
 export async function getPromptResponseWithChatGPT(
   prompt: string,
@@ -21,7 +22,8 @@ export async function getPromptResponseWithChatGPT(
       providerOptions: {
         openai: {
           maxToolCalls: 1,
-          textVerbosity: 'high', // gpt-5.4-nano is otherwise very concise
+          textVerbosity: 'high', // gpt-5.6-luna is otherwise very concise
+          reasoningEffort: 'none', // Free ChatGPT's default (pre-"Think" button) is instant, not the API's own "medium" default
         } satisfies OpenAIResponsesProviderOptions,
       },
       tools: {

@@ -6,14 +6,18 @@ import { logNoObjectGeneratedError } from '../utils';
 
 // Models: https://ai.google.dev/gemini-api/docs/models
 // Prices: https://ai.google.dev/gemini-api/docs/pricing
-// AI Overviews feel: gemini-3.1-flash or gemini-3.1-flash-lite with google_search grounding.
-// Cost note: the $14 per 1000 searches grounding fee dominates the bill, not the token rate
-// ($0.25 in / $1.50 out per 1M). At ~$0.014 per call, grounding is ~10x more than the same
-// call on gpt-5.4-nano (web_search included) and ~14x more than perplexity/sonar (flat token
-// price includes search). If this line item gets too expensive, the levers are: drop the
-// model from the daily fan-out, halve cron frequency, or replace google_search with
-// urlContext + a curated URL list.
-const MODEL_ID = 'gemini-3.1-flash-lite';
+// AI Overviews/AI Mode actually run on Google's own custom Gemini 3 fine-tunes wired into
+// Search's index/ranking/Knowledge Graph, so no public API model is a literal match — this is
+// a best-effort proxy. gemini-3.6-flash is the newest GA Flash model (2026-07-21), superseding
+// the 3.1 generation this used to point at; there is no gemini-3.6-flash-lite (only
+// gemini-3.5-flash-lite exists as of this writing) so flash is the closest current option.
+// Cost note: the $14 per 1000 searches grounding fee still dominates the bill, not the token
+// rate ($1.50 in / $7.50 out per 1M, up from 3.1-flash-lite's rate). At ~$0.014 per call,
+// grounding alone is already several times a gpt-5.6-luna call (web_search included) and far
+// more than perplexity/sonar (flat token price includes search). If this line item gets too
+// expensive, the levers are: drop the model from the daily fan-out, halve cron frequency, or
+// replace google_search with urlContext + a curated URL list.
+const MODEL_ID = 'gemini-3.6-flash';
 
 export async function getPromptResponseWithGoogleAIMode(prompt: string) {
   try {
