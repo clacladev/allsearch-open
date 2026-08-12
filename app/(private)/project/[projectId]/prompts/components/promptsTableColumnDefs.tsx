@@ -37,12 +37,12 @@ const columnHelper = createColumnHelper<PromptAndTopicJoinRow>();
 export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'name',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="name"
         label="Prompt"
         tooltip="The prompt text"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),

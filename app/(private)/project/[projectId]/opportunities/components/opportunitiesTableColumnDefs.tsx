@@ -37,12 +37,12 @@ function DescriptionContent({ title, detail }: { title: React.ReactNode; detail:
 export const createOpportunitiesTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'type',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="type"
         label="Type"
         tooltip="Type of action"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),

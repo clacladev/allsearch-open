@@ -12,12 +12,12 @@ const columnHelper = createColumnHelper<SourceDomain>();
 export const createSourceDomainsTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'hostname',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="hostname"
         label="Domain"
         tooltip="Domain name of the source"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),
