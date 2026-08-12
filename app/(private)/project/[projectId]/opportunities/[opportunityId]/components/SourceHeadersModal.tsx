@@ -1,8 +1,6 @@
 import { SourceItem } from '@/libs/database/Sources/types';
 import { PageHeading } from '@/libs/utils/urlAnalysis';
-import { DialogTrigger as AriaDialogTrigger } from 'react-aria-components';
-import { Dialog, Modal, ModalOverlay } from '@/components/application/modals/modal';
-import { CloseButton } from '@/components/base/buttons/close-button';
+import { Dialog, DialogCloseButton, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { CopyButton } from '@/app/(private)/components/CopyButton';
 import { LinkExternal01 } from '@untitledui/icons';
 import { SourceHeadingsList } from '../../../sources/components/SourceHeadingsList';
@@ -22,26 +20,15 @@ export const SourceHeadersModal = ({
   const headings = source.headings ?? [];
 
   return (
-    <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-      <ModalOverlay isDismissable>
-        <Modal className="max-w-xl">
-          <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-xl p-0">
             <div className="bg-primary relative flex w-full flex-col overflow-hidden rounded-2xl shadow-xl">
-              <CloseButton
-                onClick={() => setIsOpen(false)}
-                theme="light"
-                size="lg"
-                className="absolute top-3 right-3 z-10"
-              />
+              <DialogCloseButton label="Close source headers" />
 
               <div className="flex flex-col gap-4 p-6">
                 <div className="flex flex-col gap-1 pr-8">
-                  <p className="text-tertiary text-xs font-semibold tracking-wide uppercase">
-                    Headers structure
-                  </p>
-                  <h2 className="text-primary line-clamp-1 text-lg font-semibold">
-                    {source.title ?? source.cleanUrl}
-                  </h2>
+                  <DialogTitle className="text-xs font-semibold tracking-wide uppercase">Headers structure</DialogTitle>
+                  <DialogDescription className="line-clamp-1 text-lg font-semibold text-primary">{source.title ?? source.cleanUrl}</DialogDescription>
                   <a
                     href={source.url}
                     target="_blank"
@@ -65,9 +52,7 @@ export const SourceHeadersModal = ({
                 )}
               </div>
             </div>
-          </Dialog>
-        </Modal>
-      </ModalOverlay>
-    </AriaDialogTrigger>
+          </DialogContent>
+    </Dialog>
   );
 };

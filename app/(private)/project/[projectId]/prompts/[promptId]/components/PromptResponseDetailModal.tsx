@@ -1,7 +1,5 @@
 import React from 'react';
-import { DialogTrigger as AriaDialogTrigger } from 'react-aria-components';
-import { Dialog, Modal, ModalOverlay } from '@/components/application/modals/modal';
-import { CloseButton } from '@/components/base/buttons/close-button';
+import { Dialog, DialogCloseButton, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { PromptResponseContent } from '../types';
 import { SourceItem } from '@/libs/database/Sources/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
@@ -53,24 +51,18 @@ export function PromptResponseDetailModal({
   });
 
   return (
-    <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-      <ModalOverlay isDismissable>
-        <Modal className="max-w-5xl">
-          <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-5xl p-0">
             <div className="bg-primary relative flex w-full flex-col overflow-hidden rounded-2xl shadow-xl sm:flex-row">
-              <CloseButton
-                onClick={() => setIsOpen(false)}
-                theme="light"
-                size="lg"
-                className="absolute top-3 right-3 z-10"
-              />
+              <DialogCloseButton label="Close prompt response" />
 
               <div className="flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto p-6 pr-4 sm:max-h-[80vh]">
                 <div className="flex flex-col gap-1">
                   <p className="text-tertiary text-xs font-semibold tracking-wide uppercase">
                     Prompt
                   </p>
-                  <h2 className="text-primary text-lg font-semibold">{promptName}</h2>
+                  <DialogTitle>{promptName}</DialogTitle>
+                  <DialogDescription className="sr-only">Prompt response details and sources.</DialogDescription>
                 </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-tertiary text-xs font-semibold tracking-wide uppercase">
@@ -138,10 +130,8 @@ export function PromptResponseDetailModal({
                 </div>
               </div>
             </div>
-          </Dialog>
-        </Modal>
-      </ModalOverlay>
-    </AriaDialogTrigger>
+          </DialogContent>
+    </Dialog>
   );
 }
 
