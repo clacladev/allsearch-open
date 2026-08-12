@@ -1,8 +1,12 @@
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import {
+  ChartContainer,
+  ChartLegend,
   ChartLegendContent,
+  ChartTooltip,
   ChartTooltipContent,
-} from '@/components/application/charts/charts-base';
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { cx } from '@/utils/cx';
 import type { VisibilityDataset } from '@/libs/utils/project-analysis/getVisibilityDataset';
 
@@ -18,8 +22,12 @@ export default function VisibilityChart({
   /** Maps brand label → brand color (oklch string). Used to color each brand's line. */
   colorMap?: Record<string, string>;
 }) {
+  const config = Object.fromEntries(
+    displayKeys.map((key) => [key, { label: key, color: colorMap?.[key] ?? 'currentColor' }])
+  ) satisfies ChartConfig;
+
   return (
-    <ResponsiveContainer>
+    <ChartContainer config={config} className="aspect-auto h-full w-full">
       <AreaChart
         data={data}
         className="text-tertiary [&_.recharts-text]:text-xs"
@@ -52,7 +60,11 @@ export default function VisibilityChart({
           })}
         </defs>
 
-        <CartesianGrid vertical={false} stroke="currentColor" className="text-utility-neutral-100" />
+        <CartesianGrid
+          vertical={false}
+          stroke="currentColor"
+          className="text-utility-neutral-100"
+        />
 
         {/* Real time scale: points are spaced by elapsed time, not by array position, so a fortnight
             gap looks like a fortnight. Hidden, matching today's chart which renders no x labels.
@@ -60,8 +72,19 @@ export default function VisibilityChart({
             squash every epoch-ms timestamp against the right edge. */}
         <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} hide />
 
-        <Tooltip
-          content={<ChartTooltipContent formatter={(value) => `${value}%`} />}
+        <ChartTooltip
+          isAnimationActive={false}
+          content={
+            <ChartTooltipContent
+              formatter={(value) => `${value}%`}
+              labelFormatter={(_label, payload) => {
+                const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
+                return date
+                  ? new Date(date).toLocaleString(undefined, { month: 'long', day: 'numeric' })
+                  : 'N/A';
+              }}
+            />
+          }
           labelFormatter={(_label, payload) => {
             const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
             return date
@@ -75,11 +98,7 @@ export default function VisibilityChart({
           wrapperStyle={{ zIndex: 1 }}
         />
 
-        <Legend
-          verticalAlign="bottom"
-          content={<ChartLegendContent align="center" />}
-          className="pt-4"
-        />
+        <ChartLegend verticalAlign="bottom" content={<ChartLegendContent />} />
 
         {[...displayKeys]
           .sort((a, b) => (a === highlightKey ? 1 : b === highlightKey ? -1 : 0))
@@ -116,10 +135,11 @@ export default function VisibilityChart({
                 }}
                 fill={`url(#gradient-${key})`}
                 fillOpacity={isHighlighted ? 0.2 : 0}
+                isAnimationActive={false}
               />
             );
           })}
       </AreaChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }

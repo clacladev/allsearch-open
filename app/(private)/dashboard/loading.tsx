@@ -1,11 +1,16 @@
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
   return (
     <MainContainer>
-      <div className="mx-auto flex h-screen w-full max-w-4xl justify-center space-y-10 p-4 py-12">
-        <LoadingIndicator label="Loading..." />
+      <div
+        className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 py-12"
+        aria-label="Loading dashboard"
+      >
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
       </div>
     </MainContainer>
   );

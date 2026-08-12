@@ -20,6 +20,19 @@ test.describe('Overview page', () => {
     await expect(page.getByText('Brand visibility')).toBeVisible({ timeout: 15_000 });
   });
 
+  test('switches chart type with labelled radio controls and keyboard', async ({ page }) => {
+    test.setTimeout(30_000);
+
+    await page.goto(`${OVERVIEW_URL}${TEST_DATE_RANGE}`);
+
+    const visibility = page.getByRole('radio', { name: 'Visibility' });
+    const sentiment = page.getByRole('radio', { name: 'Sentiment' });
+    await expect(visibility).toBeVisible({ timeout: 15_000 });
+    await visibility.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(sentiment).toBeChecked();
+  });
+
   test('shows top source contents table with View more link', async ({ page }) => {
     test.setTimeout(30_000);
 

@@ -1,8 +1,13 @@
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
-import { ChartTooltipContent } from '@/components/application/charts/charts-base';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { toOrdinal } from '@/libs/numberFormatters';
 import { cx } from '@/utils/cx';
-import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
 import { getBrandColor, PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
 
 export function getBrandsRankingRadialData(
@@ -36,9 +41,12 @@ export default function BrandsRankingRadial({
   highlightId?: string;
 }) {
   const highlightItem = data.find((item) => item.id === highlightId);
+  const config = Object.fromEntries(
+    data.map((item) => [item.id, { label: item.brand, color: item.fill }])
+  ) satisfies ChartConfig;
 
   return (
-    <ResponsiveContainer>
+    <ChartContainer config={config} className="aspect-auto h-full w-full">
       <RadialBarChart
         data={data}
         accessibilityLayer
@@ -49,11 +57,10 @@ export default function BrandsRankingRadial({
         className="text-tertiary [&_.recharts-polar-grid]:text-utility-neutral-100 font-medium [&_.recharts-text]:text-sm"
       >
         <PolarAngleAxis tick={false} domain={[0, 100]} type="number" reversed />
-        <Tooltip
+        <ChartTooltip
+          isAnimationActive={false}
           content={
             <ChartTooltipContent
-              isAnimationActive={false}
-              isRadialChart
               formatter={(_, __, item) => {
                 const radialItem: BrandsRankingRadialItem = item?.payload.payload;
                 return `${radialItem.brand}: ${toOrdinal(radialItem.ranking + 1)}`;
@@ -66,6 +73,7 @@ export default function BrandsRankingRadial({
           dataKey="value"
           cornerRadius={99}
           background={{ className: 'fill-utility-neutral-100' }}
+          isAnimationActive={false}
         />
         {!!highlightItem && (
           <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
@@ -87,6 +95,6 @@ export default function BrandsRankingRadial({
           </text>
         )}{' '}
       </RadialBarChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }
