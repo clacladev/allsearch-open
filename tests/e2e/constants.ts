@@ -11,6 +11,7 @@ export const SOURCES_CONTENTS_URL = `/project/${TEST_PROJECT_ID}/sources/content
 export const SOURCES_DOMAINS_URL = `/project/${TEST_PROJECT_ID}/sources/domains`;
 export const OPPORTUNITIES_URL = `/project/${TEST_PROJECT_ID}/opportunities`;
 export const BRANDS_URL = `/project/${TEST_PROJECT_ID}/brands`;
+export const ACCOUNT_SETTINGS_URL = '/settings';
 export const SETTINGS_URL = `/project/${TEST_PROJECT_ID}/settings`;
 export const SETTINGS_COMPETITORS_URL = `/project/${TEST_PROJECT_ID}/settings/competitors`;
 export const SETTINGS_BRAND_URL = `/project/${TEST_PROJECT_ID}/settings/brand`;
