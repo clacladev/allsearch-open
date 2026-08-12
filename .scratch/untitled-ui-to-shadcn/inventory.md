@@ -2,7 +2,7 @@
 
 ## Snapshot and contract
 
-Audit date: 2026-08-12 (reachability and provenance reconciliation). `HEAD`: `b760bcd720790a435a0f091748f92fa6e1ce4b87`; `origin/dev` merge-base: `660790950d3bd72090def9fcb0d07b1eb4a45757`. In scope: `components/base`, `components/application`, `components/foundations`, `components/shared-assets`, their resolved TypeScript callers, current `app/**/page.tsx` and boundaries, E2E, packages, assets, fonts, and live URL references.
+Audit date: 2026-08-12 (reachability and provenance reconciliation). `HEAD`: `6c6c5a282407a9c5560a4d01e21c182b6655f6a1`; `origin/dev` merge-base: `660790950d3bd72090def9fcb0d07b1eb4a45757`. In scope: `components/base`, `components/application`, `components/foundations`, `components/shared-assets`, their resolved TypeScript callers, current `app/**/page.tsx` and boundaries, E2E, packages, assets, fonts, and live URL references.
 
 This is the authoritative inventory/provenance and current behavioral-coverage ledger for this snapshot. **Candidate deliverable 0 is not complete:** the E2E visual-baseline deliverable added Playwright screenshot baselines and light/dark/mobile projects (`visual-light`, `visual-dark`, `visual-mobile`) for six screens (SCREEN-005–008, SCREEN-020, and SCREEN-025) — see the Visual baselines burn-down row and BLOCK-001/002/003. Nineteen of 25 screens still have no visual baseline; each captures its own when its migration slice lands.
 
