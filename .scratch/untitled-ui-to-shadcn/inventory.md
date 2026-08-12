@@ -4,7 +4,7 @@
 
 Audit date: 2026-08-12 (reachability and provenance reconciliation). `HEAD`: `b760bcd720790a435a0f091748f92fa6e1ce4b87`; `origin/dev` merge-base: `660790950d3bd72090def9fcb0d07b1eb4a45757`. In scope: `components/base`, `components/application`, `components/foundations`, `components/shared-assets`, their resolved TypeScript callers, current `app/**/page.tsx` and boundaries, E2E, packages, assets, fonts, and live URL references.
 
-This is the authoritative inventory/provenance and current behavioral-coverage ledger for this snapshot. **Candidate deliverable 0 is not complete:** Playwright has zero screenshot baselines, light/dark projects, and mobile projects.
+This is the authoritative inventory/provenance and current behavioral-coverage ledger for this snapshot. **Candidate deliverable 0 is not complete:** the E2E visual-baseline deliverable added Playwright screenshot baselines and light/dark/mobile projects (`visual-light`, `visual-dark`, `visual-mobile`), proven on one screen (SCREEN-020's organization tab) — see the Visual baselines burn-down row and BLOCK-001/002/003. 24 of 25 screens still have no visual baseline; each captures its own when its migration slice lands.
 
 Provenance records repository evidence and open questions only; it is not legal advice or a conclusion that an asset is safe to publish.
 
@@ -330,9 +330,9 @@ Tracked `.ts/.tsx/.js/.jsx` files were parsed with the installed TypeScript comp
 | Local font files | 0 | audited roots font find | No woff/woff2/ttf/otf | Keep next/font framework declaration. |
 | Generated shadcn source (observational/completion; may increase) | 9 | `git ls-files components.json 'components/ui/**'` | `components.json` + 8 files: `button.tsx`, `field.tsx`, `input.tsx`, `label.tsx`, `radio-group.tsx`, `separator.tsx`, `sonner.tsx`, `spinner.tsx` | Deliverable 1 foundation pilot; see generated-source ledger below. |
 | Screen behavior coverage | 25 denominator: 16 Default CI, 4 AI-only/partial, 5 none | mechanically derived screen table | Route pages, transitive flows | Improve state coverage without changing denominator. |
-| Playwright default (observational/completion; may increase) | 53 tests / 10 files | `bunx playwright test --list` | grepInvert excludes @ai | Present. |
-| Playwright including AI (observational/completion; may increase) | 56 tests / 12 files | `PLAYWRIGHT_INCLUDE_AI=1 bunx playwright test --list` | 3 @ai tests / 2 files | On-demand. |
-| Visual baselines (observational/completion; may increase) | 0 | screenshot/snapshot scans | 0 light, 0 dark, 0 mobile projects | Blocking separate E2E deliverable. |
+| Playwright default (observational/completion; may increase) | 54 tests / 10 files | `bunx playwright test --project chromium --list` | grepInvert excludes @ai | Present. |
+| Playwright including AI (observational/completion; may increase) | 3 @ai tests / 2 files | `PLAYWRIGHT_INCLUDE_AI=1 bunx playwright test --project chromium --grep @ai --list` | Scoped to `chromium` project | On-demand. |
+| Visual baselines (observational/completion; may increase) | 3 (1 screen × light/dark/mobile) | `bunx playwright test --project visual-light --project visual-dark --project visual-mobile --list`; PNGs under `tests/e2e/visual/settings-organization.visual.spec.ts-snapshots/` | SCREEN-020 (Organization settings tab) only | `visual-light`/`visual-dark`/`visual-mobile` projects now exist; BLOCK-001/002/003 resolved. Remaining 24 screens capture their own baseline when their slice migrates. |
 | Approved visual differences (observational/completion; may increase) | 0 | table below | No approvals recorded | Remain zero until explicit approval. |
 
 ## Package and lockfile ledger
@@ -654,7 +654,7 @@ All 102 importer files are represented across the following 78 imported-symbol r
 | SCREEN-017 | new article | `app/(private)/project/[projectId]/prompts/[promptId]/new-article/page.tsx` | outline generation/autosave | E2E-019, E2E-020 | AI-only/partial | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
 | SCREEN-018 | prompt detail | `app/(private)/project/[projectId]/prompts/[promptId]/page.tsx` | detail state | No current behavior coverage | None | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
 | SCREEN-019 | prompts | `app/(private)/project/[projectId]/prompts/page.tsx` | topics/prompts CRUD | E2E-031, E2E-032, E2E-033, E2E-034, E2E-035, E2E-036, E2E-037, E2E-038, E2E-039, E2E-040, E2E-041 | Default CI | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
-| SCREEN-020 | project settings tab | `app/(private)/project/[projectId]/settings/[tabId]/page.tsx` | competitors/brand/organization tabs | E2E-004, E2E-015, E2E-042, E2E-043, E2E-044, E2E-045, E2E-046, E2E-047, E2E-048, E2E-049 | Default CI | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
+| SCREEN-020 | project settings tab | `app/(private)/project/[projectId]/settings/[tabId]/page.tsx` | competitors/brand/organization tabs | E2E-004, E2E-015, E2E-042, E2E-043, E2E-044, E2E-045, E2E-046, E2E-047, E2E-048, E2E-049 | Default CI | Yes (organization tab only) | Yes (organization tab only) | Yes | Yes (organization tab only) | No current focus assertion | Organization tab baseline captured (`tests/e2e/visual/settings-organization.visual.spec.ts`); brand/competitors tabs still outstanding |
 | SCREEN-021 | project settings | `app/(private)/project/[projectId]/settings/page.tsx` | redirect | E2E-042 | Default CI | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
 | SCREEN-022 | source detail | `app/(private)/project/[projectId]/sources/[sourceId]/page.tsx` | detail state | No current behavior coverage | None | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
 | SCREEN-023 | source contents | `app/(private)/project/[projectId]/sources/contents/page.tsx` | contents table/export/tab | E2E-015, E2E-018, E2E-050, E2E-051, E2E-052, E2E-053, E2E-054, E2E-055, E2E-056 | Default CI | No | No | Yes | No | No current focus assertion | Visual/light-dark/mobile baseline outstanding |
@@ -751,20 +751,20 @@ Derived mechanically from the 25 screen rows above: 17 Default CI + 4 AI-only/pa
 
 ### E2E suite status
 
-The rebased helper layer has isolated golden-database/per-test server fixtures. `playwright.config.ts` is fully parallel with three workers and one desktop `chromium` project. Default continuous execution uses `grepInvert` to exclude `@ai`; `test:e2e:ai` opts in. `onboarding.spec.ts` mocks provider-related endpoints, so its suite-level `@ai` tag is broad/stale/ambiguous rather than verified provider-dependent. `new-article.spec.ts` has two suite-level `@ai` tests, including mocked outline generation; the mocked flow remains continuously excluded because the suite tag is broad. There are no screenshot assertions/snapshot directories, colour-scheme matrix, light/dark projects, or mobile viewport/project. Issue 21 tracker metadata is stale despite implemented/verified comments and the rebased E2E commit; behavioral coverage is no longer technically blocked, while visual/light-dark/mobile baselines remain genuinely outstanding.
+The rebased helper layer has isolated golden-database/per-test server fixtures. `playwright.config.ts` is fully parallel with three workers, one desktop `chromium` project for behavioral specs, and three visual projects (`visual-light`, `visual-dark`, `visual-mobile` — the last a Chromium-based mobile device profile, not WebKit/iPhone, so no extra browser binary is required). `test:e2e`/`test:e2e:ai` pin `--project chromium` explicitly so the visual projects never run as part of the behavioral suite; `test:e2e:visual` runs only the three visual projects. Default continuous execution uses `grepInvert` to exclude `@ai`; `test:e2e:ai` opts in. `onboarding.spec.ts` mocks provider-related endpoints, so its suite-level `@ai` tag is broad/stale/ambiguous rather than verified provider-dependent. `new-article.spec.ts` has two suite-level `@ai` tests, including mocked outline generation; the mocked flow remains continuously excluded because the suite tag is broad. Screenshot assertions now exist under `tests/e2e/visual/` (`toHaveScreenshot()`, `animations: 'disabled'`, `maxDiffPixelRatio: 0.01`), proven on one screen (SCREEN-020's organization tab) across the light/dark/mobile matrix — see `docs/development-guidelines.md` § Testing for the convention future slices should follow when they add their own screen's baseline. Issue 21 tracker metadata is stale despite implemented/verified comments and the rebased E2E commit; behavioral coverage is no longer technically blocked, and the visual/light-dark/mobile harness now exists, though most of the 25 screens still need their own baseline captured as their slice migrates.
 
 ## Dependency/blocker ledger
 
 | Blocker ID | Scope | Evidence | Preventing caller/dependency | Required resolving deliverable | Current status |
 | --- | --- | --- | --- | --- | --- |
-| BLOCK-001 | Visual regression | zero screenshot assertions/snapshots | migration sign-off | Separate E2E visual-baseline deliverable | Open |
-| BLOCK-002 | Light/dark matrix | one chromium desktop project | colour-scheme validation | Separate E2E visual-baseline deliverable | Open |
-| BLOCK-003 | Mobile | no mobile project/viewport | responsive shell migration | Separate E2E visual-baseline deliverable | Open |
+| BLOCK-001 | Visual regression | `tests/e2e/visual/settings-organization.visual.spec.ts` + 3 committed PNGs | migration sign-off | Separate E2E visual-baseline deliverable | Resolved — harness exists; proven on SCREEN-020 organization tab, remaining screens capture their own baseline per-slice |
+| BLOCK-002 | Light/dark matrix | `visual-light`/`visual-dark` Playwright projects (`playwright.config.ts`) | colour-scheme validation | Separate E2E visual-baseline deliverable | Resolved |
+| BLOCK-003 | Mobile | `visual-mobile` Playwright project (Chromium `Pixel 7` device profile) | responsive shell migration | Separate E2E visual-baseline deliverable | Resolved |
 | BLOCK-004 | Asset provenance | Unknown sources in asset ledger | provenance-review assets | Provenance/legal review and replacements | Open |
 | BLOCK-005 | @untitledui/icons | 102 importer files | package removal | Semantic icon migration | Open |
 | BLOCK-006 | Legacy dependencies | package ledger caller lists | package removal | Last-caller migration | Open |
 
-Baseline is 6 remaining blocker rows; reproduce with `rg -c "^\| BLOCK-" .scratch/untitled-ui-to-shadcn/inventory.md`. Exit: zero open blocker rows.
+Baseline is 6 blocker rows (3 resolved: BLOCK-001/002/003; 3 open: BLOCK-004/005/006); reproduce with `rg -c "^\| BLOCK-" .scratch/untitled-ui-to-shadcn/inventory.md` (row count) and `rg -c "^\| BLOCK-.*\| Open \|" .scratch/untitled-ui-to-shadcn/inventory.md` (open count). Exit: zero open blocker rows.
 
 ## Approved visual differences
 

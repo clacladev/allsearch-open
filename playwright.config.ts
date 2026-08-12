@@ -18,10 +18,32 @@ export default defineConfig({
   use: {
     trace: 'on-first-retry',
   },
+  expect: {
+    toHaveScreenshot: { animations: 'disabled', maxDiffPixelRatio: 0.01 },
+  },
   projects: [
     {
       name: 'chromium',
+      testIgnore: /visual\//,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'visual-light',
+      testMatch: /visual\//,
+      use: { ...devices['Desktop Chrome'], colorScheme: 'light' },
+    },
+    {
+      name: 'visual-dark',
+      testMatch: /visual\//,
+      use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
+    },
+    {
+      // A Chromium-based device profile (not iPhone/WebKit) so the mobile
+      // project needs no browser binary beyond the chromium already
+      // installed for the other projects.
+      name: 'visual-mobile',
+      testMatch: /visual\//,
+      use: { ...devices['Pixel 7'] },
     },
   ],
 });
