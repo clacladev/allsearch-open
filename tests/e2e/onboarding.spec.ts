@@ -116,7 +116,10 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   // /new-project redirects to /new-project/brand (org already exists for the test user)
   await page.waitForURL('**/new-project/brand');
   await expect(page).toHaveURL(/\/new-project\/brand/);
-  await expect(page.getByText('Your Brand')).toBeVisible();
+  // Use the heading role, not getByText: Next.js's route announcer
+  // (#__next-route-announcer__) duplicates the page title as plain text and
+  // would otherwise trip strict mode.
+  await expect(page.getByRole('heading', { name: 'Your Brand' })).toBeVisible();
 
   // Fill in the brand URL — triggers domain-metadata fetch (mocked)
   const brandUrlInput = page.getByRole('textbox', { name: /brand url/i });
