@@ -1,33 +1,7 @@
-import { Dropdown } from '@/components/base/dropdown/dropdown';
+import { MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { FC } from 'react';
-
-export interface StandardTableActionsDropdownItem {
-  icon?: FC<{ className?: string }>;
-  href: string;
-  text: string;
-}
-
-export default function StandardTableActionsDropdown({
-  items,
-}: {
-  items: StandardTableActionsDropdownItem[];
-}) {
-  return (
-    <Dropdown.Root>
-      <Dropdown.DotsButton />
-
-      <Dropdown.Popover className="w-min">
-        <Dropdown.Menu>
-          {items.map((item) => (
-            <Dropdown.Item key={item.href} icon={item.icon}>
-              <span className="pr-4">
-                <Link href={item.href}>{item.text}</Link>
-              </span>
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown.Root>
-  );
-}
+export interface StandardTableActionsDropdownItem { icon?: FC<{ className?: string }>; href: string; text: string; }
+export default function StandardTableActionsDropdown({ items }: { items: StandardTableActionsDropdownItem[] }) { return <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Row actions"><MoreHorizontal aria-hidden="true" /></Button>} /><DropdownMenuContent aria-label="Row actions">{items.map(({ icon: Icon, href, text }) => <DropdownMenuItem key={href} render={<Link href={href} />}>{Icon && <Icon aria-hidden="true" />}{text}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>; }
