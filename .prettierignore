@@ -1,0 +1,8 @@
+# Build output, not authored code.
+.next/
+dist/
+out/
+
+# Dependencies and lockfiles.
+node_modules/
+bun.lock

@@ -83,7 +83,7 @@ import {
   createCollectionRun,
   ensureCollectionRunLoopIsRunning,
   MAX_CONCURRENT_AI_CALLS,
-  resumeInterruptedCollectionRuns,
+  releaseRunningCollectionRuns,
   retryFailedCollectionRunItems,
   aiCallLimiter,
 } from '@/libs/collection';
@@ -319,7 +319,7 @@ describe('issue 10 Done-when 2 — kill-and-restart resumes without duplicating 
       .set({ status: 'running', items_total: 6 })
       .where(eq(collectionRuns.id, run.id));
 
-    await resumeInterruptedCollectionRuns();
+    await releaseRunningCollectionRuns();
 
     const itemsAfterResume = await getItemsForRun(run.id);
     const promptAItems = itemsAfterResume.filter((item) => item.prompt_id === promptA.id);
@@ -367,7 +367,7 @@ describe('issue 10 Done-when 2 — kill-and-restart resumes without duplicating 
       .where(eq(collectionRuns.id, run.id));
     expect(await getResponsesForRun(run.id)).toHaveLength(3);
 
-    await resumeInterruptedCollectionRuns();
+    await releaseRunningCollectionRuns();
     expect((await getItemsForRun(run.id)).every((item) => item.status === 'pending')).toBe(true);
     expect((await getRun(run.id))?.status).toBe('pending');
 
@@ -540,10 +540,7 @@ describe('issue 10 — paused and archived Projects', () => {
 
     const archivedProject = await createProject('AllRunArchived');
     await createPrompts(archivedProject.id, 2);
-    await db
-      .update(projects)
-      .set({ is_archived: true })
-      .where(eq(projects.id, archivedProject.id));
+    await db.update(projects).set({ is_archived: true }).where(eq(projects.id, archivedProject.id));
 
     const run = await createCollectionRun();
 

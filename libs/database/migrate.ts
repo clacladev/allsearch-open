@@ -126,23 +126,30 @@ function uniqueBackupPath(dbPath: string): string {
 
 let migrationsFolderCache: string | undefined;
 
-/** Resolves the `drizzle/` migrations folder. `process.cwd()` is correct today because the only
- * runtime is `next dev`/`next start`, both invoked from the repo root — `import.meta.dirname` is
- * used only as an optional refinement when it happens to be defined, since inside the Turbopack
- * server bundle it is `undefined` (not the repo-root path a plain Node/Bun module would report),
- * and `join(undefined, ...)` throws. This is called lazily, from inside `migrateDatabase`, so a
- * bad resolution surfaces as a migration error rather than preventing this module from ever being
- * imported (which previously took down the whole server before it could boot). Packaging this
- * folder alongside a distributable binary is out of scope here — issue 20 owns that. */
+/** Resolves the `drizzle/` migrations folder.
+ *
+ * `ALLSEARCH_MIGRATIONS_DIR` wins when set, and the `bunx allsearch` CLI always sets it (issue
+ * 20): the standalone server `chdir`s into `.next/standalone/` before any of our code runs, so
+ * neither the working directory nor `import.meta.dirname` — which inside the server bundle points
+ * at a chunk directory, when it is defined at all — can be trusted to lead back to the migrations
+ * that shipped with the package.
+ *
+ * Without it, `process.cwd()` is correct for `next dev` / `next start` / `bun run db:*`, all
+ * invoked from the repo root, and `import.meta.dirname` is used only as an optional refinement
+ * when it happens to be defined (inside the Turbopack server bundle it is `undefined`, and
+ * `join(undefined, ...)` throws). This is called lazily, from inside `migrateDatabase`, so a bad
+ * resolution surfaces as a migration error rather than preventing this module from ever being
+ * imported (which previously took down the whole server before it could boot). */
 function resolveMigrationsFolder(): string {
   if (migrationsFolderCache) {
     return migrationsFolderCache;
   }
 
   const folder =
-    typeof import.meta.dirname === 'string'
+    process.env.ALLSEARCH_MIGRATIONS_DIR ||
+    (typeof import.meta.dirname === 'string'
       ? join(import.meta.dirname, '..', '..', 'drizzle')
-      : join(process.cwd(), 'drizzle');
+      : join(process.cwd(), 'drizzle'));
   if (!existsSync(folder)) {
     throw new Error(
       `Migrations folder not found at "${folder}". The drizzle/ directory must ship alongside the app.`

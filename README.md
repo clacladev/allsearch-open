@@ -10,7 +10,34 @@ Single-user: data stays on the machine (SQLite). AI calls use the operator’s o
 - Node.js 22+ (runtime for the Next.js server — see ADR 0010)
 - Optional: provider API keys (OpenAI, Google, Perplexity) for live collection
 
-## Get started
+## Run it
+
+```bash
+bun run build:package && bun run start:cli   # from a checkout, today
+bunx allsearch                               # once published — see Packaging note
+```
+
+Either boots the app's own server on a free port and opens your browser at it. The URL is printed
+so you can reopen it later. Press Ctrl-C to quit.
+
+| Flag                  | Effect                                     |
+| --------------------- | ------------------------------------------ |
+| `--port <n>`          | Use exactly this port; fail if it is taken |
+| `--no-open`           | Print the URL, don't open a browser        |
+| `--version`, `--help` | As expected                                |
+
+Notes:
+
+- The server listens on `127.0.0.1` only. There is no login anywhere in the app and the database
+  holds your provider keys, so it is never exposed to your network.
+- Only one instance can run against a given database — a second is refused rather than allowed to
+  race the first. Two writers on one SQLite file can corrupt it.
+- Quitting during a Collection Run is safe: the run is returned to `pending` and resumes the next
+  time you start the app.
+- Requires Node.js 22.5+ on PATH (`node:sqlite`). `bunx` and `npx` both run it under Node — see
+  ADR 0010 for why the server does not run under Bun.
+
+## Get started (development)
 
 ```bash
 bun install
@@ -24,11 +51,11 @@ Open the URL Next prints (default `https://localhost:3000`). Migrations run on s
 
 Default path:
 
-| Platform | Path |
-| -------- | ---- |
-| macOS | `~/Library/Application Support/AllSearch/allsearch.db` |
-| Windows | `%APPDATA%\AllSearch\allsearch.db` |
-| Linux | `$XDG_DATA_HOME/AllSearch/allsearch.db` or `~/.local/share/AllSearch/allsearch.db` |
+| Platform | Path                                                                               |
+| -------- | ---------------------------------------------------------------------------------- |
+| macOS    | `~/Library/Application Support/AllSearch/allsearch.db`                             |
+| Windows  | `%APPDATA%\AllSearch\allsearch.db`                                                 |
+| Linux    | `$XDG_DATA_HOME/AllSearch/allsearch.db` or `~/.local/share/AllSearch/allsearch.db` |
 
 Override with `ALLSEARCH_DB_PATH` (used by tests and local experiments). See `.env.example`.
 
@@ -47,12 +74,14 @@ After seeding, `bun dev` loads the dashboard with sample Projects — no onboard
 
 ## Run the application
 
-| Command | Purpose |
-| ------- | ------- |
-| `bun dev` | Dev server (HTTPS, hot reload) |
-| `bun dev:debug` | Dev server with Node inspector |
-| `bun build` / `bun start` | Production build and serve |
-| `bun run db:seed:demo` | Migrate + demo fixture without starting Next |
+| Command                   | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `bun dev`                 | Dev server (HTTPS, hot reload)                      |
+| `bun dev:debug`           | Dev server with Node inspector                      |
+| `bun build` / `bun start` | Production build and serve                          |
+| `bun run build:package`   | Production build + CLI bundle, ready to `npm pack`  |
+| `bun run start:cli`       | Run the built CLI exactly as `bunx allsearch` would |
+| `bun run db:seed:demo`    | Migrate + demo fixture without starting Next        |
 
 Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars are documented in `.env.example`.
 
@@ -60,12 +89,12 @@ Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars
 
 ### Stack
 
-| Layer | Choice |
-| ----- | ------ |
-| App | Next.js 16 (App Router), React 19 |
-| UI | Tailwind CSS v4, Untitled UI / React Aria |
-| DB | SQLite via Drizzle (`libs/database/`, `drizzle/`) |
-| AI | Vercel AI SDK + direct OpenAI / Google / Perplexity keys |
+| Layer   | Choice                                                           |
+| ------- | ---------------------------------------------------------------- |
+| App     | Next.js 16 (App Router), React 19                                |
+| UI      | Tailwind CSS v4, Untitled UI / React Aria                        |
+| DB      | SQLite via Drizzle (`libs/database/`, `drizzle/`)                |
+| AI      | Vercel AI SDK + direct OpenAI / Google / Perplexity keys         |
 | Tooling | Bun (`install`, `test`, scripts); Node for the long-lived server |
 
 More detail: [`docs/tech-stack.md`](./docs/tech-stack.md), ADRs under [`docs/adr/`](./docs/adr/).
@@ -92,13 +121,14 @@ Full list: [`docs/commands.md`](./docs/commands.md).
 
 ```
 app/            # Routes: (private), (new-project), api/
+cli/            # `bunx allsearch`: port choice, browser, single-instance lock
 components/     # application, base, foundations, collection-run
 libs/
   database/     # schema, client, migrate, table queries
   collection/   # Collection Run loop and progress
   ai/           # provider calls and generation
 drizzle/        # SQL migrations (applied on boot)
-scripts/        # db seed/snapshot, verifyProviders
+scripts/        # db seed/snapshot, verifyProviders, buildCli
 tests/          # unit + e2e
 docs/           # stack, patterns, ADRs, agent tracker docs
 CONTEXT.md      # ubiquitous language
@@ -122,4 +152,16 @@ Conventions: [`docs/development-guidelines.md`](./docs/development-guidelines.md
 
 ## Packaging note
 
-Today this is a **local Next.js app** you run with Bun. Shipping as a CLI that opens the browser (and a later Electron shell) is decided in ADR 0010; distribution is not npm-published from this README yet.
+`bun run build:package` produces everything the npm package ships: the Next.js standalone server
+under `.next/standalone/`, the CLI bundle at `dist/cli.mjs`, and the migrations under `drizzle/`.
+`npm pack` (via `prepack`) runs it for you.
+
+**The package is not published, and is marked `private` so it cannot be published by accident.**
+Publishing is a deliberate, manual step the maintainer takes at the end of the process. Until
+then `bunx allsearch` does not resolve — build and pack locally to try the CLI:
+
+```bash
+bun run build:package && bun run start:cli
+```
+
+A desktop shell (Electron, not Tauri) is deferred to public launch — see ADR 0010.
