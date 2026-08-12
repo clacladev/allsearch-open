@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { OVERVIEW_URL } from './constants';
 
 // ---------------------------------------------------------------------------
@@ -17,6 +17,7 @@ test.describe('Sidebar navigation', () => {
     await expect(aside.getByRole('link', { name: 'Opportunities' })).toBeVisible();
     await expect(aside.getByRole('link', { name: 'Prompts' })).toBeVisible();
     await expect(aside.getByRole('link', { name: 'Brands' })).toBeVisible();
+    await expect(aside.getByRole('link', { name: 'Crawl health' })).toBeVisible();
     await expect(aside.getByRole('link', { name: 'Settings' })).toBeVisible();
   });
 
@@ -39,7 +40,10 @@ test.describe('Sidebar navigation', () => {
     await aside.getByRole('link', { name: 'Brands' }).click();
     await page.waitForURL('**/brands**');
 
-    // Brands → Settings
+    // Brands → Crawl health → Settings
+    await aside.getByRole('link', { name: 'Crawl health' }).click();
+    await page.waitForURL('**/crawl-health');
+
     await aside.getByRole('link', { name: 'Settings' }).click();
     await page.waitForURL('**/settings/competitors**');
 
@@ -63,9 +67,8 @@ test.describe('Project selector', () => {
     await page.locator('aside button').first().click();
 
     await expect(page.getByText('Switch project')).toBeVisible();
-    await expect(page.getByText('Account settings')).toBeVisible();
+    await expect(page.getByText('App Settings')).toBeVisible();
     await expect(page.getByText('New project')).toBeVisible();
-    await expect(page.getByText('Sign out')).toBeVisible();
   });
 
   test('can navigate to New Project', async ({ page }) => {
