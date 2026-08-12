@@ -4,9 +4,7 @@ import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/rea
 import { useCallback, useMemo, useState } from 'react';
 import { RouteHelper } from '@/libs/routes';
 import { createPromptsTableColumnDefs, PromptsTableMeta } from './promptsTableColumnDefs';
-import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
-import { parseDate } from '@internationalized/date';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useRouter } from 'next/navigation';
 import { PromptAndTopicJoinRow } from '@/libs/database/Prompts/types';
 import { TopicRow, CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
@@ -92,12 +90,12 @@ export default function PromptsTable({
     [topicsState]
   );
 
-  const onDateRangeChange = (value: DateRangePickerValue) =>
+  const onDateRangeChange = (value: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getPrompts(
         projectId,
-        value.start.toString(),
-        value.end.toString(),
+        value.start,
+        value.end,
         shouldShowArchived ? 'true' : undefined,
         sortBy,
         sortDir,
@@ -227,7 +225,7 @@ export default function PromptsTable({
   });
 
   const activePromptsCount = promptsData?.filter((prompt) => !prompt.is_archived).length ?? 0;
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
   const sortDescriptor: SortDescriptor | undefined = sortBy
     ? { column: sortBy, direction: sortDir === 'desc' ? 'descending' : 'ascending' }
@@ -316,10 +314,7 @@ export default function PromptsTable({
       <div className="mb-4">
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2">
-            <DateRangePickerCard
-              selectedDateRange={selectedDateRange}
-              onApplyAction={onDateRangeChange}
-            />
+            <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
             <Button color="secondary" size="sm" onClick={() => setIsAddPromptModalOpen(true)}>
               New Prompt
             </Button>

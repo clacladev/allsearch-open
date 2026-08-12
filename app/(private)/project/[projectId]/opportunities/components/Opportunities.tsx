@@ -4,9 +4,7 @@ import { RouteHelper } from '@/libs/routes';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
 import { DataTablePagination } from '@/components/shared/data-table-pagination';
-import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
-import { parseDate } from '@internationalized/date';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
@@ -75,14 +73,14 @@ export function Opportunities({
 
   const onExportCsv = () =>
     exportOpportunitiesToCsv(opportunitiesData.data, currentPrompts, projectId, startDate, endDate);
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
-  const onDateRangeChange = (dateRange: DateRangePickerValue) =>
+  const onDateRangeChange = (dateRange: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        dateRange.start.toString(),
-        dateRange.end.toString(),
+        dateRange.start,
+        dateRange.end,
         undefined,
         sortBy,
         sortDir,
@@ -94,8 +92,8 @@ export function Opportunities({
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         page - 1,
         sortBy,
         sortDir,
@@ -113,8 +111,8 @@ export function Opportunities({
       router.push(
         RouteHelper.Project.getOpportunities(
           projectId,
-          selectedDateRange.start.toString(),
-          selectedDateRange.end.toString(),
+          selectedDateRange.start,
+          selectedDateRange.end,
           0,
           undefined,
           undefined,
@@ -128,8 +126,8 @@ export function Opportunities({
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         0,
         newSortBy,
         newSortDir,
@@ -210,10 +208,7 @@ export function Opportunities({
       <div>
         <div className="flex items-end justify-between gap-2">
           <div className="flex gap-2">
-            <DateRangePickerCard
-              selectedDateRange={selectedDateRange}
-              onApplyAction={onDateRangeChange}
-            />
+            <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
             <ExportActionsButton onExportCsvAction={onExportCsv} />
             <FilterToggle
               isExpanded={isFiltersExpanded}
@@ -264,8 +259,8 @@ export function Opportunities({
           totalPages={opportunitiesData.totalPages}
           prompts={currentPrompts}
           projectId={projectId}
-          startDate={selectedDateRange.start.toString()}
-          endDate={selectedDateRange.end.toString()}
+          startDate={selectedDateRange.start}
+          endDate={selectedDateRange.end}
           sortDescriptor={sortDescriptor}
           onSortChange={onSortChange}
           tableFooter={

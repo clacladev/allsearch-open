@@ -3,15 +3,14 @@
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { EmptyState } from '@/app/(private)/components/EmptyState';
-import { CheckCircleBroken, InfoCircle, LinkExternal01 } from '@untitledui/icons';
+import { CheckCircle2, CircleAlert, ExternalLink } from 'lucide-react';
 import { CopyButton } from '@/app/(private)/components/CopyButton';
 import SmallProgressBar from '../../components/SmallProgressBar';
 import { SourceStatisticBox } from './SourceStatisticBox';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { BrandsIconsStack, getBrandNamesList } from '../../components/BrandsIconsStack';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { DOMAIN_CATEGORIES_COLORS } from '../../components/helpers';
+import { Badge } from '@/components/ui/badge';
 import dayjs from 'dayjs';
 import { PromptRow } from '@/libs/database/Prompts/types';
 import Link from 'next/link';
@@ -78,7 +77,7 @@ const SourceHeader = ({ source }: { source: SourceContent }) => (
         className="text-tertiary hover:text-secondary flex items-center gap-1 transition-colors"
       >
         {source.cleanUrl}
-        <LinkExternal01 className="size-3" />
+        <ExternalLink className="size-3" />
       </a>
       <span className="text-quaternary">·</span>
       <span className="text-tertiary">Last updated {dayjs(source.createdAt).format('ll')}</span>
@@ -112,17 +111,11 @@ const SourceStatistics = ({
         title={
           <>
             <span>Category</span>
-            <InfoCircle size={14} />
+            <CircleAlert size={14} />
           </>
         }
         value={
-          <BadgeWithDot
-            size="sm"
-            color={DOMAIN_CATEGORIES_COLORS[source.domainCategory]}
-            type="modern"
-          >
-            {source.domainCategory}
-          </BadgeWithDot>
+          <Badge variant="secondary">{source.domainCategory}</Badge>
         }
         tooltipTitle="Category of the source"
         tooltipDescription={source.domainCategory}
@@ -132,7 +125,7 @@ const SourceStatistics = ({
         title={
           <>
             <span>Used %</span>
-            <InfoCircle size={14} />
+            <CircleAlert size={14} />
           </>
         }
         value={
@@ -149,7 +142,7 @@ const SourceStatistics = ({
         title={
           <>
             <span>Cited %</span>
-            <InfoCircle size={14} />
+            <CircleAlert size={14} />
           </>
         }
         value={
@@ -166,13 +159,13 @@ const SourceStatistics = ({
         title={
           <>
             <span>Mention</span>
-            <InfoCircle size={14} />
+            <CircleAlert size={14} />
           </>
         }
         value={
           source.projectIdRank !== -1 ? (
             <>
-              <CheckCircleBroken className="text-brand-secondary" size={20} />
+              <CheckCircle2 className="text-primary" size={20} />
               <span>{toOrdinal(source.projectIdRank + 1)}</span>
             </>
           ) : (
@@ -187,7 +180,7 @@ const SourceStatistics = ({
         title={
           <>
             <span>Brands</span>
-            <InfoCircle size={14} />
+            <CircleAlert size={14} />
           </>
         }
         value={
@@ -214,17 +207,17 @@ const SourceStatistics = ({
 
 const PromptBadge = ({ text, href, isCited }: { text: string; href: string; isCited: boolean }) => (
   <Link href={href} className="no-underline!">
-    <BadgeWithDot size="lg" color={isCited ? 'brand' : 'gray'} type="modern">
+    <Badge variant={isCited ? 'default' : 'secondary'}>
       {text}{' '}
       {isCited && (
         <>
-          <CheckCircleBroken className="text-brand-secondary" size={10} />
-          <span className="text-brand-secondary">
+          <CheckCircle2 className="text-primary-foreground" size={10} />
+          <span className="text-primary-foreground">
             <Tooltip title="This source has been cited in this prompt responses">Cited</Tooltip>
           </span>
         </>
       )}
-    </BadgeWithDot>
+    </Badge>
   </Link>
 );
 

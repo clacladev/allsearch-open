@@ -1,5 +1,5 @@
 import { Tooltip } from '@/app/(private)/components/Tooltip';
-import { CheckCircleBroken } from '@untitledui/icons';
+import { CheckCircle2 } from 'lucide-react';
 import { toOrdinal } from '@/libs/numberFormatters';
 
 export const BrandPositionBadge = ({
@@ -19,7 +19,7 @@ export const BrandPositionBadge = ({
   return (
     <Tooltip title={`Your brand position is ${ordinal}`}>
       <div className="flex items-center gap-1.5">
-        <CheckCircleBroken className="text-brand-secondary" size={14} />
+        <CheckCircle2 className="text-primary" size={14} />
         <span className="text-tertiary">{ordinal}</span>
       </div>
     </Tooltip>

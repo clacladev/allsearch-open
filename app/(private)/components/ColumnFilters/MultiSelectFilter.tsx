@@ -10,7 +10,6 @@ import {
 } from 'react-aria-components';
 import { Check, ChevronDown } from 'lucide-react';
 import { cx } from '@/utils/cx';
-import { Dot } from '@/components/foundations/dot-icon';
 
 export type FilterOption = {
   id: string;
@@ -63,10 +62,7 @@ export function MultiSelectFilter({
           <ChevronDown className="text-fg-quaternary size-4 shrink-0" />
         </AriaButton>
         {isActive && (
-          <Dot
-            size="md"
-            className="text-fg-warning-primary pointer-events-none absolute -top-1 -right-1"
-          />
+          <span aria-hidden="true" className="absolute -top-1 -right-1 size-2 rounded-full bg-amber-500" />
         )}
       </div>
 
