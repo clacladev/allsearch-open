@@ -1,9 +1,16 @@
 'use client';
 
 import { ArrowDown, ChevronsUpDown } from 'lucide-react';
-import { flexRender, type Column, type Table as ReactTable } from '@tanstack/react-table';
+import { flexRender, type Column, type RowData, type Table as ReactTable } from '@tanstack/react-table';
 import { createContext, useContext } from 'react';
 import { cn } from '@/libs/utils/cn';
+
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    isRowHeader?: boolean;
+  }
+}
 
 export type DataTableSort = { column: string | number; direction: 'ascending' | 'descending' };
 
@@ -73,9 +80,9 @@ export function DataTable<T>({
           </thead>
           <tbody>
             {reactTable.getRowModel().rows.map((row) => <tr key={row.id} className="border-b last:border-0 hover:bg-muted/40">
-              {row.getVisibleCells().map((cell) => <td key={cell.id} className="px-4 py-3 align-middle md:px-5">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>)}
+              {row.getVisibleCells().map((cell) => cell.column.columnDef.meta?.isRowHeader
+                ? <th key={cell.id} scope="row" className="px-4 py-3 align-middle md:px-5">{flexRender(cell.column.columnDef.cell, cell.getContext())}</th>
+                : <td key={cell.id} className="px-4 py-3 align-middle md:px-5">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
             </tr>)}
           </tbody>
         </table>

@@ -144,7 +144,15 @@ export default function Sources({
         : RouteHelper.Project.getSourcesDomains;
 
     router.push(
-      getSourceUrl(projectId, selectedDateRange.start, selectedDateRange.end)
+      getSourceUrl(
+        projectId,
+        selectedDateRange.start,
+        selectedDateRange.end,
+        0,
+        sortBy,
+        sortDir,
+        filters
+      )
     );
   };
 

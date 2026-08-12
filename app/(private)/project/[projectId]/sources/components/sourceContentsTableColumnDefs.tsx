@@ -23,12 +23,12 @@ const columnHelper = createColumnHelper<SourceContent>();
 export const createSourceContentsTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'title',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="title"
         label="URL"
         tooltip="URL of the source"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),
