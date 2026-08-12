@@ -1,4 +1,3 @@
-import { ProgressBarBase } from '@/components/base/progress-indicators/progress-indicators';
 import { cx } from '@/utils/cx';
 
 export default function SmallProgressBar({
@@ -8,7 +7,5 @@ export default function SmallProgressBar({
   value: number;
   className?: string;
 }) {
-  return (
-    <ProgressBarBase min={0} max={100} value={value} className={cx('block w-12', className)} />
-  );
+  return <div aria-label={`${value}%`} aria-valuemax={100} aria-valuemin={0} aria-valuenow={value} role="progressbar" className={cx('h-1.5 w-12 overflow-hidden rounded-full bg-muted', className)}><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div>;
 }

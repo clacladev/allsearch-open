@@ -8,11 +8,9 @@ import { LatestRunNotice } from './components/LatestRunNotice';
 import { CollectionRunCoverageBanner } from './components/CollectionRunCoverageBanner';
 import { VisualContainer } from './components/VisualContainer';
 import VisibilityChart from './components/VisibilityChart';
-import { DateRangePickerCard } from './components/DateRangePickerCard';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { RouteHelper } from '@/libs/routes';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
-import { parseDate } from '@internationalized/date';
 import { useRouter } from 'next/navigation';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
 import { useMemo, useState } from 'react';
@@ -70,7 +68,7 @@ export default function ProjectOverview({
   const { currentProject, currentCompetitors, currentPrompts } = usePrivateLayoutContext();
   const [sourcesType, setSourcesType] = useState<SourcesType>('contents');
   const [chartType, setChartType] = useState<OverviewChartType>('visibility');
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
   const [
     projectVisibilityScore,
@@ -87,12 +85,12 @@ export default function ProjectOverview({
     [overviewData]
   );
 
-  const onDateRangeChange = (dateRange: DateRangePickerValue) =>
+  const onDateRangeChange = (dateRange: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getOverview(
         projectId,
-        dateRange.start.toString(),
-        dateRange.end.toString()
+        dateRange.start,
+        dateRange.end
       )
     );
 
@@ -143,10 +141,7 @@ export default function ProjectOverview({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangePickerCard
-          selectedDateRange={selectedDateRange}
-          onApplyAction={onDateRangeChange}
-        />
+        <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
         <ExportActionsButton onExportCsvAction={onExportCsv} />
         {overviewData.latestRun && (
           <span className="text-tertiary text-sm" data-testid="overview-latest-run-provenance">

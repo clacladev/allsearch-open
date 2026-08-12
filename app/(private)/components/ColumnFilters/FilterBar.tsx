@@ -2,9 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { FilterLines, XClose } from '@untitledui/icons';
+import { Filter, X } from 'lucide-react';
 import { cx } from '@/utils/cx';
-import { Dot } from '@/components/foundations/dot-icon';
 
 interface FilterToggleProps {
   isExpanded: boolean;
@@ -25,14 +24,11 @@ export function FilterToggle({ isExpanded, onToggle, hasActiveFilters }: FilterT
           )
         }
       >
-        <FilterLines className="size-4" />
+        <Filter className="size-4" />
         Filters
       </AriaButton>
       {hasActiveFilters && (
-        <Dot
-          size="md"
-          className="text-fg-warning-primary pointer-events-none absolute -top-1 -right-1"
-        />
+        <span aria-hidden="true" className="absolute -top-1 -right-1 size-2 rounded-full bg-amber-500" />
       )}
     </div>
   );
@@ -61,7 +57,7 @@ export function FilterBar({ children, isExpanded, hasActiveFilters, onClearAll }
               onPress={onClearAll}
               className="flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-sm text-secondary hover:text-primary transition duration-100 outline-hidden"
             >
-              <XClose className="size-3.5" />
+              <X className="size-3.5" />
               Clear filters
             </AriaButton>
           )}

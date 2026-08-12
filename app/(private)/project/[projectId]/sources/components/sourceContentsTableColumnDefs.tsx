@@ -1,8 +1,7 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { DOMAIN_CATEGORIES_COLORS } from './helpers';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
@@ -61,9 +60,7 @@ export const createSourceContentsTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <BadgeWithDot size="sm" color={DOMAIN_CATEGORIES_COLORS[domainCategory]} type="modern">
-          {domainCategory}
-        </BadgeWithDot>
+        <Badge variant="secondary">{domainCategory}</Badge>
       );
     },
   }),

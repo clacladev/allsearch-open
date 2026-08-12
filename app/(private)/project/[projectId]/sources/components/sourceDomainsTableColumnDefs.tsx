@@ -1,8 +1,7 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { DOMAIN_CATEGORIES_COLORS } from './helpers';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import SmallProgressBar from './SmallProgressBar';
 
@@ -50,9 +49,7 @@ export const createSourceDomainsTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <BadgeWithDot size="sm" color={DOMAIN_CATEGORIES_COLORS[domainCategory]} type="modern">
-          {domainCategory}
-        </BadgeWithDot>
+        <Badge variant="secondary">{domainCategory}</Badge>
       );
     },
   }),

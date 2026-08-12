@@ -2,9 +2,7 @@
 
 import { RouteHelper } from '@/libs/routes';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
-import { parseDate } from '@internationalized/date';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExportActionsButton } from '@/app/(private)/components/ExportActionsButton';
@@ -66,14 +64,14 @@ export default function Brands({
 }) {
   const router = useRouter();
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
-  const onDateRangeChange = (value: DateRangePickerValue) =>
+  const onDateRangeChange = (value: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getBrands(
         projectId,
-        value.start.toString(),
-        value.end.toString(),
+        value.start,
+        value.end,
         selectedBrandIds,
         undefined,
         sortBy,
@@ -213,10 +211,7 @@ export default function Brands({
       <div>
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2">
-            <DateRangePickerCard
-              selectedDateRange={selectedDateRange}
-              onApplyAction={onDateRangeChange}
-            />
+            <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
             <div className="w-60">
               <BrandSelector
                 availableBrands={availableBrands}
