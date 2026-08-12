@@ -9,7 +9,7 @@ import {
   ListBoxItem,
 } from 'react-aria-components';
 import { Favicon } from '@/app/(private)/components/Favicon';
-import { Check, ChevronDown, Building06 } from '@untitledui/icons';
+import { Building2, Check, ChevronDown } from 'lucide-react';
 import { cx } from '@/utils/cx';
 
 export type BrandOption = {
@@ -58,7 +58,7 @@ export function BrandSelector({
             className="size-5 shrink-0 rounded-md"
           />
         ) : (
-          <Building06 className="text-fg-quaternary size-4 shrink-0" />
+          <Building2 className="text-fg-quaternary size-4 shrink-0" />
         )}
         <span
           className={cx(

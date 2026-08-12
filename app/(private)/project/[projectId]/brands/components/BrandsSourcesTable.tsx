@@ -1,6 +1,6 @@
 import { useReactTable, getCoreRowModel, getSortedRowModel } from '@tanstack/react-table';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import { PaginationPageDefault } from '@/components/application/pagination/pagination';
+import { DataTablePagination } from '@/components/shared/data-table-pagination';
 import StandardTable from '@/app/(private)/components/StandardTable/StandardTable';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import { useMemo } from 'react';
@@ -84,9 +84,9 @@ function BrandsSourcesTableInner({
       reactTable={table}
       ariaLabel="Brand Sources List"
       tableFooter={
-        <PaginationPageDefault
+        <DataTablePagination
           page={currentPage + 1}
-          total={totalPages}
+          totalPages={totalPages}
           onPageChange={onPageChange}
           className="px-4 py-3 md:px-6 md:py-1.5"
         />
