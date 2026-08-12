@@ -31,6 +31,8 @@ test.describe('Overview page', () => {
     await visibility.focus();
     await page.keyboard.press('ArrowRight');
     await expect(sentiment).toBeChecked();
+    await expect(page.getByText('Brand sentiment', { exact: true })).toBeVisible();
+    await expect(page.getByText('Sentiment over time', { exact: true })).toBeVisible();
   });
 
   test('shows top source contents table with View more link', async ({ page }) => {

@@ -42,7 +42,7 @@ export default function BrandsRankingRadial({
 }) {
   const highlightItem = data.find((item) => item.id === highlightId);
   const config = Object.fromEntries(
-    data.map((item) => [item.id, { label: item.brand, color: item.fill }])
+    data.map((item) => [item.brand, { label: item.brand, color: item.fill }])
   ) satisfies ChartConfig;
 
   return (
@@ -61,9 +61,10 @@ export default function BrandsRankingRadial({
           isAnimationActive={false}
           content={
             <ChartTooltipContent
+              nameKey="brand"
               formatter={(_, __, item) => {
                 const radialItem: BrandsRankingRadialItem = item?.payload.payload;
-                return `${radialItem.brand}: ${toOrdinal(radialItem.ranking + 1)}`;
+                return toOrdinal(radialItem.ranking + 1);
               }}
               label="Ranking"
             />
