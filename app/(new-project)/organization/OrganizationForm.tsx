@@ -1,14 +1,20 @@
 'use client';
 
-import { Button } from '@/components/base/buttons/button';
-import { Input, InputBase } from '@/components/base/input/input';
-import { RadioGroupRadioButton } from '@/components/base/radio-groups/radio-group-radio-button';
+import { Button } from '@/components/ui/button';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState, useTransition } from 'react';
 import { OrganizationType } from '@/libs/database/Organizations/types';
 import { useDebounce } from 'use-debounce';
 import { ROUTES } from '@/libs/routes';
-import { InputGroup } from '@/components/base/input/input-group';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { useRouter } from 'next/navigation';
 import { useDomainMetadata } from '../new-project/components/useDomainMetadata';
 import FormHeader from '../new-project/components/FormHeader';
@@ -19,7 +25,7 @@ import useSWRMutation from 'swr/mutation';
 import { UpdateOrganizationResponse } from '@/app/api/organization/types';
 import { appFetch } from '@/hooks/appFetch';
 import { isValidUrl } from '@/libs/utils/urls';
-import { ArrowRight } from '@untitledui/icons';
+import { ArrowRight } from 'lucide-react';
 
 const useUpdateOrganization = (
   type: OrganizationType,
@@ -100,8 +106,6 @@ export default function OrganizationForm() {
     ? !!urlDebounced.length && !isUrlInvalid && !isDebouncePending() && !isNameInvalid
     : true;
 
-  const error = (isUrlInvalid && 'Invalid URL') || undefined;
-
   return (
     <NewProjectLayoutColumn>
       <div className="flex flex-col gap-5">
@@ -110,64 +114,78 @@ export default function OrganizationForm() {
           description="To get started, please tell us who you are."
         />
 
-        <RadioGroupRadioButton
+        <RadioGroup
           aria-label="Account type"
-          defaultValue={organizationType}
-          onChange={(value) => setOrganizationType(value as OrganizationType)}
-          items={ORGANIZATION_TYPES}
-          className="mb-6"
-        />
+          value={organizationType}
+          onValueChange={(value) => setOrganizationType(value)}
+          className="mb-6 gap-3"
+        >
+          {ORGANIZATION_TYPES.map((option) => {
+            const id = `organization-type-${option.value}`;
+            return (
+              <Field
+                key={option.value}
+                orientation="horizontal"
+                onClick={() => setOrganizationType(option.value)}
+                className="has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 cursor-pointer rounded-lg border p-4"
+              >
+                <RadioGroupItem id={id} value={option.value} />
+                <FieldContent>
+                  <FieldLabel htmlFor={id}>{option.title}</FieldLabel>
+                  <FieldDescription>{option.description}</FieldDescription>
+                </FieldContent>
+              </Field>
+            );
+          })}
+        </RadioGroup>
 
         {organizationType === OrganizationType.Agency && (
           <>
-            <InputGroup
-              value={url}
-              onChange={onUrlChange}
-              isInvalid={isUrlInvalid}
-              isRequired
-              label="Agency URL"
-              name="agencyUrl"
-              size="md"
-              trailingAddon={
-                isLoadingDomainMetadata ? (
-                  <InputGroup.Prefix>
-                    <LoadingIndicator size="xxs" />
-                  </InputGroup.Prefix>
-                ) : iconUrl ? (
-                  <InputGroup.Prefix>
-                    <Favicon url={iconUrl} alt={agencyName} className="size-6" />
-                  </InputGroup.Prefix>
-                ) : null
-              }
-              className="border-r-0"
-            >
-              <InputBase type="url" placeholder="https://agency.com" />
-            </InputGroup>
-
-            {error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>}
-
-            <Input
-              value={agencyName}
-              onChange={setAgencyName}
-              isRequired
-              label="Agency Name"
-              type="text"
-              name="agencyName"
-              placeholder="Superstar"
-              size="md"
-            />
+            <Field data-invalid={isUrlInvalid || undefined}>
+              <FieldLabel htmlFor="agency-url">Agency URL</FieldLabel>
+              <div className="flex">
+                <Input
+                  id="agency-url"
+                  value={url}
+                  onChange={(event) => onUrlChange(event.target.value)}
+                  aria-invalid={isUrlInvalid || undefined}
+                  required
+                  type="url"
+                  name="agencyUrl"
+                  placeholder="https://agency.com"
+                  className="rounded-r-none"
+                />
+                {(isLoadingDomainMetadata || iconUrl) && (
+                  <div className="border-input flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0">
+                    {isLoadingDomainMetadata ? (
+                      <Spinner aria-label="Loading agency details" />
+                    ) : (
+                      <Favicon url={iconUrl} alt={agencyName} className="size-6" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {isUrlInvalid && <FieldError>Invalid URL</FieldError>}
+            </Field>
+            <Field data-invalid={isNameInvalid || undefined}>
+              <FieldLabel htmlFor="agency-name">Agency Name</FieldLabel>
+              <Input
+                id="agency-name"
+                value={agencyName}
+                onChange={(event) => setAgencyName(event.target.value)}
+                aria-invalid={isNameInvalid || undefined}
+                required
+                type="text"
+                name="agencyName"
+                placeholder="Superstar"
+              />
+              {isNameInvalid && <FieldError>Agency name is required</FieldError>}
+            </Field>
           </>
         )}
 
-        <Button
-          type="button"
-          size="lg"
-          isDisabled={!canContinue || isUpdating}
-          isLoading={isUpdating}
-          onClick={onContinue}
-          iconTrailing={ArrowRight}
-        >
-          Continue
+        <Button type="button" size="lg" disabled={!canContinue || isUpdating} onClick={onContinue}>
+          Continue <ArrowRight aria-hidden="true" /> {isUpdating && <Spinner aria-hidden="true" />}
         </Button>
       </div>
     </NewProjectLayoutColumn>

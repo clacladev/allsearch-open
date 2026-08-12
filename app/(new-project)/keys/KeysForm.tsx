@@ -65,7 +65,6 @@ export default function KeysForm({
             provider="openai"
             storedKey={findKey('openai')}
             onChange={setProviderKeys}
-            size="sm"
           />
           <a
             href="https://platform.openai.com/api-keys"
@@ -83,7 +82,6 @@ export default function KeysForm({
             provider="perplexity"
             storedKey={findKey('perplexity')}
             onChange={setProviderKeys}
-            size="sm"
           />
           <a
             href="https://www.perplexity.ai/settings/api"

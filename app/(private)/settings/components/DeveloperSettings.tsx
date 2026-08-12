@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Copy03, PauseCircle, PlayCircle, RefreshCw01, Trash01 } from '@untitledui/icons';
+import { Copy, PauseCircle, PlayCircle, RefreshCw, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/base/buttons/button';
-import { Badge } from '@/components/base/badges/badges';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { SectionLabel } from '@/components/application/section-headers/section-label';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
@@ -203,16 +203,8 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
                 title={
                   <span className="flex flex-wrap items-center gap-2">
                     {project.name}
-                    {project.is_paused && (
-                      <Badge size="sm" color="warning">
-                        Paused
-                      </Badge>
-                    )}
-                    {project.is_archived && (
-                      <Badge size="sm" color="gray">
-                        Archived
-                      </Badge>
-                    )}
+                    {project.is_paused && <Badge variant="secondary">Paused</Badge>}
+                    {project.is_archived && <Badge variant="outline">Archived</Badge>}
                   </span>
                 }
                 description={project.hostname || undefined}
@@ -221,44 +213,46 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  color="secondary"
+                  variant="secondary"
                   size="sm"
-                  iconLeading={Copy03}
-                  isDisabled={isRunning && busyProjectId === project.id}
+                  disabled={isRunning && busyProjectId === project.id}
                   onClick={() => onClone(project)}
                 >
-                  Clone
+                  <Copy aria-hidden="true" /> Clone
                 </Button>
 
                 <Button
                   type="button"
-                  color="secondary"
+                  variant="secondary"
                   size="sm"
-                  iconLeading={project.is_paused ? PlayCircle : PauseCircle}
-                  isDisabled={isRunning && busyProjectId === project.id}
+                  disabled={isRunning && busyProjectId === project.id}
                   onClick={() => onTogglePause(project)}
                 >
+                  {project.is_paused ? (
+                    <PlayCircle aria-hidden="true" />
+                  ) : (
+                    <PauseCircle aria-hidden="true" />
+                  )}{' '}
                   {project.is_paused ? 'Resume' : 'Pause'}
                 </Button>
 
                 {!project.is_archived && (
                   <Button
                     type="button"
-                    color="secondary"
+                    variant="secondary"
                     size="sm"
-                    iconLeading={RefreshCw01}
-                    isDisabled={isRunning && busyProjectId === project.id}
+                    disabled={isRunning && busyProjectId === project.id}
                     onClick={() => onForceRun(project)}
                   >
-                    Force run
+                    <RefreshCw aria-hidden="true" /> Force run
                   </Button>
                 )}
 
                 <Button
                   type="button"
-                  color="secondary"
+                  variant="secondary"
                   size="sm"
-                  isDisabled={isRunning && busyProjectId === project.id}
+                  disabled={isRunning && busyProjectId === project.id}
                   onClick={() =>
                     setPendingAction({
                       project,
@@ -272,9 +266,9 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
                 {isDevEnv && (
                   <Button
                     type="button"
-                    color="secondary"
+                    variant="secondary"
                     size="sm"
-                    isDisabled={isRunning && busyProjectId === project.id}
+                    disabled={isRunning && busyProjectId === project.id}
                     onClick={() => setPendingAction({ project, kind: 'fill' })}
                   >
                     Fill responses
@@ -286,13 +280,12 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
                 {project.is_archived && (
                   <Button
                     type="button"
-                    color="secondary-destructive"
+                    variant="destructive"
                     size="sm"
-                    iconLeading={Trash01}
-                    isDisabled={isRunning && busyProjectId === project.id}
+                    disabled={isRunning && busyProjectId === project.id}
                     onClick={() => setPendingAction({ project, kind: 'delete' })}
                   >
-                    Delete
+                    <Trash aria-hidden="true" /> Delete
                   </Button>
                 )}
               </div>

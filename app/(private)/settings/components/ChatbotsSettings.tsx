@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
-import type { RadioGroupItemType } from '@/components/base/radio-groups/radio-group-radio-button';
+import { Checkbox } from '@/components/ui/checkbox';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { showErrorAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
@@ -44,7 +43,7 @@ export default function ChatbotsSettings({
   const defaultIds = SUPPORTED_CHATBOTS_IDS.filter(hasKey);
   const enabledIds = rawIds ?? defaultIds;
 
-  const items: RadioGroupItemType[] = SUPPORTED_CHATBOTS_IDS.map((chatbotId) => ({
+  const items = SUPPORTED_CHATBOTS_IDS.map((chatbotId) => ({
     value: chatbotId,
     title: CHATBOT_DISPLAY_LABELS[chatbotId],
     disabled: !hasKey(chatbotId),
@@ -72,7 +71,7 @@ export default function ChatbotsSettings({
   };
 
   return (
-    <div className="max-w-md flex flex-col gap-5">
+    <div className="flex max-w-md flex-col gap-5">
       <SettingsFormHeader
         title="Chatbots"
         description="Which Chatbots run in the next Collection Run. Disabling one excludes it from the run, and Visibility figures only cover the Chatbots that produced them."
@@ -80,13 +79,29 @@ export default function ChatbotsSettings({
 
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
-      <CheckboxGroup
-        aria-label="Chatbots"
-        items={items}
-        value={enabledIds}
-        onChange={onChange}
-        isDisabled={isSaving}
-      />
+      <fieldset aria-label="Chatbots" className="flex flex-col gap-3">
+        {items.map((item) => (
+          <label key={item.value} className="flex items-start gap-3 text-sm">
+            <Checkbox
+              checked={enabledIds.includes(item.value)}
+              disabled={item.disabled || isSaving}
+              onCheckedChange={(checked) =>
+                onChange(
+                  checked
+                    ? [...enabledIds, item.value]
+                    : enabledIds.filter((id) => id !== item.value)
+                )
+              }
+            />
+            <span>
+              <span className="block font-medium">{item.title}</span>
+              {item.description && (
+                <span className="text-muted-foreground">{item.description}</span>
+              )}
+            </span>
+          </label>
+        ))}
+      </fieldset>
     </div>
   );
 }

@@ -160,24 +160,18 @@ test.describe('Settings — Brand', () => {
       timeout: 15_000,
     });
 
-    // React Aria Checkbox — click the label to toggle
-    const checkboxLabel = page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'I want to target a specific location' });
-    await expect(checkboxLabel).toBeVisible();
+    const checkbox = page.getByRole('checkbox', { name: 'I want to target a specific location' });
+    await expect(checkbox).toBeVisible();
 
     const targetInput = page.locator('input[name="targetLocation"]');
 
     // Toggle: click once, check input appeared/disappeared, click again to restore
-    await checkboxLabel.click();
-    // Small wait for React state update
-    await page.waitForTimeout(200);
+    await checkbox.click();
 
     const isNowVisible = await targetInput.isVisible();
 
     // Click again to restore original state
-    await checkboxLabel.click();
-    await page.waitForTimeout(200);
+    await checkbox.click();
 
     if (isNowVisible) {
       // First click showed the input, second click should hide it

@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Copy01, FolderCode } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import { Copy, FolderCode } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { SectionLabel } from '@/components/application/section-headers/section-label';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
@@ -78,19 +79,13 @@ export default function DataSettings({
           </code>
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" color="secondary" iconLeading={Copy01} onClick={onCopyPath}>
-              {hasCopied ? 'Copied' : 'Copy path'}
+            <Button type="button" variant="secondary" onClick={onCopyPath}>
+              <Copy aria-hidden="true" /> {hasCopied ? 'Copied' : 'Copy path'}
             </Button>
 
-            <Button
-              type="button"
-              color="secondary"
-              iconLeading={FolderCode}
-              isDisabled={isRevealing}
-              isLoading={isRevealing}
-              onClick={onReveal}
-            >
-              Reveal in file manager
+            <Button type="button" variant="secondary" disabled={isRevealing} onClick={onReveal}>
+              <FolderCode aria-hidden="true" /> Reveal in file manager{' '}
+              {isRevealing && <Spinner aria-hidden="true" />}
             </Button>
           </div>
         </div>
