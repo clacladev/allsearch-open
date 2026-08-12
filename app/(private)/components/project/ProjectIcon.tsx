@@ -3,8 +3,7 @@
 import { type FC, type ReactNode, useState } from 'react';
 import { User01 } from '@untitledui/icons';
 import { cx } from '@/utils/cx';
-import { ProjectStatus } from '@/app/(private)/components/project/ProjectSelectorCard';
-import { ProjectStatusIndicator } from './ProjectStatusIndicator';
+import { ProjectStatusIndicator, type ProjectStatus } from './ProjectStatusIndicator';
 
 type ProjectIconSize = 'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 

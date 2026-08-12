@@ -43,6 +43,9 @@ body {
     font-kerning: normal;
 }
 
+/* Base UI portals render beneath document.body. Application overlays use z-50; navigation stays
+ * below them at z-40 so sheets, popovers, tooltips, and toasts share one predictable stack. */
+
 /* Hide the default expand arrow on Safari.  */
 details summary::-webkit-details-marker {
     display: none;

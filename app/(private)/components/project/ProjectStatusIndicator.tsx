@@ -1,5 +1,6 @@
-import { ProjectStatus } from '@/app/(private)/components/project/ProjectSelectorCard';
 import { cx } from '@/utils/cx';
+
+export type ProjectStatus = 'running' | 'paused';
 
 const sizes = {
   xs: 'size-1.5',
