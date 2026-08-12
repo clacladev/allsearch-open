@@ -1,8 +1,10 @@
 'use client';
 
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
 import FormHeader from '../components/FormHeader';
-import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
 import {
   routeForStep,
   NewProjectStep,
@@ -12,8 +14,6 @@ import { useEffect, useState } from 'react';
 import { useTransition } from 'react';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import useSWRImmutable from 'swr/immutable';
-import { InputGroup } from '@/components/base/input/input-group';
-import { InputBase } from '@/components/base/input/input';
 import { Topic, Topics } from '@/libs/ai/promptsIdeas/getPromptsIdeas';
 import { useRouter } from 'next/navigation';
 import {
@@ -26,7 +26,7 @@ import { CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { isAiErrorCode } from '@/libs/ai/errors';
 import { AiFailureState } from '@/app/components/AiFailureState';
-import { ArrowLeft, ArrowRight, RefreshCcw01 } from '@untitledui/icons';
+import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { OnboardingProgressSteps } from '../components/OnboardingProgressSteps';
 
 const THIS_STEP = NewProjectStep.Prompts;
@@ -199,44 +199,59 @@ export default function PromptsForm() {
             <div key={topicGroup.topic}>
               <div className="mb-1 text-lg font-semibold">{topicGroup.topic}</div>
 
-              <CheckboxGroup
+              <div
+                role="group"
                 aria-label={`${topicGroup.topic} Prompts`}
-                items={topicGroup.prompts.map((prompt) => ({
-                  title: prompt,
-                  value: getPromptAndTopicId(topicGroup.topic, prompt),
-                }))}
-                value={selectedPromptAndTopicIds
-                  .map((id) => {
-                    const { topic } = getPartsFromPromptAndTopicId(id);
-                    return topic === topicGroup.topic ? id : undefined;
-                  })
-                  .filter((id) => !!id)}
-                onChange={(ids) =>
-                  toggleSelectedPromptAndTopicIds(ids as PromptAndTopicId[], topicGroup.topic)
-                }
-                isDisabled={isLoading}
-              />
+                className="flex flex-col gap-2"
+              >
+                {topicGroup.prompts.map((prompt) => {
+                  const id = getPromptAndTopicId(topicGroup.topic, prompt);
+                  return (
+                    <label key={id} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={selectedPromptAndTopicIds.includes(id)}
+                        onCheckedChange={(checked) => {
+                          const selected = selectedPromptAndTopicIds.filter((selectedId) => {
+                            const { topic } = getPartsFromPromptAndTopicId(selectedId);
+                            return topic === topicGroup.topic;
+                          });
+                          toggleSelectedPromptAndTopicIds(
+                            checked
+                              ? [...selected, id]
+                              : selected.filter((selectedId) => selectedId !== id),
+                            topicGroup.topic
+                          );
+                        }}
+                        disabled={isLoading}
+                      />
+                      {prompt}
+                    </label>
+                  );
+                })}
+              </div>
 
               {topicGroup.topic === CUSTOM_TOPIC_NAME && (
-                <InputGroup
-                  value={newCustomPrompt}
-                  onChange={setNewCustomPrompt}
-                  isDisabled={isLoading || !canAddNewCustom}
-                  name="customPrompt"
-                  size="md"
-                  className="mt-3"
-                  trailingAddon={
+                <InputGroup className="mt-3">
+                  <InputGroupInput
+                    value={newCustomPrompt}
+                    onChange={(event) => setNewCustomPrompt(event.target.value)}
+                    disabled={isLoading || !canAddNewCustom}
+                    name="customPrompt"
+                    type="text"
+                    placeholder="Custom"
+                    onKeyDown={handleKeyDown}
+                  />
+                  <InputGroupAddon align="inline-end" className="pr-1">
                     <Button
-                      color="secondary"
-                      size="md"
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={onAddCustom}
-                      isDisabled={!newCustomPrompt.length || isLoading || !canAddNewCustom}
+                      disabled={!newCustomPrompt.length || isLoading || !canAddNewCustom}
                     >
                       Add
                     </Button>
-                  }
-                >
-                  <InputBase type="text" placeholder="Custom" onKeyDown={handleKeyDown} />
+                  </InputGroupAddon>
                 </InputGroup>
               )}
             </div>
@@ -247,7 +262,7 @@ export default function PromptsForm() {
             <span>You can only add {MAX_CUSTOM_PROMPTS} custom prompts.</span>{' '}
             <Button
               type="button"
-              color="link-destructive"
+              variant="link"
               size="xs"
               onClick={onResetCustomValues}
               className="text-error-800"
@@ -270,36 +285,27 @@ export default function PromptsForm() {
         )}
 
         <div className="mt-10 flex gap-2">
-          <Button
-            type="button"
-            color="secondary"
-            size="lg"
-            onClick={() => router.back()}
-            iconLeading={ArrowLeft}
-          >
-            Back
+          <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>
+            <ArrowLeft aria-hidden="true" /> Back
           </Button>
           <Button
             type="button"
-            color={promptIdeasError ? 'primary' : 'secondary'}
+            variant={promptIdeasError ? 'default' : 'outline'}
             size="lg"
-            isDisabled={isUpdating || isLoading}
-            isLoading={isLoading}
+            disabled={isUpdating || isLoading}
             onClick={onReload}
-            iconLeading={RefreshCcw01}
           >
-            Retry
+            <RefreshCw aria-hidden="true" /> Retry {isLoading && <Spinner aria-hidden="true" />}
           </Button>
           <Button
             type="button"
             size="lg"
-            isDisabled={!canContinue || isUpdating || isLoading}
-            isLoading={isUpdating}
+            disabled={!canContinue || isUpdating || isLoading}
             onClick={onContinue}
             className="flex-1"
-            iconTrailing={ArrowRight}
           >
-            Continue
+            Continue <ArrowRight aria-hidden="true" />{' '}
+            {isUpdating && <Spinner aria-hidden="true" />}
           </Button>
         </div>
 

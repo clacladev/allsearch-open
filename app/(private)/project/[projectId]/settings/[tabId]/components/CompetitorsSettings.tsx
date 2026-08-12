@@ -2,16 +2,15 @@ import { useDebounce, useDebouncedCallback } from 'use-debounce';
 import { useEffect, useState } from 'react';
 import { useTransition } from 'react';
 import { useDomainMetadata } from '@/app/(new-project)/new-project/components/useDomainMetadata';
-import { Form } from '@/components/base/form/form';
-import { InputGroup } from '@/components/base/input/input-group';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Favicon } from '@/app/(private)/components/Favicon';
-import { Input, InputBase } from '@/components/base/input/input';
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { RouteHelper } from '@/libs/routes';
-import { Check, ChevronDown, Minus, Plus } from '@untitledui/icons';
+import { Check, ChevronDown, Minus, Plus } from 'lucide-react';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { isDuplicateName, isDuplicateUrl } from './helpers';
@@ -170,6 +169,11 @@ export default function CompetitorsSettings() {
     });
   };
 
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onAddCustom();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
@@ -197,65 +201,64 @@ export default function CompetitorsSettings() {
 
   return (
     <div className="flex max-w-xl flex-col gap-10">
-      <Form className="flex flex-col gap-5" onSubmit={onAddCustom}>
+      <form className="flex flex-col gap-5" onSubmit={onSubmit}>
         <SettingsFormHeader
           title="Competitors"
           description="The competitors you want to monitor and benchmark against."
         />
 
         {competitors === undefined ? (
-          <LoadingIndicator />
+          <Spinner />
         ) : (
           <>
             <div className="flex flex-col gap-2">
               {competitors.map((competitor) => (
                 <div key={competitor.url} className="flex flex-row gap-2">
-                  <InputGroup
-                    value={competitor.url}
-                    size="md"
-                    isDisabled
-                    trailingAddon={
-                      competitor.icon_url ? (
-                        <InputGroup.Prefix>
-                          <Favicon
-                            url={competitor.icon_url}
-                            alt={competitor.name ?? competitor.hostname}
-                            className="size-6"
-                          />
-                        </InputGroup.Prefix>
-                      ) : null
-                    }
-                    className="flex-1 border-r-0"
-                  >
-                    <InputBase type="url" placeholder="https://brand.com" />
+                  <InputGroup className="flex-1">
+                    <InputGroupInput
+                      value={competitor.url}
+                      disabled
+                      type="url"
+                      placeholder="https://brand.com"
+                    />
+                    {competitor.icon_url ? (
+                      <InputGroupAddon align="inline-end">
+                        <Favicon
+                          url={competitor.icon_url}
+                          alt={competitor.name ?? competitor.hostname}
+                          className="size-6"
+                        />
+                      </InputGroupAddon>
+                    ) : null}
                   </InputGroup>
 
                   <Input
                     value={editingNames[competitor.id] ?? competitor.name ?? ''}
-                    onChange={(value) => onCompetitorNameChange(competitor.id, value)}
-                    isRequired
+                    onChange={(event) => onCompetitorNameChange(competitor.id, event.target.value)}
+                    required
                     type="text"
                     placeholder="Name"
-                    size="md"
                     className="flex-1"
                   />
 
                   <Button
-                    color="secondary"
-                    size="md"
-                    className="h-auto w-11 shrink-0"
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-auto shrink-0"
                     onClick={() => onArchiveCompetitor(competitor.id)}
-                    isDisabled={
+                    disabled={
                       savedCompetitorId === competitor.id ||
                       (isRemoving && removingCompetitorId === competitor.id)
                     }
                   >
+                    aria-label={`Archive ${competitor.name ?? competitor.hostname}`}
                     {savedCompetitorId === competitor.id ? (
-                      <Check size={14} className="text-success-600" />
+                      <Check className="text-success-600" />
                     ) : isRemoving && removingCompetitorId === competitor.id ? (
-                      <LoadingIndicator size="xxs" />
+                      <Spinner className="size-3" />
                     ) : (
-                      <Minus size={14} />
+                      <Minus />
                     )}
                   </Button>
                 </div>
@@ -264,52 +267,51 @@ export default function CompetitorsSettings() {
               <div className="mt-4 -mb-1 ml-1 flex text-sm">New competitor</div>
               <div className="flex flex-row gap-2">
                 <InputGroup
-                  value={customUrl}
-                  onChange={setCustomUrl}
-                  isInvalid={isUrlInvalid || isUrlDuplicate}
-                  isRequired
-                  name="competitorUrl"
-                  size="md"
-                  trailingAddon={
-                    isLoadingDomainMetadata ? (
-                      <InputGroup.Prefix>
-                        <LoadingIndicator size="xxs" />
-                      </InputGroup.Prefix>
-                    ) : customIconUrl ? (
-                      <InputGroup.Prefix>
-                        <Favicon url={customIconUrl} alt={customName} className="size-6" />
-                      </InputGroup.Prefix>
-                    ) : null
-                  }
-                  className="flex-1 border-r-0"
+                  className="flex-1"
+                  aria-invalid={isUrlInvalid || isUrlDuplicate || undefined}
                 >
-                  <InputBase
+                  <InputGroupInput
+                    value={customUrl}
+                    onChange={(event) => setCustomUrl(event.target.value)}
+                    required
+                    name="competitorUrl"
+                    aria-label="Competitor URL"
                     type="url"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
                   />
+                  {isLoadingDomainMetadata ? (
+                    <InputGroupAddon align="inline-end">
+                      <Spinner className="size-3" />
+                    </InputGroupAddon>
+                  ) : customIconUrl ? (
+                    <InputGroupAddon align="inline-end">
+                      <Favicon url={customIconUrl} alt={customName} className="size-6" />
+                    </InputGroupAddon>
+                  ) : null}
                 </InputGroup>
 
                 <Input
                   value={customName}
-                  onChange={setCustomName}
+                  onChange={(event) => setCustomName(event.target.value)}
                   onKeyDown={handleKeyDown}
-                  isInvalid={isNameInvalid}
+                  aria-invalid={isNameInvalid || undefined}
                   type="text"
                   name="competitorName"
+                  aria-label="Competitor name"
                   placeholder="Name"
-                  size="md"
                   className="flex-1"
                 />
 
                 <Button
-                  color="secondary"
-                  size="md"
+                  type="submit"
+                  variant="outline"
+                  size="icon"
                   className="h-auto shrink-0"
-                  onClick={onAddCustom}
-                  isDisabled={!canAdd || isAdding}
+                  disabled={!canAdd || isAdding}
+                  aria-label="Add competitor"
                 >
-                  {isAdding ? <LoadingIndicator size="xxs" /> : <Plus size={14} />}
+                  {isAdding ? <Spinner className="size-3" /> : <Plus />}
                 </Button>
               </div>
             </div>
@@ -344,47 +346,46 @@ export default function CompetitorsSettings() {
                           key={competitor.url}
                           className="flex flex-row gap-2 opacity-60 transition-opacity hover:opacity-100"
                         >
-                          <InputGroup
-                            value={competitor.url}
-                            size="md"
-                            isDisabled
-                            trailingAddon={
-                              competitor.icon_url ? (
-                                <InputGroup.Prefix>
-                                  <Favicon
-                                    url={competitor.icon_url}
-                                    alt={competitor.name ?? competitor.hostname}
-                                    className="size-6"
-                                  />
-                                </InputGroup.Prefix>
-                              ) : null
-                            }
-                            className="flex-1 border-r-0"
-                          >
-                            <InputBase type="url" placeholder="https://brand.com" />
+                          <InputGroup className="flex-1">
+                            <InputGroupInput
+                              value={competitor.url}
+                              disabled
+                              type="url"
+                              placeholder="https://brand.com"
+                            />
+                            {competitor.icon_url ? (
+                              <InputGroupAddon align="inline-end">
+                                <Favicon
+                                  url={competitor.icon_url}
+                                  alt={competitor.name ?? competitor.hostname}
+                                  className="size-6"
+                                />
+                              </InputGroupAddon>
+                            ) : null}
                           </InputGroup>
 
                           <Input
                             value={competitor.name ?? ''}
-                            isRequired
-                            isDisabled
+                            required
+                            disabled
                             type="text"
                             placeholder="Name"
-                            size="md"
                             className="flex-1"
                           />
 
                           <Button
-                            color="secondary"
-                            size="md"
+                            type="button"
+                            variant="outline"
+                            size="icon"
                             className="h-auto shrink-0"
                             onClick={() => onUnarchiveCompetitor(competitor.id)}
-                            isDisabled={isRestoring && restoringCompetitorId === competitor.id}
+                            disabled={isRestoring && restoringCompetitorId === competitor.id}
+                            aria-label={`Restore ${competitor.name ?? competitor.hostname}`}
                           >
                             {isRestoring && restoringCompetitorId === competitor.id ? (
-                              <LoadingIndicator size="xxs" />
+                              <Spinner className="size-3" />
                             ) : (
-                              <Plus size={14} />
+                              <Plus />
                             )}
                           </Button>
                         </div>
@@ -396,7 +397,7 @@ export default function CompetitorsSettings() {
             )}
           </>
         )}
-      </Form>
+      </form>
     </div>
   );
 }
