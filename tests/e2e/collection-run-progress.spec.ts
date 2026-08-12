@@ -1,12 +1,4 @@
-import { test, expect } from '@playwright/test';
-
-// This spec runs under the `chromium-no-auth` Playwright project (see playwright.config.ts),
-// not `chromium` — the app has no auth and no middleware, and `app/(new-project)/**` performs
-// no DB-gated redirect, so it can run against a plain dev server with a migrated database.
-//
-// There is no `webServer` wired up for this project (see playwright.config.ts's comment on why),
-// so this relies on `playwright.config.ts`'s default `baseURL` (`https://localhost:3000`, what
-// `bun run dev` serves) unless `PLAYWRIGHT_BASE_URL` overrides it.
+import { test, expect } from './helpers/test';
 
 // The EventSource client *does* reconnect on its own once the server ends a 200 event-stream
 // response (see useCollectionRunProgress.ts) — what it won't retry is a non-2xx / wrong-content-type

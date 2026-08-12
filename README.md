@@ -42,10 +42,10 @@ Notes:
 ```bash
 bun install
 bun run db:seed:demo   # migrate + load demo fixture (skip if you want empty onboarding)
-bun dev                # https://localhost:3000
+bun dev                # http://localhost:3000
 ```
 
-Open the URL Next prints (default `https://localhost:3000`). Migrations run on server boot via `instrumentation.ts`.
+Open the URL Next prints (default `http://localhost:3000`). Migrations run on server boot via `instrumentation.ts`.
 
 ### Database location
 
@@ -68,15 +68,11 @@ bun run db:seed:demo -- --force  # wipe user rows, then re-seed
 
 After seeding, `bun dev` loads the dashboard with sample Projects — no onboarding required.
 
-### HTTPS in dev
-
-`bun dev` runs `next dev --experimental-https`. Next can generate local certs automatically; if the browser complains, trust the cert or generate ones with [mkcert](https://github.com/FiloSottile/mkcert).
-
 ## Run the application
 
 | Command                   | Purpose                                             |
 | ------------------------- | --------------------------------------------------- |
-| `bun dev`                 | Dev server (HTTPS, hot reload)                      |
+| `bun dev`                 | Dev server (HTTP, hot reload)                       |
 | `bun dev:debug`           | Dev server with Node inspector                      |
 | `bun build` / `bun start` | Production build and serve                          |
 | `bun run build:package`   | Production build + CLI bundle, ready to `npm pack`  |
@@ -108,7 +104,8 @@ bun prettier          # Format
 bun test              # Unit tests (bun test)
 bun test:watch
 bun test:coverage
-bun test:e2e          # Playwright (dev server must be up; see playwright.config.ts)
+bun test:e2e          # Playwright; builds the app and starts isolated servers automatically
+bun test:e2e:ai       # On-demand AI-tagged Playwright specs
 bun test:e2e:ui
 bun run db:generate   # drizzle-kit generate from libs/database/schema.ts
 bun run db:snapshot   # snapshot live DB → demo fixture (maintainers)
@@ -116,6 +113,16 @@ bun run verify:providers  # smoke-check configured providers
 ```
 
 Full list: [`docs/commands.md`](./docs/commands.md).
+
+### End-to-end tests
+
+`bun test:e2e` runs the continuously-green browser suite: it builds a golden SQLite database from
+`scripts/fixtures/demo-data.json`, then each test copies that database and starts its own local
+Next.js server. No dev server, login, or provider key is needed, and tests can run in parallel.
+
+Specs tagged `@ai` are excluded from that default suite because they exercise generation flows.
+Run them on demand with `bun test:e2e:ai` and a live provider key when the spec requires one; this
+keeps provider costs and flaky network calls out of the normal test signal.
 
 ### Layout
 

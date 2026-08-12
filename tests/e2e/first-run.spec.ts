@@ -1,19 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { resetInstallState, seedGoogleKey } from './helpers/installState';
-
-// This spec runs under the `chromium-fresh-install` Playwright project (see playwright.config.ts),
-// not `chromium` or `chromium-no-auth` — it exercises DB-gated redirects (no provider key, no
-// organization) that the seeded suite database used by those projects can never be in. It needs a
-// dev server started by hand against a throwaway `ALLSEARCH_DB_PATH`, and resets that database to a
-// fresh-install state before each test. Every AI/network dependency is mocked; real-API (unmocked)
-// coverage is issue 21.
-//
-// Run with:
-//   ALLSEARCH_DB_PATH=/tmp/allsearch-e2e/allsearch.db bun run dev
-//   # other shell:
-//   ALLSEARCH_DB_PATH=/tmp/allsearch-e2e/allsearch.db bunx playwright test --project=chromium-fresh-install
-
-test.skip(!process.env.ALLSEARCH_DB_PATH, 'requires ALLSEARCH_DB_PATH pointed at a throwaway DB');
 
 const MOCK_DOMAIN_METADATA = {
   name: 'Nike',
@@ -41,14 +27,14 @@ const MOCK_PROMPT_IDEAS = [
 ];
 
 test.describe('fresh install onboarding', () => {
-  test.beforeEach(async () => {
-    await resetInstallState();
+  test.beforeEach(async ({ e2eServer }) => {
+    await resetInstallState(e2eServer.databasePath);
   });
 
   test('fresh install funnels / to the keys step', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/keys$/);
-    await expect(page.getByText('Connect an AI provider')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Connect an AI provider' })).toBeVisible();
   });
 
   test('keys step entry validation', async ({ page }) => {
@@ -101,10 +87,10 @@ test.describe('fresh install onboarding', () => {
     await expect(page).toHaveURL(/\/keys$/);
   });
 
-  test('accepted key advances to the organization step', async ({ page }) => {
+  test('accepted key advances to the organization step', async ({ page, e2eServer }) => {
     await page.route('**/api/settings/provider-keys', async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      await seedGoogleKey();
+      await seedGoogleKey(e2eServer.databasePath);
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -140,10 +126,10 @@ test.describe('fresh install onboarding', () => {
     await expect(page.getByText('Your Organization')).toBeVisible();
   });
 
-  test('organization step advances into the wizard', async ({ page }) => {
+  test('organization step advances into the wizard', async ({ page, e2eServer }) => {
     await page.route('**/api/settings/provider-keys', async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      await seedGoogleKey();
+      await seedGoogleKey(e2eServer.databasePath);
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -186,10 +172,10 @@ test.describe('fresh install onboarding', () => {
     await expect(page.getByText('Your Brand')).toBeVisible();
   });
 
-  test('draft restore resumes past completed steps (gap 2)', async ({ page }) => {
+  test('draft restore resumes past completed steps (gap 2)', async ({ page, e2eServer }) => {
     await page.route('**/api/settings/provider-keys', async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      await seedGoogleKey();
+      await seedGoogleKey(e2eServer.databasePath);
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -267,10 +253,10 @@ test.describe('fresh install onboarding', () => {
     await expect(page).not.toHaveURL(/\/new-project\/brand/);
   });
 
-  test('AI failure recovery reaches a usable keys screen (gap 1)', async ({ page }) => {
+  test('AI failure recovery reaches a usable keys screen (gap 1)', async ({ page, e2eServer }) => {
     await page.route('**/api/settings/provider-keys', async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
-      await seedGoogleKey();
+      await seedGoogleKey(e2eServer.databasePath);
       return route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { OPPORTUNITIES_URL, TEST_DATE_RANGE, TEST_PROJECT_ID } from './constants';
 
 /**
@@ -7,7 +7,7 @@ import { OPPORTUNITIES_URL, TEST_DATE_RANGE, TEST_PROJECT_ID } from './constants
  * We navigate through the real opportunity page to reach the new-article page,
  * then intercept the outline generation API so we don't hit Gemini during CI.
  */
-test.describe('New Article outline page', () => {
+test.describe('New Article outline page', { tag: '@ai' }, () => {
   test('generates an outline via mocked API and lets the user copy and regenerate', async ({
     page,
     context,
