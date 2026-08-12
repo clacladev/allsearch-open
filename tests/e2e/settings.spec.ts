@@ -1,10 +1,32 @@
 import { test, expect } from './helpers/test';
 import {
+  ACCOUNT_SETTINGS_URL,
   SETTINGS_URL,
   SETTINGS_COMPETITORS_URL,
   SETTINGS_BRAND_URL,
   SETTINGS_ORGANIZATION_URL,
 } from './constants';
+
+// ---------------------------------------------------------------------------
+// App settings
+// ---------------------------------------------------------------------------
+
+test.describe('App settings navigation', () => {
+  test('organizes app settings into tabs', async ({ page }) => {
+    test.setTimeout(30_000);
+
+    await page.goto(ACCOUNT_SETTINGS_URL);
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Provider keys' })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Chatbots' }).click();
+    await expect(page.getByRole('heading', { name: 'Chatbots' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Provider keys' })).not.toBeVisible();
+
+    await page.getByRole('tab', { name: 'Data' }).click();
+    await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Navigation

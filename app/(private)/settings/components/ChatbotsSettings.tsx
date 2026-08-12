@@ -72,7 +72,7 @@ export default function ChatbotsSettings({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="max-w-md flex flex-col gap-5">
       <SettingsFormHeader
         title="Chatbots"
         description="Which Chatbots run in the next Collection Run. Disabling one excludes it from the run, and Visibility figures only cover the Chatbots that produced them."
