@@ -19,10 +19,16 @@ export const OnboardingProgressSteps = ({
         const isComplete = index < currentStep;
         const isCurrent = index === currentStep;
         return (
-          <li key={step} className="flex items-center">
+          <li
+            key={step}
+            aria-current={isCurrent ? 'step' : undefined}
+            className="flex items-center"
+          >
+            <span className="sr-only">
+              {`${step}: ${isCurrent ? 'current step' : isComplete ? 'complete' : 'upcoming step'}`}
+            </span>
             <span
-              aria-current={isCurrent ? 'step' : undefined}
-              aria-label={`${step}${isCurrent ? ', current step' : isComplete ? ', complete' : ''}`}
+              aria-hidden="true"
               className={cn(
                 'z-10 flex size-4 items-center justify-center rounded-full',
                 isComplete || isCurrent ? 'bg-shadcn-primary' : 'ring-1.5 opacity-50 ring-inset',
@@ -30,13 +36,16 @@ export const OnboardingProgressSteps = ({
               )}
             >
               {isComplete ? (
-                <Check className="text-shadcn-primary-foreground size-2" />
+                <Check aria-hidden="true" className="text-shadcn-primary-foreground size-2" />
               ) : (
                 <span className="bg-muted-foreground size-1 rounded-full" />
               )}
             </span>
             {index < DEFAULT_STEPS.length - 1 && (
-              <span className={cn('h-0.5 w-20', isComplete ? 'bg-shadcn-primary' : 'bg-muted')} />
+              <span
+                aria-hidden="true"
+                className={cn('h-0.5 w-20', isComplete ? 'bg-shadcn-primary' : 'bg-muted')}
+              />
             )}
           </li>
         );

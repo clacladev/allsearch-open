@@ -1,7 +1,7 @@
 'use client';
 
-import { TabList, Tabs } from '@/components/application/tabs/tabs';
-import { NativeSelect } from '@/components/base/select/select-native';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandSettings from './BrandSettings';
 import OrganizationSettingsForm from '@/components/settings/OrganizationSettingsForm';
 import { useRouter } from 'next/navigation';
@@ -34,16 +34,27 @@ export default function Settings({
           className="md:hidden"
           value={selectedSettingsTabId}
           onChange={(event) => onSelectionChange(event.target.value)}
-          options={settingsTabs.map((group) => ({ label: group.label, value: group.id }))}
-        />
+        >
+          {settingsTabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </NativeSelect>
 
         <div className="scrollbar-hide -mx-4 -my-1 flex overflow-auto px-4 py-1 lg:-mx-8 lg:px-8">
           <Tabs
             className="hidden md:flex xl:w-full"
-            selectedKey={selectedSettingsTabId}
-            onSelectionChange={(value) => onSelectionChange(value as string)}
+            value={selectedSettingsTabId}
+            onValueChange={onSelectionChange}
           >
-            <TabList type="button-minimal" className="w-full" items={settingsTabs} />
+            <TabsList variant="line" className="w-full justify-start">
+              {settingsTabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </Tabs>
         </div>
       </section>

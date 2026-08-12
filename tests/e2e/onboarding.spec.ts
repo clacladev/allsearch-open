@@ -151,6 +151,16 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(page.getByRole('checkbox', { name: 'Athlete Stories' })).not.toBeChecked();
   await expect(page.getByRole('checkbox', { name: 'Fitness Tech' })).not.toBeChecked();
 
+  // The migrated checkboxes support both pointer and keyboard selection.
+  const sportsEquipment = page.getByRole('checkbox', { name: 'Sports Equipment' });
+  await sportsEquipment.click();
+  await expect(sportsEquipment).toBeChecked();
+
+  const athleteStories = page.getByRole('checkbox', { name: 'Athlete Stories' });
+  await athleteStories.focus();
+  await page.keyboard.press('Space');
+  await expect(athleteStories).toBeChecked();
+
   // Continue to prompts
   await page.getByRole('button', { name: 'Continue' }).click();
 
@@ -162,6 +172,14 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   // Both topics and their prompts must be visible
   await expect(page.getByText('Running Shoes').first()).toBeVisible();
   await expect(page.getByText('Athletic Apparel').first()).toBeVisible();
+
+  // Continuing persists the selected Topics when navigating back to that step.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.waitForURL('**/new-project/topics');
+  await expect(sportsEquipment).toBeChecked();
+  await expect(athleteStories).toBeChecked();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForURL('**/new-project/prompts');
 
   const prompt1 = page.getByRole('checkbox', { name: 'Best running shoes for marathon training' });
   const prompt2 = page.getByRole('checkbox', { name: 'Nike running shoes vs Adidas comparison' });
@@ -178,6 +196,13 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(prompt5).toBeChecked();
   await expect(prompt6).not.toBeChecked();
 
+  // The migrated prompt checkboxes support pointer and Space-key selection.
+  await prompt3.click();
+  await expect(prompt3).toBeChecked();
+  await prompt6.focus();
+  await page.keyboard.press('Space');
+  await expect(prompt6).toBeChecked();
+
   // Continue to competitors
   await page.getByRole('button', { name: 'Continue' }).click();
 
@@ -185,6 +210,14 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await page.waitForURL('**/new-project/competitors');
   await expect(page).toHaveURL(/\/new-project\/competitors/);
   await expect(page.getByRole('heading', { name: 'Competitors Review' })).toBeVisible();
+
+  // Prompt selections persist after Continue as well.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.waitForURL('**/new-project/prompts');
+  await expect(prompt3).toBeChecked();
+  await expect(prompt6).toBeChecked();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForURL('**/new-project/competitors');
 
   // All 3 mocked competitors should appear in the URL inputs (disabled, type="url")
   const urlInputs = page.locator('input[type="url"][placeholder="https://brand.com"]');

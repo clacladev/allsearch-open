@@ -169,7 +169,7 @@ test.describe('fresh install onboarding', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
 
     await page.waitForURL('**/new-project/brand');
-    await expect(page.getByText('Your Brand')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your Brand' })).toBeVisible();
   });
 
   test('draft restore resumes past completed steps (gap 2)', async ({ page, e2eServer }) => {
