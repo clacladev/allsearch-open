@@ -58,6 +58,36 @@ component:
 - **Boolean getter functions:** Prefix with `get` (e.g., `getIsHidden`).
 - **Callback functions:** Prefix JSX callbacks with `on` (e.g., `onSaveClick`). Do not use `handle` prefix/suffix.
 
+## Testing
+
+### Visual regression baselines
+
+`tests/e2e/visual/*.visual.spec.ts` holds screenshot-based specs, separate from the
+behavioral suite in `tests/e2e/*.spec.ts`. They run under three dedicated Playwright
+projects (`playwright.config.ts`): `visual-light` and `visual-dark` (desktop, light/dark
+`colorScheme`) and `visual-mobile` (a Chromium-based mobile device profile — not
+WebKit/iPhone, so it needs no extra browser binary). The default `chromium` project
+`testIgnore`s the `visual/` folder and the visual projects `testMatch` only it, so
+`bun run test:e2e` and `bun run test:e2e:visual` stay independent and neither doubles the
+other's runtime.
+
+- Run visual specs: `bun run test:e2e:visual`.
+- Add a baseline for a new or changed screen: write the spec, wait for the page to reach a
+  stable, deterministic state (no in-flight async fetches, no `Date.now()`-driven banners),
+  then `await expect(page).toHaveScreenshot()`. Generate the baseline images with
+  `bun run test:e2e:visual -- --update-snapshots`, review the diff, and commit the PNGs
+  under the spec's `-snapshots/` directory.
+- There is no CI in this repo (single-user, local-first) — baselines are generated and
+  compared on whichever machine runs the command. If a screenshot fails to match only
+  because a contributor is on a different OS, regenerate with `--update-snapshots` rather
+  than treating the diff as a real regression.
+- Screens with a Recharts animation or a live-timestamp-driven element (e.g. the Overview
+  dashboard's staleness banner) aren't screenshot-safe as-is: Playwright's
+  `animations: 'disabled'` only freezes CSS animations/transitions, not Recharts' JS-driven
+  `react-smooth` animation. When that screen's migration slice needs a baseline, either set
+  `isAnimationActive={false}` on the chart or mask the non-deterministic element — don't
+  add screenshot coverage for those screens without handling this first.
+
 ## Git Commit Messages
 
 - Keep short and descriptive (50–72 characters).
