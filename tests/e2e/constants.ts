@@ -1,12 +1,9 @@
-export const TEST_EMAIL = 'test@allsearch.io';
-export const TEST_PROJECT_ID = 'f98b24d2-2c46-43ec-975a-048d0c5eb103'; // Sportiva
+export const TEST_PROJECT_ID = '55bfbf5a-af2d-4510-b5b6-e0d5dfc6fd10'; // Meridian Run Co.
 
-export const MAGIC_AUTH_URL = '/api/admin/magic-auth';
-
-// Date-range query string covering all seeded test data (currently 2026-03-02).
+// Date-range query string covering all data in scripts/fixtures/demo-data.json.
 // Kept under MAX_ALLOWED_DAYS_IN_DATE_RANGE (120 days). Append to project URLs
 // in tests that need rows/charts/opportunities to render.
-export const TEST_DATE_RANGE = '?startDate=2026-03-01&endDate=2026-04-30';
+export const TEST_DATE_RANGE = '?startDate=2026-07-01&endDate=2026-08-31';
 
 // Page URLs
 export const OVERVIEW_URL = `/project/${TEST_PROJECT_ID}`;

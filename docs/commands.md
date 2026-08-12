@@ -2,7 +2,7 @@
 
 ```bash
 bun install           # Install dependencies
-bun dev               # Start dev server (https://localhost:3000)
+bun dev               # Start dev server (http://localhost:3000)
 bun dev:debug         # Dev server with Node.js inspector
 bun build             # Production build (Next.js standalone output)
 bun start             # Serve production build
@@ -15,12 +15,14 @@ bun prettier          # Format with Prettier
 bun test              # Unit tests (bun test)
 bun test:watch        # Unit tests in watch mode
 bun test:coverage     # Unit tests with coverage
-bun test:e2e          # Playwright e2e (dev server running)
+bun test:e2e          # Playwright e2e (builds + starts isolated local servers)
+bun test:e2e:ai       # On-demand AI-tagged Playwright specs
 bun test:e2e:ui       # Playwright interactive UI
 bun run verify:providers  # Smoke-check AI providers
 ```
 
-> **Note:** `bun dev` uses `--experimental-https`. Prefer trusting Next’s local certs or [mkcert](https://github.com/FiloSottile/mkcert).
+`bun test:e2e` builds its golden SQLite image from `scripts/fixtures/demo-data.json`. Each test
+uses its own copy and local production server, so no manually started server or login is involved.
 
 ## Database
 
@@ -59,4 +61,4 @@ Collection Run to `pending` so it resumes on the next start.
 
 ## Environment
 
-Copy only what you need from `.env.example`. Provider API keys are **not** env vars — they are stored in Settings (SQLite). For Playwright, optional `PLAYWRIGHT_BASE_URL` (default `https://localhost:3000`).
+Copy only what you need from `.env.example`. Provider API keys are **not** env vars — they are stored in Settings (SQLite). AI-tagged Playwright specs are intentionally opt-in via `bun test:e2e:ai`.

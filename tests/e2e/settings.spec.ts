@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import {
   SETTINGS_URL,
   SETTINGS_COMPETITORS_URL,

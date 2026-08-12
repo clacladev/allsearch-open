@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { SOURCES_CONTENTS_URL, SOURCES_DOMAINS_URL, TEST_DATE_RANGE } from './constants';
 
 test.describe('Sources Contents', () => {
