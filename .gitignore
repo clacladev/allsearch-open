@@ -38,7 +38,6 @@ next-env.d.ts
 
 backups/database-data.sql
 
-certificates
 dump_*.tar.gz.enc
 
 # next-agents-md
@@ -49,6 +48,7 @@ test-results/
 
 # playwright auth state
 tests/e2e/.auth/
+tests/e2e/fixtures/golden.db*
 .claude/skills/gstack/
 .gstack/
 

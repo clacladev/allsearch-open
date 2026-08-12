@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { OPPORTUNITIES_URL, TEST_DATE_RANGE } from './constants';
 
 test.describe('Opportunities page', () => {

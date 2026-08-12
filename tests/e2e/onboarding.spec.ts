@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 import { TEST_PROJECT_ID } from './constants';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ const MOCK_SAVE_RESPONSE = {
 // Test
 // ---------------------------------------------------------------------------
 
-test('can complete onboarding flow for a new Nike brand project', async ({ page }) => {
+test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }, async ({ page }) => {
   test.setTimeout(90_000);
   // --- Set up API route mocks (must be registered before any navigation) ---
 
@@ -99,7 +99,7 @@ test('can complete onboarding flow for a new Nike brand project', async ({ page 
     })
   );
 
-  // --- Step 1: Navigate to the project overview page (auth is pre-loaded from global setup) ---
+  // --- Step 1: Navigate to the project overview page ---
 
   await page.goto(`/project/${TEST_PROJECT_ID}`);
   await expect(page).toHaveURL(`/project/${TEST_PROJECT_ID}`);

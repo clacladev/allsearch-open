@@ -38,3 +38,15 @@ assumed covered.
 - The non-AI specs pass against a golden database with no auth setup.
 - Specs run in parallel.
 - AI-dependent specs are tagged, excluded by default, and documented.
+
+## Comments
+
+- Implemented: `bun test:e2e` regenerates a golden SQLite image from the demo fixture, builds the
+  production app, then gives every Playwright test its own database copy, loopback server and port.
+  The default Chromium project is fully parallel (three workers) with no auth setup or HTTPS.
+
+- Deleted the magic-auth setup/helpers/spec and obsolete marketing-page spec; moved crawl-checker
+  coverage to the project-scoped Crawl health page. Onboarding and article-generation coverage are
+  tagged `@ai`, excluded from the default command and available via `bun test:e2e:ai`.
+
+- Verified with `bun test:e2e` (53 passed), `bun lint`, and `bun tsc`.
