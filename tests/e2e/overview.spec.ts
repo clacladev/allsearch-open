@@ -52,12 +52,11 @@ test.describe('Overview page', () => {
     // Default is Contents
     await expect(page.getByText('Top Source Contents')).toBeVisible({ timeout: 15_000 });
 
-    // Switch to Domains (ToggleButtonGroup renders items as role="radio")
-    await page.getByRole('radio', { name: 'Domains' }).click();
+    await page.getByRole('button', { name: 'Domains' }).click();
     await expect(page.getByText('Top Source Domains')).toBeVisible({ timeout: 15_000 });
 
     // Switch back to Contents
-    await page.getByRole('radio', { name: 'Contents' }).click();
+    await page.getByRole('button', { name: 'Contents' }).click();
     await expect(page.getByText('Top Source Contents')).toBeVisible({ timeout: 15_000 });
   });
 

@@ -442,7 +442,7 @@ test.describe('Prompts table interactions', () => {
 
     // Wait for the prompts table to render
     await expect(
-      page.getByRole('grid', { name: 'Prompts List' })
+      page.getByRole('table', { name: 'Prompts List' })
     ).toBeVisible({ timeout: 15_000 });
 
     // Click the first "Edit" button (ButtonUtility with aria-label="Edit")
@@ -483,7 +483,7 @@ test.describe('Prompts table interactions', () => {
 
     // Wait for the prompts table to render
     await expect(
-      page.getByRole('grid', { name: 'Prompts List' })
+      page.getByRole('table', { name: 'Prompts List' })
     ).toBeVisible({ timeout: 15_000 });
 
     // Open edit slideout for first prompt
@@ -565,7 +565,7 @@ test.describe('Prompts table interactions', () => {
 
     // Wait for the prompts table to render
     await expect(
-      page.getByRole('grid', { name: 'Prompts List' })
+      page.getByRole('table', { name: 'Prompts List' })
     ).toBeVisible({ timeout: 15_000 });
 
     // Click the first "Archive" button (ButtonUtility with aria-label="Archive")

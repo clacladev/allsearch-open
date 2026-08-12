@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { Selection } from 'react-aria-components';
 import {
   DialogTrigger,
@@ -32,16 +33,18 @@ export function BrandSelector({
   onSelectionChange,
   placeholder = 'Select brands...',
 }: BrandSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const firstSelected = availableBrands.find((b) => selectedBrandIds.includes(b.id));
   const additionalCount = selectedBrandIds.length - 1;
 
   const handleSelectionChange = (keys: Selection) => {
     if (keys === 'all') return;
+    setIsOpen(false);
     onSelectionChange(Array.from(keys as Set<string>));
   };
 
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <AriaButton
         className={({ isFocusVisible }) =>
           cx(
