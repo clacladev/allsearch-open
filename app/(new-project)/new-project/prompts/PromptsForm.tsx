@@ -207,8 +207,9 @@ export default function PromptsForm() {
                 {topicGroup.prompts.map((prompt) => {
                   const id = getPromptAndTopicId(topicGroup.topic, prompt);
                   return (
-                    <label key={id} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <div key={id} className="flex items-center gap-2 text-sm">
                       <Checkbox
+                        id={`prompt-${encodeURIComponent(id)}`}
                         checked={selectedPromptAndTopicIds.includes(id)}
                         onCheckedChange={(checked) => {
                           const selected = selectedPromptAndTopicIds.filter((selectedId) => {
@@ -224,8 +225,13 @@ export default function PromptsForm() {
                         }}
                         disabled={isLoading}
                       />
-                      {prompt}
-                    </label>
+                      <label
+                        htmlFor={`prompt-${encodeURIComponent(id)}`}
+                        className="cursor-pointer"
+                      >
+                        {prompt}
+                      </label>
+                    </div>
                   );
                 })}
               </div>

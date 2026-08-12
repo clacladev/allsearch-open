@@ -76,13 +76,16 @@ export function BrandDetailsFields({
         {isNameInvalid && <FieldError>Brand name is required</FieldError>}
       </Field>
       <div className="mt-1 flex flex-col gap-3">
-        <label className="flex items-center gap-2 text-sm font-medium">
+        <div className="flex items-center gap-2 text-sm font-medium">
           <Checkbox
+            id="target-specific-location"
             checked={isTargetLocationSelected}
             onCheckedChange={onTargetLocationSelectedChange}
           />
-          I want to target a specific location
-        </label>
+          <label htmlFor="target-specific-location" className="cursor-pointer">
+            I want to target a specific location
+          </label>
+        </div>
         <p className="text-muted-foreground -mt-2 text-sm">Leave unchecked to keep worldwide.</p>
         {isTargetLocationSelected && (
           <Field>

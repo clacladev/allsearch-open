@@ -151,9 +151,9 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(page.getByRole('checkbox', { name: 'Athlete Stories' })).not.toBeChecked();
   await expect(page.getByRole('checkbox', { name: 'Fitness Tech' })).not.toBeChecked();
 
-  // The migrated checkboxes support both pointer and keyboard selection.
+  // The migrated checkboxes are role-findable and their associated labels toggle them.
   const sportsEquipment = page.getByRole('checkbox', { name: 'Sports Equipment' });
-  await sportsEquipment.click();
+  await page.getByText('Sports Equipment', { exact: true }).click();
   await expect(sportsEquipment).toBeChecked();
 
   const athleteStories = page.getByRole('checkbox', { name: 'Athlete Stories' });
@@ -196,8 +196,8 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(prompt5).toBeChecked();
   await expect(prompt6).not.toBeChecked();
 
-  // The migrated prompt checkboxes support pointer and Space-key selection.
-  await prompt3.click();
+  // The migrated prompt checkboxes are role-findable and their labels toggle them.
+  await page.getByText('Top trail running shoes reviewed', { exact: true }).click();
   await expect(prompt3).toBeChecked();
   await prompt6.focus();
   await page.keyboard.press('Space');

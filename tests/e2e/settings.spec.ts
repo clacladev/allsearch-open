@@ -21,6 +21,7 @@ test.describe('App settings navigation', () => {
 
     await page.getByRole('tab', { name: 'Chatbots' }).click();
     await expect(page.getByRole('heading', { name: 'Chatbots' })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider keys' })).not.toBeVisible();
 
     await page.getByRole('tab', { name: 'Data' }).click();
@@ -193,12 +194,12 @@ test.describe('Settings — Brand', () => {
     const targetInput = page.locator('input[name="targetLocation"]');
 
     // Toggle: click once, check input appeared/disappeared, click again to restore
-    await checkbox.click();
+    await page.getByText('I want to target a specific location', { exact: true }).click();
 
     const isNowVisible = await targetInput.isVisible();
 
     // Click again to restore original state
-    await checkbox.click();
+    await page.getByText('I want to target a specific location', { exact: true }).click();
 
     if (isNowVisible) {
       // First click showed the input, second click should hide it
