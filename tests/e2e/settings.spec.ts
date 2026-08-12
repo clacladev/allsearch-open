@@ -40,6 +40,40 @@ test.describe('App settings navigation', () => {
     await tabs.selectOption('data');
     await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
   });
+
+  test('keeps a failed confirmation open for retry and allows cancelling it', async ({ page }) => {
+    let fulfillArchive: (() => void) | undefined;
+    const archiveRequest = new Promise<void>((resolve) => {
+      fulfillArchive = resolve;
+    });
+
+    await page.route('**/api/project/*/archive', async (route) => {
+      await archiveRequest;
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Archive failed' }),
+      });
+    });
+
+    await page.goto(ACCOUNT_SETTINGS_URL);
+    await page.getByRole('tab', { name: 'Developer' }).click();
+    await page.getByRole('button', { name: 'Archive' }).first().click();
+
+    const dialog = page.getByRole('alertdialog');
+    const confirmButton = dialog.getByRole('button', { name: 'Confirm' });
+    const actionButton = dialog.getByRole('button').nth(1);
+    const cancelButton = dialog.getByRole('button', { name: 'Cancel' });
+    await confirmButton.click();
+    await expect(actionButton).toBeDisabled();
+    await expect(cancelButton).toBeDisabled();
+
+    fulfillArchive?.();
+    await expect(dialog).toBeVisible();
+    await expect(actionButton).toBeEnabled();
+    await cancelButton.click();
+    await expect(dialog).not.toBeVisible();
+  });
 });
 
 // ---------------------------------------------------------------------------

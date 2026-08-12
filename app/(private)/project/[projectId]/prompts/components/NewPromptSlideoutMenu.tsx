@@ -243,7 +243,7 @@ export const NewPromptSlideoutMenu = ({
                     value={singleTopicId ?? null}
                     onValueChange={(value) => setSingleTopicId(value ?? undefined)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger aria-label="Topic" className="w-full">
                       <SelectValue placeholder="Select topic" />
                     </SelectTrigger>
                     <SelectContent>
@@ -312,7 +312,7 @@ export const NewPromptSlideoutMenu = ({
                       value={bulkTopicId ?? null}
                       onValueChange={(value) => setBulkTopicId(value ?? undefined)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger aria-label="Topic" className="w-full">
                         <SelectValue placeholder="Select topic" />
                       </SelectTrigger>
                       <SelectContent>

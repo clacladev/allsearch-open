@@ -37,12 +37,12 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
     startTransition(async () => {
       try {
         onSuccess(await request());
+        setPendingAction(undefined);
       } catch (error) {
         console.error(error);
         showErrorAlertToast('Something went wrong', error instanceof Error ? error.message : '');
       } finally {
         setBusyProjectId(undefined);
-        setPendingAction(undefined);
       }
     });
   };
