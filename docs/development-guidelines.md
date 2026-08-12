@@ -11,6 +11,28 @@ Always use `bun` instead of `npm` or `yarn`.
 - Avoid custom CSS files unless absolutely necessary.
 - **Use existing component APIs before rolling custom solutions.** When adding loading states, check if the component already has a built-in prop (like Button's `isLoading`) rather than manually swapping children with a `LoadingIndicator`.
 
+### Updating generated shadcn source
+
+`components/ui/` is vendored source (shadcn's model), not a package — there is
+no `npm update`. To pull in an upstream change to an already-customized
+component:
+
+1. Start from a clean git tree (`git status --porcelain` empty).
+2. Use the pinned `shadcn` CLI version (`bunx shadcn@latest --version`,
+   recorded in `.scratch/untitled-ui-to-shadcn/inventory.md`).
+3. Inspect before touching anything: `bunx shadcn@latest add <component> --diff`
+   and `--view` against the local file.
+4. Re-apply only the reviewed delta by hand, or re-`add` a single named
+   component and re-diff — never `add --all`/`--overwrite` across
+   already-customized files.
+5. Re-record the component's row in the inventory's generated-source ledger
+   with the new version/date and any local modifications that must survive
+   the update (e.g. the `.dark-mode` theme mapping in `sonner.tsx`, or the
+   `shadcn-primary`/`shadcn-secondary` token renames needed because legacy
+   `theme.css` already claims the bare `primary`/`secondary` namespace — see
+   `styles/shadcn-theme.css`).
+6. Run `bun lint` and `bun tsc` before committing.
+
 ## State Management
 
 - Use `useState`, `useReducer`, and Context API for local and shared state.
