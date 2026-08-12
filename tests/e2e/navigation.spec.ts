@@ -19,7 +19,10 @@ test.describe('Sidebar navigation', () => {
     await expect(aside.getByRole('link', { name: 'Brands' })).toBeVisible();
     await expect(aside.getByRole('link', { name: 'Crawl health' })).toBeVisible();
     await expect(aside.getByRole('link', { name: 'Settings' })).toBeVisible();
-    await expect(aside.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    await expect(aside.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 
   test('can navigate between all pages via sidebar', async ({ page }) => {
@@ -90,8 +93,38 @@ test.describe('Project selector', () => {
     await page.getByRole('button', { name: 'Select project' }).click();
     await page.getByRole('button', { name: 'App Settings' }).click();
     await page.waitForURL('**/settings');
-    await page.getByRole('button', { name: 'Toggle theme' }).click();
-    await expect(page.locator('html')).toHaveClass(/dark-mode|light-mode/);
+    const toggleTheme = page.getByRole('button', { name: 'Toggle theme' });
+
+    await toggleTheme.click();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('light');
+    await expect(page.locator('html')).toHaveClass(/light-mode/);
+
+    await toggleTheme.click();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+    await expect(page.locator('html')).toHaveClass(/dark-mode/);
+
+    await toggleTheme.click();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('system');
+  });
+
+  test('closes the selector when switching projects', async ({ page }) => {
+    await page.goto(OVERVIEW_URL);
+    await page.getByRole('button', { name: 'Select project' }).click();
+
+    const selector = page.getByText('Switch project');
+    await expect(selector).toBeVisible();
+    await page.getByRole('button', { name: 'Meridian Run Co.' }).click();
+    await expect(selector).toBeHidden();
+  });
+
+  test('closes the selector while navigating to App Settings', async ({ page }) => {
+    await page.goto(OVERVIEW_URL);
+    await page.getByRole('button', { name: 'Select project' }).click();
+
+    const selector = page.getByText('Switch project');
+    await page.getByRole('button', { name: 'App Settings' }).click();
+    await expect(selector).toBeHidden();
+    await page.waitForURL('**/settings');
   });
 });
 
@@ -141,9 +174,16 @@ test.describe('Mobile navigation', () => {
     await page.goto(OVERVIEW_URL);
     const trigger = page.getByRole('button', { name: 'Expand navigation menu' });
     await trigger.click();
-    await expect(page.getByRole('dialog', { name: 'Navigation menu' })).toBeVisible();
+    const sheet = page.getByRole('dialog', { name: 'Navigation menu' });
+    const closeButton = sheet.getByRole('button', { name: 'Close navigation menu' });
+    await expect(sheet).toBeVisible();
+    await expect(closeButton).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(sheet.locator(':focus')).toHaveCount(1);
+    await page.keyboard.press('Tab');
+    await expect(closeButton).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog', { name: 'Navigation menu' })).toBeHidden();
+    await expect(sheet).toBeHidden();
     await expect(trigger).toBeFocused();
   });
 });
