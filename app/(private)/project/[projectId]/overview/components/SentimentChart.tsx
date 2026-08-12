@@ -1,18 +1,12 @@
+import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from 'recharts';
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import {
+  ChartContainer,
+  ChartLegend,
   ChartLegendContent,
+  ChartTooltip,
   ChartTooltipContent,
-} from '@/components/application/charts/charts-base';
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { cx } from '@/utils/cx';
 import type { SentimentDataset } from '@/libs/utils/project-analysis/getSentimentDataset';
 
@@ -35,8 +29,12 @@ export default function SentimentChart({
   highlightKey?: string;
   colorMap?: Record<string, string>;
 }) {
+  const config = Object.fromEntries(
+    displayKeys.map((key) => [key, { label: key, color: colorMap?.[key] ?? 'currentColor' }])
+  ) satisfies ChartConfig;
+
   return (
-    <ResponsiveContainer>
+    <ChartContainer config={config} className="aspect-auto h-full w-full">
       <AreaChart
         data={data}
         className="text-tertiary [&_.recharts-text]:text-xs"
@@ -71,7 +69,11 @@ export default function SentimentChart({
           })}
         </defs>
 
-        <CartesianGrid vertical={false} stroke="currentColor" className="text-utility-neutral-100" />
+        <CartesianGrid
+          vertical={false}
+          stroke="currentColor"
+          className="text-utility-neutral-100"
+        />
 
         <YAxis
           domain={[-2, 2]}
@@ -95,8 +97,18 @@ export default function SentimentChart({
             squash every epoch-ms timestamp against the right edge. */}
         <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} hide />
 
-        <Tooltip
-          content={<ChartTooltipContent />}
+        <ChartTooltip
+          isAnimationActive={false}
+          content={
+            <ChartTooltipContent
+              labelFormatter={(_label, payload) => {
+                const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
+                return date
+                  ? new Date(date).toLocaleString(undefined, { month: 'long', day: 'numeric' })
+                  : 'N/A';
+              }}
+            />
+          }
           labelFormatter={(_label, payload) => {
             const date = (payload?.[0]?.payload as { date?: string | null } | undefined)?.date;
             return date
@@ -110,11 +122,7 @@ export default function SentimentChart({
           wrapperStyle={{ zIndex: 1 }}
         />
 
-        <Legend
-          verticalAlign="bottom"
-          content={<ChartLegendContent align="center" />}
-          className="pt-4"
-        />
+        <ChartLegend verticalAlign="bottom" content={<ChartLegendContent />} />
 
         {[...displayKeys]
           .sort((a, b) => (a === highlightKey ? 1 : b === highlightKey ? -1 : 0))
@@ -151,10 +159,11 @@ export default function SentimentChart({
                 }}
                 fill={`url(#sentiment-gradient-${key})`}
                 fillOpacity={0}
+                isAnimationActive={false}
               />
             );
           })}
       </AreaChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }

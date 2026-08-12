@@ -7,7 +7,9 @@ import useSWR, { useSWRConfig } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
-import { AlertFloating } from '@/components/application/alerts/alerts';
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { TriangleAlert } from 'lucide-react';
 import { showErrorAlertToast } from '@/components/Alerts';
 import { getShouldShowLatestRunNotice } from '@/libs/collection/latestRunStaleness';
 import { deriveCollectionCadenceState } from '@/libs/collection/cadence';
@@ -78,13 +80,16 @@ export function LatestRunNotice({
 
   return (
     <div data-testid="overview-latest-run-stale">
-      <AlertFloating
-        color="warning"
-        title={`Latest data is from ${dayjs(latestRunDate).format('ll')}`}
-        description="Collect again to see current rankings."
-        confirmLabel="Update data now"
-        onConfirm={() => !isMutating && trigger()}
-      />
+      <Alert>
+        <TriangleAlert aria-hidden="true" />
+        <AlertTitle>{`Latest data is from ${dayjs(latestRunDate).format('ll')}`}</AlertTitle>
+        <AlertDescription>Collect again to see current rankings.</AlertDescription>
+        <AlertAction>
+          <Button size="sm" onClick={() => !isMutating && trigger()} disabled={isMutating}>
+            Update data now
+          </Button>
+        </AlertAction>
+      </Alert>
     </div>
   );
 }

@@ -1,8 +1,6 @@
 'use client';
 
-import { ButtonGroup, ButtonGroupItem } from '@/components/base/button-group/button-group';
-import { Dot } from '@/components/foundations/dot-icon';
-import { cx } from '@/utils/cx';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export type OverviewChartType = 'visibility' | 'sentiment';
 
@@ -12,33 +10,28 @@ const CHART_VARIANTS: { chartType: OverviewChartType; label: string }[] = [
 ];
 
 export default function OverviewChartTypeGroup({
-  size = 'xs',
   chartType,
   onChartTypeChangeAction,
 }: {
-  size?: 'xs' | 'sm';
   chartType: OverviewChartType;
   onChartTypeChangeAction: (chartType: OverviewChartType) => void;
 }) {
   return (
-    <ButtonGroup selectedKeys={[chartType]} size={size}>
+    <RadioGroup
+      aria-label="Chart type"
+      value={chartType}
+      onValueChange={(value) => onChartTypeChangeAction(value as OverviewChartType)}
+      className="flex w-auto items-center gap-3"
+    >
       {CHART_VARIANTS.map((item) => (
-        <ButtonGroupItem
+        <label
           key={item.chartType}
-          id={item.chartType}
-          iconLeading={
-            <Dot
-              className={cx(
-                'mx-0.75 size-2',
-                chartType === item.chartType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
-              )}
-            />
-          }
-          onClick={() => onChartTypeChangeAction(item.chartType)}
+          className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs"
         >
+          <RadioGroupItem key={item.chartType} value={item.chartType} aria-label={item.label} />
           {item.label}
-        </ButtonGroupItem>
+        </label>
       ))}
-    </ButtonGroup>
+    </RadioGroup>
   );
 }

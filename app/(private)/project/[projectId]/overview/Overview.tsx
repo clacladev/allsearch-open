@@ -1,9 +1,9 @@
 'use client';
 
-import { BarChart11, Eye, FaceSmile } from '@untitledui/icons';
+import { BarChart3, Eye, Smile, TriangleAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
-import { AlertFloating } from '@/components/application/alerts/alerts';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { LatestRunNotice } from './components/LatestRunNotice';
 import { CollectionRunCoverageBanner } from './components/CollectionRunCoverageBanner';
 import { VisualContainer } from './components/VisualContainer';
@@ -126,12 +126,11 @@ export default function ProjectOverview({
   return (
     <div className="flex flex-col gap-4">
       {currentProject.is_paused && (
-        <AlertFloating
-          color="warning"
-          title="This project is paused"
-          description="Prompt tracking is currently disabled for this project."
-          confirmLabel=""
-        />
+        <Alert>
+          <TriangleAlert aria-hidden="true" />
+          <AlertTitle>This project is paused</AlertTitle>
+          <AlertDescription>Prompt tracking is currently disabled for this project.</AlertDescription>
+        </Alert>
       )}
 
       {overviewData.latestRun && (
@@ -165,7 +164,7 @@ export default function ProjectOverview({
               <VisualContainer
                 title="Sentiment over time"
                 info="Average sentiment expressed about each brand across AI responses over time."
-                icon={FaceSmile}
+                icon={Smile}
                 className="grow"
                 contentClassName="h-70"
                 headerTrailing={chartToggle}
@@ -182,7 +181,7 @@ export default function ProjectOverview({
             <VisualContainer
               title="Brand sentiment"
               info="Average sentiment expressed about each brand across all prompt responses in the selected period."
-              icon={FaceSmile}
+              icon={Smile}
               className={hasManyDaysOfSentiment ? 'md:w-1/3 md:min-w-60 xl:max-w-80' : 'grow'}
               contentClassName="h-70 overflow-auto"
               headerTrailing={hasManyDaysOfSentiment ? undefined : chartToggle}
@@ -214,7 +213,7 @@ export default function ProjectOverview({
             <VisualContainer
               title="Brand visibility"
               info="How often each brand appears across all prompt responses in the selected period."
-              icon={BarChart11}
+              icon={BarChart3}
               className={hasManyDaysOfVisibility ? 'md:w-1/3 md:min-w-60 xl:max-w-80' : 'grow'}
               contentClassName="h-70 overflow-auto"
               headerTrailing={hasManyDaysOfVisibility ? undefined : chartToggle}
