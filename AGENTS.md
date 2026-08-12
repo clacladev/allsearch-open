@@ -24,3 +24,14 @@ Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/
 - DB access: Drizzle under `libs/database/` — never invent a second data layer (`docs/patterns.md`, ADR 0006).
 - Routes: `RouteHelper` / `ROUTES` in `libs/routes.ts`.
 - After substantive edits: `bun lint`, `bun tsc`, and relevant `bun test` / e2e.
+
+## Never publish
+
+This project stays private until the maintainer publishes it **manually**, by hand, at the end of
+the process. Until then:
+
+- Do not run `npm publish` (or `bun publish`, or any registry push), and do not ask to.
+- `"private": true` in `package.json` is the guard that enforces this. Leave it there. It does not
+  block `bun run build:package` or `npm pack`, which are the only packaging steps agents should run.
+- `bunx allsearch` therefore does not resolve yet, and is not expected to. Build and pack locally
+  to verify the CLI; never treat "publish it and see" as a verification step.

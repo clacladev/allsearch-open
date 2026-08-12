@@ -98,10 +98,14 @@ No Homebrew formula is planned.
   a resumable Run. The one part of "Done when" that cannot be verified here is `bunx allsearch`
   against the real registry, which needs a publish.
 
-- **`private: true` was removed from `package.json`** so the package can be published, which is
-  what `bunx allsearch` requires (ADR 0010 names npm as the distribution channel). Worth a
-  maintainer's eye before the first publish: the name `allsearch` may be taken on npm, and
-  publishing puts the compiled Untitled UI code in public view while ADR 0005 is still open.
+- **`private: true` stays in `package.json`, and nothing is published.** The maintainer publishes
+  by hand at the end of the process; until then the flag is the guard against an accidental
+  `npm publish`. It costs nothing here: it blocks only `publish`, so `bun run build:package` and
+  `npm pack` — the whole verification path used above — still work. Recorded in `AGENTS.md`.
+
+  Two things for the maintainer to weigh at that point, not before: the name `allsearch` may be
+  taken on npm, and publishing puts the compiled Untitled UI code in public view while ADR 0005
+  is still open. A scoped private package or handing testers the `.tgz` avoids the second.
 
 - **Not done here:** the published package still declares the full `dependencies` list, so
   `npm install` resolves ~550 packages that the bundled `.next/standalone/node_modules`

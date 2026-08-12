@@ -13,10 +13,11 @@ Single-user: data stays on the machine (SQLite). AI calls use the operator’s o
 ## Run it
 
 ```bash
-bunx allsearch      # or: npx allsearch
+bun run build:package && bun run start:cli   # from a checkout, today
+bunx allsearch                               # once published — see Packaging note
 ```
 
-That boots the app's own server on a free port and opens your browser at it. The URL is printed
+Either boots the app's own server on a free port and opens your browser at it. The URL is printed
 so you can reopen it later. Press Ctrl-C to quit.
 
 | Flag                  | Effect                                     |
@@ -155,5 +156,12 @@ Conventions: [`docs/development-guidelines.md`](./docs/development-guidelines.md
 under `.next/standalone/`, the CLI bundle at `dist/cli.mjs`, and the migrations under `drizzle/`.
 `npm pack` (via `prepack`) runs it for you.
 
-The package is not published to npm yet, so `bunx allsearch` only works once it is. A desktop
-shell (Electron, not Tauri) is deferred to public launch — see ADR 0010 for both decisions.
+**The package is not published, and is marked `private` so it cannot be published by accident.**
+Publishing is a deliberate, manual step the maintainer takes at the end of the process. Until
+then `bunx allsearch` does not resolve — build and pack locally to try the CLI:
+
+```bash
+bun run build:package && bun run start:cli
+```
+
+A desktop shell (Electron, not Tauri) is deferred to public launch — see ADR 0010.
