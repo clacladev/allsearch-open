@@ -2,10 +2,11 @@
 // `queries.ts`. Client components import it directly, never via the `@/libs/collection` barrel
 // (that barrel pulls in server-only modules).
 
-import { COLLECTION_CADENCE_MS } from './constants';
+import { COLLECTION_CADENCE_GRACE_PERIOD_MS, COLLECTION_CADENCE_MS } from './constants';
 
 export type CollectionCadenceState =
   | { kind: 'unknown' } // no Run has ever completed — show nothing
+  | { kind: 'fresh' } // a Run just completed — too soon to nag for another one
   | { kind: 'countdown'; daysRemaining: number }
   | { kind: 'stale' };
 
@@ -20,6 +21,8 @@ export function deriveCollectionCadenceState(input: {
 
   // Clamps a stored timestamp ahead of the client clock — never render a negative countdown.
   const elapsedMs = Math.max(0, input.now - parsed);
+  if (elapsedMs < COLLECTION_CADENCE_GRACE_PERIOD_MS) return { kind: 'fresh' };
+
   const remainingMs = COLLECTION_CADENCE_MS - elapsedMs;
 
   // Exactly 7x24h elapsed is stale — criterion 12.

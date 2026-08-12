@@ -22,11 +22,28 @@ describe('deriveCollectionCadenceState', () => {
     ).toEqual({ kind: 'unknown' });
   });
 
-  it('returns a 7-day countdown at 0 ms elapsed', () => {
+  it('returns fresh at 0 ms elapsed (grace period)', () => {
     const now = Date.parse('2026-01-01T00:00:00.000Z');
     expect(
       deriveCollectionCadenceState({ lastCompletedRunFinishedAt: '2026-01-01T00:00:00.000Z', now })
-    ).toEqual({ kind: 'countdown', daysRemaining: 7 });
+    ).toEqual({ kind: 'fresh' });
+  });
+
+  it('returns fresh just under the 24h grace period', () => {
+    const anchor = '2026-01-01T00:00:00.000Z';
+    const now = Date.parse(anchor) + DAY_MS - 1;
+    expect(deriveCollectionCadenceState({ lastCompletedRunFinishedAt: anchor, now })).toEqual({
+      kind: 'fresh',
+    });
+  });
+
+  it('returns a 6-day countdown at exactly the 24h grace period', () => {
+    const anchor = '2026-01-01T00:00:00.000Z';
+    const now = Date.parse(anchor) + DAY_MS;
+    expect(deriveCollectionCadenceState({ lastCompletedRunFinishedAt: anchor, now })).toEqual({
+      kind: 'countdown',
+      daysRemaining: 6,
+    });
   });
 
   it('returns a 1-day countdown at 6 days elapsed', () => {
@@ -61,12 +78,11 @@ describe('deriveCollectionCadenceState', () => {
     });
   });
 
-  it('clamps a future anchor to a 7-day countdown, never negative', () => {
+  it('clamps a future anchor to fresh, never a negative countdown', () => {
     const now = Date.parse('2026-01-01T00:00:00.000Z');
     const anchor = '2026-01-02T00:00:00.000Z';
     expect(deriveCollectionCadenceState({ lastCompletedRunFinishedAt: anchor, now })).toEqual({
-      kind: 'countdown',
-      daysRemaining: 7,
+      kind: 'fresh',
     });
   });
 
