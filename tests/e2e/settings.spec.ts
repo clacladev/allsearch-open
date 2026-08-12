@@ -26,6 +26,19 @@ test.describe('App settings navigation', () => {
     await page.getByRole('tab', { name: 'Data' }).click();
     await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
   });
+
+  test('uses the native select to switch global settings on mobile', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(ACCOUNT_SETTINGS_URL);
+
+    const tabs = page.getByRole('combobox', { name: 'Settings tabs' });
+    await expect(tabs).toHaveValue('provider-keys');
+    await tabs.selectOption('chatbots');
+    await expect(page.getByRole('heading', { name: 'Chatbots' })).toBeVisible();
+    await tabs.selectOption('data');
+    await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -58,6 +71,20 @@ test.describe('Settings navigation', () => {
     // Navigate back to Competitors tab
     await page.getByRole('tab', { name: 'Competitors' }).click();
     await page.waitForURL(`**${SETTINGS_COMPETITORS_URL}`);
+  });
+
+  test('uses the native select to navigate project settings on mobile', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(SETTINGS_COMPETITORS_URL);
+
+    const tabs = page.getByRole('combobox', { name: 'Settings tabs' });
+    await expect(tabs).toHaveValue('competitors');
+    await tabs.selectOption('brand');
+    await page.waitForURL(`**${SETTINGS_BRAND_URL}`);
+    await expect(tabs).toHaveValue('brand');
+    await tabs.selectOption('organization');
+    await page.waitForURL(`**${SETTINGS_ORGANIZATION_URL}`);
   });
 });
 
