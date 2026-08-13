@@ -25,6 +25,20 @@ test.describe('Sources Contents', () => {
     ).toBeVisible({ timeout: 15_000 });
   });
 
+  test('restores information-icon tooltips for every source contents table header', async ({ page }) => {
+    test.setTimeout(30_000);
+
+    await page.goto(`${SOURCES_CONTENTS_URL}${TEST_DATE_RANGE}`);
+
+    const table = page.getByRole('table', { name: 'Source Contents List' });
+    await expect(table).toBeVisible({ timeout: 15_000 });
+    await expect(table.locator('thead [data-slot="tooltip-trigger"]')).toHaveCount(6);
+
+    const usedPercentageInfo = table.getByLabel('Percentage of times the source was used');
+    await usedPercentageInfo.hover();
+    await expect(page.getByText('Percentage of times the source was used')).toBeVisible();
+  });
+
   test('export triggers a CSV download', async ({ page }) => {
     test.setTimeout(30_000);
 
@@ -124,6 +138,20 @@ test.describe('Sources Domains', () => {
     await expect(
       page.getByRole('table', { name: 'Source Domains List' })
     ).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('restores information-icon tooltips for every source domains table header', async ({ page }) => {
+    test.setTimeout(30_000);
+
+    await page.goto(`${SOURCES_DOMAINS_URL}${TEST_DATE_RANGE}`);
+
+    const table = page.getByRole('table', { name: 'Source Domains List' });
+    await expect(table).toBeVisible({ timeout: 15_000 });
+    await expect(table.locator('thead [data-slot="tooltip-trigger"]')).toHaveCount(4);
+
+    const categoryInfo = table.getByLabel('Category of the source');
+    await categoryInfo.hover();
+    await expect(page.getByText('Category of the source')).toBeVisible();
   });
 
   test('export triggers a CSV download', async ({ page }) => {
