@@ -9,8 +9,8 @@ import { useRouter } from 'next/navigation';
 import { PromptAndTopicJoinRow } from '@/libs/database/Prompts/types';
 import { TopicRow, CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
 import { PromptAnalysis } from '@/app/api/project/[projectId]/prompts/getPromptsAnalysis';
-import { Button } from '@/components/base/buttons/button';
-import { Badge } from '@/components/base/badges/badges';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { ExportActionsButton } from '@/app/(private)/components/ExportActionsButton';
 import { exportPromptsToCsv } from '@/app/(private)/project/[projectId]/prompts/utils/exportPromptsCsv';
@@ -315,10 +315,10 @@ export default function PromptsTable({
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2">
             <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
-            <Button color="secondary" size="sm" onClick={() => setIsAddPromptModalOpen(true)}>
+            <Button variant="secondary" size="sm" onClick={() => setIsAddPromptModalOpen(true)}>
               New Prompt
             </Button>
-            <Button color="secondary" size="sm" onClick={() => setIsTopicsModalOpen(true)}>
+            <Button variant="secondary" size="sm" onClick={() => setIsTopicsModalOpen(true)}>
               Topics
             </Button>
             <ExportActionsButton onExportCsvAction={onExportCsv} />
@@ -329,7 +329,7 @@ export default function PromptsTable({
             />
           </div>
 
-          <Badge type="pill-color" size="sm" color="gray">
+          <Badge variant="secondary">
             {activePromptsCount} {activePromptsCount === 1 ? 'prompt' : 'prompts'}
           </Badge>
         </div>
@@ -366,7 +366,7 @@ export default function PromptsTable({
         tableFooter={
           !!archivedPromptsCount && (
             <StandardTableFooterContainer>
-              <Button color="tertiary" size="xs" onClick={toggleShowArchived}>
+              <Button variant="ghost" size="xs" onClick={toggleShowArchived}>
                 {shouldShowArchived ? 'Hide archived' : `View archived (${archivedPromptsCount})`}
               </Button>
             </StandardTableFooterContainer>
