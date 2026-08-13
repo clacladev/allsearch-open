@@ -68,9 +68,9 @@ export default function SettingsClient({
             value={selectedSettingsTabId}
             onValueChange={onSelectionChange}
           >
-            <TabsList variant="line" className="w-full justify-start">
+            <TabsList className="border-border w-full justify-start border">
               {SETTINGS_TABS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
+                <TabsTrigger key={tab.id} value={tab.id} className="flex-none px-3">
                   {tab.label}
                 </TabsTrigger>
               ))}

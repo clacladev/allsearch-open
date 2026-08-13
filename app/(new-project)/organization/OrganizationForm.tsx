@@ -127,7 +127,7 @@ export default function OrganizationForm() {
                 key={option.value}
                 orientation="horizontal"
                 onClick={() => setOrganizationType(option.value)}
-                className="border-border has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 cursor-pointer rounded-lg border p-4"
+                className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 has-data-checked:ring-1 has-data-checked:ring-shadcn-primary/30 cursor-pointer rounded-lg border p-4"
               >
                 <RadioGroupItem id={id} value={option.value} />
                 <FieldContent>
@@ -153,10 +153,10 @@ export default function OrganizationForm() {
                   type="url"
                   name="agencyUrl"
                   placeholder="https://agency.com"
-                  className="rounded-r-none"
+                  className="h-11 rounded-r-none text-md"
                 />
                 {(isLoadingDomainMetadata || iconUrl) && (
-                  <div className="border-input flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0">
+                  <div className="border-input flex size-11 shrink-0 items-center justify-center rounded-r-md border border-l-0">
                     {isLoadingDomainMetadata ? (
                       <Spinner aria-label="Loading agency details" />
                     ) : (
@@ -178,13 +178,14 @@ export default function OrganizationForm() {
                 type="text"
                 name="agencyName"
                 placeholder="Superstar"
+                className="h-11 text-md"
               />
               {isNameInvalid && <FieldError>Agency name is required</FieldError>}
             </Field>
           </>
         )}
 
-        <Button type="button" size="lg" disabled={!canContinue || isUpdating} onClick={onContinue}>
+        <Button type="button" size="lg" className="h-11" disabled={!canContinue || isUpdating} onClick={onContinue}>
           Continue <ArrowRight aria-hidden="true" /> {isUpdating && <Spinner aria-hidden="true" />}
         </Button>
       </div>

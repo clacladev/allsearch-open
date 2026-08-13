@@ -214,12 +214,13 @@ export default function CompetitorsSettings() {
             <div className="flex flex-col gap-2">
               {competitors.map((competitor) => (
                 <div key={competitor.url} className="flex flex-row gap-2">
-                  <InputGroup className="flex-1">
+                  <InputGroup className="h-11 min-w-0 basis-0 flex-1">
                     <InputGroupInput
                       value={competitor.url}
                       disabled
                       type="url"
                       placeholder="https://brand.com"
+                      className="h-full text-md"
                     />
                     {competitor.icon_url ? (
                       <InputGroupAddon align="inline-end">
@@ -238,21 +239,21 @@ export default function CompetitorsSettings() {
                     required
                     type="text"
                     placeholder="Name"
-                    className="flex-1"
+                    className="h-11 basis-0 flex-1 text-md"
                   />
 
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-auto shrink-0"
+                    className="size-11 shrink-0"
                     onClick={() => onArchiveCompetitor(competitor.id)}
                     disabled={
                       savedCompetitorId === competitor.id ||
                       (isRemoving && removingCompetitorId === competitor.id)
                     }
-                  >
                     aria-label={`Archive ${competitor.name ?? competitor.hostname}`}
+                  >
                     {savedCompetitorId === competitor.id ? (
                       <Check className="text-success-600" />
                     ) : isRemoving && removingCompetitorId === competitor.id ? (
@@ -267,7 +268,7 @@ export default function CompetitorsSettings() {
               <div className="mt-4 -mb-1 ml-1 flex text-sm">New competitor</div>
               <div className="flex flex-row gap-2">
                 <InputGroup
-                  className="flex-1"
+                  className="h-11 min-w-0 basis-0 flex-1"
                   aria-invalid={isUrlInvalid || isUrlDuplicate || undefined}
                 >
                   <InputGroupInput
@@ -279,6 +280,7 @@ export default function CompetitorsSettings() {
                     type="url"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
+                    className="h-full text-md"
                   />
                   {isLoadingDomainMetadata ? (
                     <InputGroupAddon align="inline-end">
@@ -300,14 +302,14 @@ export default function CompetitorsSettings() {
                   name="competitorName"
                   aria-label="Competitor name"
                   placeholder="Name"
-                  className="flex-1"
+                  className="h-11 basis-0 flex-1 text-md"
                 />
 
                 <Button
                   type="submit"
                   variant="outline"
                   size="icon"
-                  className="h-auto shrink-0"
+                  className="size-11 shrink-0"
                   disabled={!canAdd || isAdding}
                   aria-label="Add competitor"
                 >
