@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { Building06 } from '@untitledui/icons';
+import { Building2 } from 'lucide-react';
 import { Metadata } from 'next';
 import Brands from './components/Brands';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
@@ -130,7 +130,7 @@ export default async function ProjectBrandsPage({ params, searchParams }: Props)
     <MainContainer>
       <Header
         text="Brands"
-        icon={Building06}
+        icon={Building2}
         description="See which sources your brand and competitors have created that are being cited by AI models."
       />
       <Brands

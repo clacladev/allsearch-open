@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { ActivityHeart } from '@untitledui/icons';
+import { Activity } from 'lucide-react';
 import { Metadata } from 'next';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
 import z from 'zod';
@@ -70,7 +70,7 @@ export default async function ProjectSourceDetailsPage({ params, searchParams }:
     <MainContainer>
       <Header
         text="Opportunity Details"
-        icon={ActivityHeart}
+        icon={Activity}
         description="A closer look at this opportunity — see which prompts and sources are involved and what action to take."
         startDate={startDate}
         endDate={endDate}

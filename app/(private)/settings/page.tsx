@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { MainContainer } from '@/app/(private)/components/Containers';
 import Header from '@/app/(private)/components/Header';
-import { Settings02 } from '@untitledui/icons';
+import { Settings } from 'lucide-react';
 import {
   getRedactedProviderKeys,
   getStoredEnabledChatbotIds,
@@ -27,7 +27,7 @@ export default async function SettingsPage() {
     <MainContainer>
       <Header
         text="Settings"
-        icon={Settings02}
+        icon={Settings}
         description="Provider keys, Chatbots, your Organization and where this install keeps its data."
       />
       <SettingsClient

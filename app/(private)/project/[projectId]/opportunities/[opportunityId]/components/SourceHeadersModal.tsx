@@ -2,7 +2,7 @@ import { SourceItem } from '@/libs/database/Sources/types';
 import { PageHeading } from '@/libs/utils/urlAnalysis';
 import { Dialog, DialogCloseButton, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { CopyButton } from '@/app/(private)/components/CopyButton';
-import { LinkExternal01 } from '@untitledui/icons';
+import { ExternalLink } from 'lucide-react';
 import { SourceHeadingsList } from '../../../sources/components/SourceHeadingsList';
 
 const headingsToMarkdown = (headings: PageHeading[]) =>
@@ -36,7 +36,7 @@ export const SourceHeadersModal = ({
                     className="text-tertiary hover:text-secondary flex items-center gap-1 text-xs transition-colors"
                   >
                     {source.cleanUrl}
-                    <LinkExternal01 className="size-3" />
+                    <ExternalLink className="size-3" />
                   </a>
                 </div>
 

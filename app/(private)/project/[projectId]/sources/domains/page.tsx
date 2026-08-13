@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { Globe01 } from '@untitledui/icons';
+import { Globe } from 'lucide-react';
 import { Metadata } from 'next';
 import Sources from '../components/Sources';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
@@ -107,7 +107,7 @@ export default async function ProjectSourcesDomainsPage({ params, searchParams }
     <MainContainer>
       <Header
         text="Sources Domains"
-        icon={Globe01}
+        icon={Globe}
         description="Websites and domains that AI models most frequently cite in responses to your tracked prompts."
       />
       <Sources

@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { MessageCircle01 } from '@untitledui/icons';
+import { MessageCircle } from 'lucide-react';
 import { Metadata } from 'next';
 import z from 'zod';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
@@ -105,7 +105,7 @@ export default async function ProjectPromptsPage({ params, searchParams }: Props
     <MainContainer>
       <Header
         text="Prompts"
-        icon={MessageCircle01}
+        icon={MessageCircle}
         description="The questions you're monitoring to track how often and where your brand appears in AI responses."
       />
       <PromptsTable

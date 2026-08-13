@@ -1,7 +1,7 @@
 'use client';
 
 import { type FC, type ReactNode, useState } from 'react';
-import { User01 } from '@untitledui/icons';
+import { User } from 'lucide-react';
 import { cx } from '@/utils/cx';
 import { ProjectStatusIndicator, type ProjectStatus } from './ProjectStatusIndicator';
 
@@ -143,7 +143,7 @@ export const ProjectIcon = ({
       return <PlaceholderIcon className={cx('text-fg-quaternary', styles[size].icon)} />;
     }
 
-    return placeholder || <User01 className={cx('text-fg-quaternary', styles[size].icon)} />;
+    return placeholder || <User className={cx('text-fg-quaternary', styles[size].icon)} />;
   };
 
   const renderBadgeContent = () => {

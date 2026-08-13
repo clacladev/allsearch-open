@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { ActivityHeart } from '@untitledui/icons';
+import { Activity } from 'lucide-react';
 import { Metadata } from 'next';
 import { Opportunities } from './components/Opportunities';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
@@ -147,7 +147,7 @@ export default async function ProjectOpportunitiesPage({ params, searchParams }:
     <MainContainer>
       <Header
         text="Opportunities"
-        icon={ActivityHeart}
+        icon={Activity}
         description="Actionable steps to improve your brand's presence in AI-generated answers, ranked by impact."
       />
       <Opportunities

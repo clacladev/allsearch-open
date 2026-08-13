@@ -1,6 +1,6 @@
 import { AppTooltip } from '@/components/shared/tooltip';
 import { cx } from '@/utils/cx';
-import { HelpCircle, InfoCircle } from '@untitledui/icons';
+import { CircleHelp, Info } from 'lucide-react';
 
 export function Tooltip({
   children,
@@ -34,10 +34,10 @@ export function TooltipIcon({
   let Icon = null;
   switch (variant) {
     case 'info':
-      Icon = InfoCircle;
+      Icon = Info;
       break;
     case 'question':
-      Icon = HelpCircle;
+      Icon = CircleHelp;
       break;
       break;
   }
