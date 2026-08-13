@@ -1,212 +1,98 @@
-import { test, expect } from './helpers/test';
-import { OPPORTUNITIES_URL, TEST_DATE_RANGE, TEST_PROJECT_ID } from './constants';
+import { expect, test } from './helpers/test';
+import { TEST_DATE_RANGE, TEST_PROJECT_ID } from './constants';
+import { seedOutlineWorkflowFixture } from './helpers/articleFixture';
 
 /**
- * Smoke test for the New Article outline page.
- *
- * We navigate through the real opportunity page to reach the new-article page,
- * then intercept the outline generation API so we don't hit Gemini during CI.
+ * Exercises the outline workflow from a known prompt instead of navigating an
+ * opportunity list whose contents vary with the fixture date range. Generation
+ * stays mocked so these browser tests never need a Gemini credential.
  */
 test.describe('New Article outline page', () => {
-  test('generates an outline via mocked API and lets the user copy and regenerate', async ({
+  test('generates, copies, and regenerates an outline through mocked API calls', async ({
     page,
     context,
+    e2eServer,
   }) => {
     test.setTimeout(60_000);
-
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    // Stub the outline generation endpoint with a predictable payload. Using a
-    // pattern so we match regardless of the projectId/promptId under test.
-    const firstOutlineId = 'outline-first';
-    const regenOutlineId = 'outline-regen';
-    let callCount = 0;
+    const { promptId, firstOutline, regeneratedOutline } = await seedOutlineWorkflowFixture(
+      e2eServer.databasePath
+    );
+    const outlineApiUrl = `**/api/project/${TEST_PROJECT_ID}/prompts/${promptId}/prompt-articles`;
+    let generationCalls = 0;
 
-    await page.route('**/api/project/*/prompts/*/prompt-articles', async (route) => {
-      callCount += 1;
-      // Each POST inserts a fresh row. The first call seeds the outline; the
-      // second (Regenerate) returns the regen row.
-      const id = callCount === 1 ? firstOutlineId : regenOutlineId;
+    await page.route(outlineApiUrl, async (route) => {
+      expect(route.request().method()).toBe('POST');
+      generationCalls += 1;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          promptArticle: {
-            id,
-            project_id: TEST_PROJECT_ID,
-            prompt_id: 'prompt-test',
-            opportunity_id: null,
-            opportunity_type: 'ProjectSourceNotFoundOpportunity',
-            target_source_clean_url: null,
-            outline: {
-              version: 1,
-              headings: [
-                {
-                  tag: 'h1',
-                  text: callCount === 1 ? 'Mocked Outline Title' : 'Regenerated Outline Title',
-                  keyPoint: 'Introduce the topic clearly.',
-                },
-                {
-                  tag: 'h2',
-                  text: 'Section One',
-                  keyPoint: 'Cover the basics.',
-                },
-              ],
-            },
-            user_edited_outline: null,
-            article_markdown: null,
-            outline_model_id: 'google/gemini-3-flash',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
+          promptArticle: generationCalls === 1 ? firstOutline : regeneratedOutline,
         }),
       });
     });
 
-    await page.goto(`${OPPORTUNITIES_URL}${TEST_DATE_RANGE}`);
-
-    // Click the first Create-type opportunity from the list to reach a detail page.
-    // If the test project has no opportunities in the current date range, skip
-    // the test rather than flake.
-    const firstRow = page.getByRole('row').nth(1);
-    if (!(await firstRow.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(true, 'No opportunities available in the test project for the current date range.');
-    }
-    await firstRow.click();
-
-    const createOutlineCTA = page.getByRole('link', { name: /generate outline/i }).first();
-    if (!(await createOutlineCTA.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(
-        true,
-        'No opportunity with an outline CTA available in the test project for the current date range.'
-      );
-    }
-
-    await createOutlineCTA.click();
-
-    // The outline should render after the mocked API resolves.
+    await page.goto(
+      `/project/${TEST_PROJECT_ID}/prompts/${promptId}/new-article${TEST_DATE_RANGE}`
+    );
     await expect(page.getByRole('heading', { name: 'New article' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Article outline' })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(page.getByText('Mocked Outline Title')).toBeVisible();
 
-    // Copy as markdown should change the button label to "Copied".
-    await page.getByRole('button', { name: /copy as markdown/i }).click();
-    await expect(page.getByRole('button', { name: /copied/i })).toBeVisible({ timeout: 5_000 });
+    await page.getByRole('button', { name: 'Generate outline' }).click();
+    await expect(page.getByRole('article', { name: 'Article outline' })).toBeVisible();
+    await expect(page.getByRole('textbox').first()).toHaveValue('Mocked Outline Title');
 
-    // Regenerate should trigger a new POST and swap the title in the outline.
-    await page.getByRole('button', { name: /regenerate/i }).click();
-    await expect(page.getByText('Regenerated Outline Title')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Copy markdown' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
 
-    expect(callCount).toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Regenerate' }).click();
+    await expect(page.getByRole('textbox').first()).toHaveValue('Regenerated Outline Title');
+    await expect(page).toHaveURL(new RegExp(`promptArticleId=${regeneratedOutline.id}`));
+    expect(generationCalls).toBe(2);
   });
 
-  test('autosaves user edits to the outline title', async ({ page, context }) => {
+  test('autosaves outline edits with a PATCH to the generated row', async ({ page, e2eServer }) => {
     test.setTimeout(60_000);
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    const seedOutlineId = 'outline-seed';
+    const { promptId, firstOutline } = await seedOutlineWorkflowFixture(e2eServer.databasePath);
+    const outlineId = firstOutline.id as string;
+    const outlineUrl = `/project/${TEST_PROJECT_ID}/prompts/${promptId}/new-article?promptArticleId=${outlineId}${TEST_DATE_RANGE.replace('?', '&')}`;
+    const outlineApiUrl = `**/api/project/${TEST_PROJECT_ID}/prompts/${promptId}/prompt-articles/${outlineId}`;
+    const patchBodies: Array<{ userEditedOutline: unknown }> = [];
 
-    await page.route('**/api/project/*/prompts/*/prompt-articles', async (route) => {
+    await page.route(outlineApiUrl, async (route) => {
+      expect(route.request().method()).toBe('PATCH');
+      const patchBody = route.request().postDataJSON() as { userEditedOutline: unknown };
+      patchBodies.push(patchBody);
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          promptArticle: {
-            id: seedOutlineId,
-            project_id: TEST_PROJECT_ID,
-            prompt_id: 'prompt-test',
-            opportunity_id: null,
-            opportunity_type: 'ProjectSourceNotFoundOpportunity',
-            target_source_clean_url: null,
-            outline: {
-              version: 1,
-              headings: [
-                { tag: 'h1', text: 'Original Title', keyPoint: 'Introduce the topic clearly.' },
-                { tag: 'h2', text: 'Section One', keyPoint: 'Cover the basics here.' },
-                { tag: 'h2', text: 'Wrap up', keyPoint: 'Summarize the takeaways.' },
-              ],
-            },
-            user_edited_outline: null,
-            article_markdown: null,
-            outline_model_id: 'google/gemini-3-flash',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
+          promptArticle: { ...firstOutline, user_edited_outline: patchBody.userEditedOutline },
         }),
       });
     });
 
-    let patchCount = 0;
-    let lastPatchBody: { userEditedOutline: unknown } | null = null;
+    await page.goto(outlineUrl);
+    await expect(page.getByRole('article', { name: 'Article outline' })).toBeVisible();
 
-    await page.route(
-      `**/api/project/*/prompts/*/prompt-articles/${seedOutlineId}`,
-      async (route) => {
-        patchCount += 1;
-        const body = route.request().postDataJSON() as { userEditedOutline: unknown };
-        lastPatchBody = body;
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            promptArticle: {
-              id: seedOutlineId,
-              project_id: TEST_PROJECT_ID,
-              prompt_id: 'prompt-test',
-              opportunity_id: null,
-              opportunity_type: 'ProjectSourceNotFoundOpportunity',
-              target_source_clean_url: null,
-              outline: {
-                version: 1,
-                headings: [
-                  { tag: 'h1', text: 'Original Title', keyPoint: 'Introduce the topic clearly.' },
-                  { tag: 'h2', text: 'Section One', keyPoint: 'Cover the basics here.' },
-                  { tag: 'h2', text: 'Wrap up', keyPoint: 'Summarize the takeaways.' },
-                ],
-              },
-              user_edited_outline: body.userEditedOutline,
-              article_markdown: null,
-              outline_model_id: 'google/gemini-3-flash',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          }),
-        });
-      }
-    );
+    await page.getByRole('textbox').first().fill('A Better Original Title');
 
-    await page.goto(OPPORTUNITIES_URL);
-    const firstRow = page.getByRole('row').nth(1);
-    if (!(await firstRow.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(true, 'No opportunities available in the test project for the current date range.');
-    }
-    await firstRow.click();
-    const createOutlineCTA = page.getByRole('link', { name: /generate outline/i }).first();
-    if (!(await createOutlineCTA.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(
-        true,
-        'No opportunity with an outline CTA available in the test project for the current date range.'
-      );
-    }
-    await createOutlineCTA.click();
-
-    await expect(page.getByRole('article', { name: 'Article outline' })).toBeVisible({
-      timeout: 10_000,
+    await expect(page.getByText(/^Saved /)).toBeVisible({ timeout: 5_000 });
+    expect(patchBodies).toHaveLength(1);
+    const savedPatch = patchBodies[0]!;
+    expect(savedPatch.userEditedOutline).toEqual({
+      version: 1,
+      headings: [
+        {
+          tag: 'h1',
+          text: 'A Better Original Title',
+          keyPoint: 'Introduce the topic clearly.',
+        },
+        { tag: 'h2', text: 'Section One', keyPoint: 'Cover the basics.' },
+        { tag: 'h2', text: 'Final Thoughts', keyPoint: 'Summarize the key takeaways.' },
+      ],
     });
-
-    // Edit the first heading's title input by appending text.
-    const titleInput = page.locator('input[type="text"]').first();
-    await titleInput.click();
-    await titleInput.fill('A Better Original Title');
-
-    // The autosave debounce is 800ms. Wait for the saved indicator to appear.
-    await expect(page.getByText(/saved/i)).toBeVisible({ timeout: 5_000 });
-
-    expect(patchCount).toBeGreaterThanOrEqual(1);
-    expect(lastPatchBody).not.toBeNull();
-    const body = lastPatchBody as { userEditedOutline: unknown } | null;
-    expect(body?.userEditedOutline).not.toBeNull();
   });
 });
