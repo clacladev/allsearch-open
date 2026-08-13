@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertFloating } from '@/components/application/alerts/alerts';
+import { FloatingAlert } from '@/components/shared/floating-alert';
 import { deriveCollectionCadenceState } from '@/libs/collection/cadence';
 import type { CollectionCadenceState } from '@/libs/collection/cadence';
 import { useCollectionCadence } from './useCollectionCadence';
@@ -65,8 +65,8 @@ export function CollectionCadenceSurfaces({ hasProjects }: { hasProjects: boolea
     >
       {shouldShowRetry && failedRun && (
         <div className="pointer-events-auto" data-testid="collection-cadence-retry">
-          <AlertFloating
-            color="warning"
+          <FloatingAlert
+            tone="warning"
             title={`${failedRun.failedPromptCount} Prompt${failedRun.failedPromptCount === 1 ? '' : 's'} failed to collect`}
             description="Only the failed Prompts will be re-run."
             confirmLabel="Retry failed Prompts"
@@ -79,8 +79,8 @@ export function CollectionCadenceSurfaces({ hasProjects }: { hasProjects: boolea
 
       {cadenceState.kind === 'stale' && (
         <div className="pointer-events-auto" data-testid="collection-cadence-stale">
-          <AlertFloating
-            color="warning"
+          <FloatingAlert
+            tone="warning"
             title="Your data is out of date"
             description="It has been more than 7 days since your data was last updated."
             confirmLabel="Refresh data"

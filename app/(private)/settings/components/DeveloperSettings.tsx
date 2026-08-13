@@ -5,7 +5,7 @@ import { Copy, PauseCircle, PlayCircle, RefreshCw, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from './SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
@@ -198,8 +198,7 @@ export default function DeveloperSettings({ projects }: { projects: ProjectRow[]
         projects.map((project, index) => (
           <div key={project.id}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-              <SectionLabel.Root
-                size="sm"
+              <SettingsSectionLabel
                 title={
                   <span className="flex flex-wrap items-center gap-2">
                     {project.name}

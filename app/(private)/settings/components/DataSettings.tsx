@@ -6,7 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { Copy, FolderCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from './SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
@@ -67,8 +67,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Database file"
           description="Copy this file to move your data to another machine. Quit the app first so nothing is mid-write."
         />
@@ -94,8 +93,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Size on disk"
           description="Includes the write-ahead log alongside the database file."
         />
@@ -110,8 +108,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Last Collection Run"
           description="When collected data was last written to this database."
         />

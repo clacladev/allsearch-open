@@ -5,7 +5,7 @@ import { Trash } from 'lucide-react';
 import { ConfirmArchiveProjectModal } from './ConfirmArchiveProjectModal';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/libs/routes';
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from '@/app/(private)/settings/components/SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { useMessagesContext } from '@/app/(private)/components/MessagesContext';
 import { showSuccessAlertToast } from '@/components/Alerts';
@@ -41,8 +41,7 @@ export default function Others() {
         <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-          <SectionLabel.Root
-            size="sm"
+          <SettingsSectionLabel
             title="Reset messages"
             description="Reset all hidden messages cards and tips."
           />
@@ -57,8 +56,7 @@ export default function Others() {
         <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-          <SectionLabel.Root
-            size="sm"
+          <SettingsSectionLabel
             title={`Archive ${currentProject?.name} project`}
             description="This will archive this project and hide it from the application project lists."
           />

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/base/buttons/button';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { ProgressBarBase } from '@/components/base/progress-indicators/progress-indicators';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/libs/utils/cn';
 import { CHATBOT_DISPLAY_LABELS } from '@/libs/database/shared/ChatbotId';
 import { CollectionRunItemStatus } from '@/libs/database/CollectionRunItems/types';
 import {
@@ -22,12 +23,12 @@ type Props = {
   variant?: 'panel' | 'bar';
 };
 
-const STATUS_BADGE_COLOR: Record<CollectionRunItemStatus, 'gray' | 'blue' | 'success' | 'error'> = {
-  pending: 'gray',
-  running: 'blue',
-  completed: 'success',
-  failed: 'error',
-  cancelled: 'gray',
+const STATUS_DOT_CLASS: Record<CollectionRunItemStatus, string> = {
+  pending: 'bg-gray-400',
+  running: 'bg-blue-500',
+  completed: 'bg-emerald-500',
+  failed: 'bg-red-500',
+  cancelled: 'bg-gray-400',
 };
 
 export function CollectionRunProgress({
@@ -56,7 +57,7 @@ export function CollectionRunProgress({
           )}
           {isReconnecting && (
             <span className="text-tertiary flex items-center gap-1.5 text-xs">
-              <LoadingIndicator size="xxs" />
+              <Spinner className="size-3" />
               Reconnecting…
             </span>
           )}
@@ -64,16 +65,16 @@ export function CollectionRunProgress({
 
         <div className="flex items-center gap-2">
           {isBar && (
-            <Button size="sm" color="tertiary" onClick={() => setShowDetails((prev) => !prev)}>
+            <Button size="sm" variant="ghost" onClick={() => setShowDetails((prev) => !prev)}>
               {showDetails ? 'Hide details' : 'Details'}
             </Button>
           )}
           {onCancel && !progress.isTerminal && (
             <Button
               size="sm"
-              color="secondary"
+              variant="secondary"
               data-testid="collection-run-progress-cancel"
-              isDisabled={isCancelling}
+              disabled={isCancelling}
               onClick={onCancel}
             >
               {isCancelling ? 'Cancelling…' : 'Cancel'}
@@ -82,7 +83,7 @@ export function CollectionRunProgress({
         </div>
       </div>
 
-      <ProgressBarBase value={getCollectionRunProgressPercentage(progress)} />
+      <Progress value={getCollectionRunProgressPercentage(progress)} />
 
       {showList && (
         <div className="flex max-h-96 flex-col gap-4 overflow-y-auto">
@@ -110,9 +111,13 @@ export function CollectionRunProgress({
                           title={chatbot.error ?? undefined}
                           data-testid={`collection-run-progress-chatbot-${chatbot.chatbotId}`}
                         >
-                          <BadgeWithDot size="sm" color={STATUS_BADGE_COLOR[chatbot.status]}>
+                          <Badge variant="outline">
+                            <span
+                              className={cn('size-1.5 rounded-full', STATUS_DOT_CLASS[chatbot.status])}
+                              aria-hidden="true"
+                            />
                             {CHATBOT_DISPLAY_LABELS[chatbot.chatbotId]} · {chatbot.status}
-                          </BadgeWithDot>
+                          </Badge>
                         </span>
                       ))}
                     </div>
