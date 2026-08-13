@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { cx } from '@/utils/cx';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { Spinner } from '@/components/ui/spinner';
 import { SaveStatusPill } from './SaveStatusPill';
 import { useArticleAutosave } from '../hooks/useArticleAutosave';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
@@ -17,7 +17,7 @@ const MarkdownArticleEditor = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex min-h-40 items-center justify-center">
-        <LoadingIndicator label="Loading editor..." />
+        <Spinner aria-label="Loading editor..." />
       </div>
     ),
   }
@@ -105,10 +105,7 @@ export function EditableArticle({
         className="pointer-events-none absolute top-2 right-3 z-20"
       />
       <div
-        className={cx(
-          'mdx-editor-allsearch-host',
-          isDisabled && 'pointer-events-none opacity-60'
-        )}
+        className={cx('mdx-editor-allsearch-host', isDisabled && 'pointer-events-none opacity-60')}
         aria-label="Article markdown editor"
       >
         <MarkdownArticleEditor

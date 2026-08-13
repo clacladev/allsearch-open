@@ -1,8 +1,8 @@
 'use client';
 
-import { Input } from '@/components/base/input/input';
-import { Label } from '@/components/base/input/label';
-import { TagsInput } from '@/components/base/input/tags-input';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   ARTICLE_PAGES_TO_LINK_MAX,
   ARTICLE_STYLE_GUIDE_MAX,
@@ -12,12 +12,12 @@ import {
   type ArticleSettings,
 } from '@/libs/ai/promptArticles/schema';
 import { isValidUrl } from '@/libs/utils/urls';
+import { ArticleTagInput } from './ArticleTagInput';
 
 const TOOLTIPS = {
-  wordCount:
-    'Roughly how long the article should be. Affects outline depth and article length.',
+  wordCount: 'Roughly how long the article should be. Affects outline depth and article length.',
   styleGuide:
-    "Describe how the article should sound. Voice, vocabulary you like or avoid, structure preferences, punctuation rules. Be specific: the more detail, the closer the output.",
+    'Describe how the article should sound. Voice, vocabulary you like or avoid, structure preferences, punctuation rules. Be specific: the more detail, the closer the output.',
   pagesToLink:
     'URLs we should link to inside the article. Each becomes a candidate internal link the writer will use where it fits naturally.',
   keywords:
@@ -44,9 +44,7 @@ export type ArticleSettingsValidity = {
   wordCountNumber: number;
 };
 
-export function articleSettingsFromValue(
-  value: ArticleSettingsFieldsValue
-): ArticleSettings {
+export function articleSettingsFromValue(value: ArticleSettingsFieldsValue): ArticleSettings {
   return {
     targetWordCount: Number(value.targetWordCount),
     styleGuide: value.styleGuide,
@@ -55,9 +53,7 @@ export function articleSettingsFromValue(
   };
 }
 
-export function articleSettingsToValue(
-  settings: ArticleSettings
-): ArticleSettingsFieldsValue {
+export function articleSettingsToValue(settings: ArticleSettings): ArticleSettingsFieldsValue {
   return {
     targetWordCount: String(settings.targetWordCount),
     styleGuide: settings.styleGuide,
@@ -109,44 +105,43 @@ export function ArticleSettingsFields({ value, onChange, projectDomain, compact 
 
   return (
     <div className={compact ? 'flex flex-col gap-4' : 'flex flex-col gap-5'}>
-      <Input
-        label="Target word count"
-        type="number"
-        size="md"
-        value={value.targetWordCount}
-        onChange={(v) => set('targetWordCount', v)}
-        tooltip={TOOLTIPS.wordCount}
-        isInvalid={validity.wordCountInvalid}
-        hint={
-          validity.wordCountInvalid
-            ? `Enter a whole number between ${ARTICLE_TARGET_WORD_COUNT_MIN} and ${ARTICLE_TARGET_WORD_COUNT_MAX}.`
-            : undefined
-        }
-      />
+      <Field>
+        <FieldLabel htmlFor="target-word-count" title={TOOLTIPS.wordCount}>
+          Target word count
+        </FieldLabel>
+        <Input
+          id="target-word-count"
+          type="number"
+          value={value.targetWordCount}
+          onChange={(event) => set('targetWordCount', event.target.value)}
+          aria-invalid={validity.wordCountInvalid}
+        />
+        {validity.wordCountInvalid && (
+          <FieldDescription className="text-destructive">
+            Enter a whole number between {ARTICLE_TARGET_WORD_COUNT_MIN} and{' '}
+            {ARTICLE_TARGET_WORD_COUNT_MAX}.
+          </FieldDescription>
+        )}
+      </Field>
 
-      <div className="flex w-full flex-col gap-1.5">
-        <Label tooltip={TOOLTIPS.styleGuide}>Tone & writing style</Label>
-        <textarea
+      <Field>
+        <FieldLabel htmlFor="article-style-guide" title={TOOLTIPS.styleGuide}>
+          Tone & writing style
+        </FieldLabel>
+        <Textarea
+          id="article-style-guide"
           rows={5}
           value={value.styleGuide}
           onChange={(e) => set('styleGuide', e.target.value)}
           placeholder="Direct, technical voice. Short paragraphs. Avoid 'leverage' and 'unlock'. Use 'we' not 'you'."
-          className={
-            validity.styleGuideTooLong
-              ? 'ring-error_subtle focus:ring-error bg-primary text-primary placeholder:text-placeholder w-full rounded-lg px-3.5 py-2.5 text-sm shadow-xs ring-1 outline-hidden ring-inset focus:ring-2'
-              : 'ring-primary focus:ring-brand bg-primary text-primary placeholder:text-placeholder w-full rounded-lg px-3.5 py-2.5 text-sm shadow-xs ring-1 outline-hidden ring-inset focus:ring-2'
-          }
+          aria-invalid={validity.styleGuideTooLong}
         />
-        <div
-          className={
-            validity.styleGuideTooLong ? 'text-error-primary text-sm' : 'text-tertiary text-sm'
-          }
-        >
+        <FieldDescription className={validity.styleGuideTooLong ? 'text-destructive' : undefined}>
           {value.styleGuide.length}/{ARTICLE_STYLE_GUIDE_MAX} characters
-        </div>
-      </div>
+        </FieldDescription>
+      </Field>
 
-      <TagsInput
+      <ArticleTagInput
         label="Pages to link"
         tooltip={TOOLTIPS.pagesToLink}
         value={value.pagesToLink}
@@ -157,7 +152,7 @@ export function ArticleSettingsFields({ value, onChange, projectDomain, compact 
         hint="Press Enter or comma to add a URL."
       />
 
-      <TagsInput
+      <ArticleTagInput
         label="Target keywords"
         tooltip={TOOLTIPS.keywords}
         value={value.targetKeywords}

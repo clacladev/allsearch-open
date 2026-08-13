@@ -1,8 +1,17 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
-import { Trash01 } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { cx } from '@/utils/cx';
 import {
   HEADING_KEY_POINT_MAX,
@@ -147,11 +156,15 @@ export function EditableOutlineCard({
 
       <div className="mt-4" style={{ paddingLeft: '18px' }}>
         <Button
-          color="tertiary"
+          variant="outline"
           size="sm"
           onClick={onAdd}
-          isDisabled={!canAdd}
-          aria-label={canAdd ? 'Add heading' : `Maximum reached (${OUTLINE_HEADINGS_MAX}/${OUTLINE_HEADINGS_MAX})`}
+          disabled={!canAdd}
+          aria-label={
+            canAdd
+              ? 'Add heading'
+              : `Maximum reached (${OUTLINE_HEADINGS_MAX}/${OUTLINE_HEADINGS_MAX})`
+          }
         >
           {canAdd ? '+ Add heading' : `${OUTLINE_HEADINGS_MAX}/${OUTLINE_HEADINGS_MAX}`}
         </Button>
@@ -195,26 +208,28 @@ function EditableHeadingRow({
   const keyPointTooLong = heading.keyPoint.length > HEADING_KEY_POINT_MAX;
 
   return (
-    <li
-      className="group flex flex-col gap-0"
-      style={{ paddingLeft: `${level * 18}px` }}
-    >
+    <li className="group flex flex-col gap-0" style={{ paddingLeft: `${level * 18}px` }}>
       <div className="flex items-start gap-2">
-        <select
+        <Select
           aria-label={`Heading level for ${heading.text || 'this heading'}`}
           value={heading.tag}
-          onChange={(e) => onTagChange(heading._uid, e.target.value as ArticleOutlineHeadingTag)}
-          className="text-secondary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand mt-0.5 inline-flex h-7 cursor-pointer rounded-md bg-transparent px-1.5 text-xs font-medium uppercase ring-1 ring-transparent ring-inset outline-hidden transition-colors hover:ring-1 focus:ring-2"
+          onValueChange={(value) => onTagChange(heading._uid, value as ArticleOutlineHeadingTag)}
         >
-          {HEADING_TAGS.map((tag) => {
-            const disabled = tag === 'h1' && hasH1 && heading.tag !== 'h1';
-            return (
-              <option key={tag} value={tag} disabled={disabled}>
+          <SelectTrigger size="sm" className="mt-0.5 w-16 uppercase">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HEADING_TAGS.map((tag) => (
+              <SelectItem
+                key={tag}
+                value={tag}
+                disabled={tag === 'h1' && hasH1 && heading.tag !== 'h1'}
+              >
                 {tag.toUpperCase()}
-              </option>
-            );
-          })}
-        </select>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {isEdited && (
           <span
@@ -225,7 +240,7 @@ function EditableHeadingRow({
           </span>
         )}
 
-        <input
+        <Input
           id={textId}
           type="text"
           aria-describedby={textHintId}
@@ -235,15 +250,17 @@ function EditableHeadingRow({
           placeholder="Heading text"
           className={cx(
             // Idle: blends with the card. Hover/focus surfaces the input shape.
-            'text-primary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand h-9 flex-1 rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-snug ring-1 ring-transparent outline-hidden ring-inset transition-colors hover:ring-1 focus:ring-2',
+            'text-primary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand h-9 flex-1 rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-snug ring-1 ring-transparent outline-hidden transition-colors ring-inset hover:ring-1 focus:ring-2',
             heading.tag === 'h1' && 'text-base font-semibold',
             heading.tag === 'h2' && 'font-semibold',
             (textTooShort || textTooLong) && 'ring-error-primary'
           )}
         />
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => onDelete(heading._uid)}
           disabled={!canDelete}
           aria-label="Delete heading"
@@ -252,8 +269,8 @@ function EditableHeadingRow({
             !canDelete && 'cursor-not-allowed opacity-30'
           )}
         >
-          <Trash01 className="size-4" aria-hidden="true" />
-        </button>
+          <Trash2 className="size-4" aria-hidden="true" />
+        </Button>
       </div>
 
       {(textTooShort || textTooLong) && (
@@ -264,7 +281,7 @@ function EditableHeadingRow({
         </p>
       )}
 
-      <textarea
+      <Textarea
         id={keyPointId}
         rows={2}
         aria-describedby={keyPointHintId}
@@ -274,7 +291,7 @@ function EditableHeadingRow({
         placeholder="Key point covered under this heading"
         className={cx(
           // Idle: blends with the card. Hover/focus surfaces the input shape.
-          'text-tertiary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand w-full rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-relaxed ring-1 ring-transparent outline-hidden ring-inset transition-colors hover:ring-1 focus:ring-2',
+          'text-tertiary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand w-full rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-relaxed ring-1 ring-transparent outline-hidden transition-colors ring-inset hover:ring-1 focus:ring-2',
           (keyPointTooShort || keyPointTooLong) && 'ring-error-primary'
         )}
       />

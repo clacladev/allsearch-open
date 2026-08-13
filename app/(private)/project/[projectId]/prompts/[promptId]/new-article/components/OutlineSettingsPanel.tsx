@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Settings01 } from '@untitledui/icons';
+import { ChevronDown, Settings } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
-import {
-  type ArticleSettings,
-  type ArticleSettingsPartial,
-} from '@/libs/ai/promptArticles/schema';
+import { type ArticleSettings, type ArticleSettingsPartial } from '@/libs/ai/promptArticles/schema';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
 import { cx } from '@/utils/cx';
 import {
@@ -88,11 +85,7 @@ export function OutlineSettingsPanel({
   const validity = validateArticleSettingsFieldsValue(value);
   const isValid = validity.isValid;
 
-  const url = RouteHelper.Api.Project.getPromptArticle(
-    projectId,
-    promptId,
-    promptArticle.id
-  );
+  const url = RouteHelper.Api.Project.getPromptArticle(projectId, promptId, promptArticle.id);
 
   const persist = async (body: ArticleSettingsPartial) => {
     setSaveStatus('saving');
@@ -145,7 +138,7 @@ export function OutlineSettingsPanel({
         className="flex w-full items-center justify-between gap-2 text-left"
       >
         <div className="flex items-center gap-2">
-          <Settings01 className="text-fg-quaternary size-4" />
+          <Settings className="text-muted-foreground size-4" />
           <span className="text-md text-primary font-medium">Article settings</span>
           <span className="text-tertiary text-sm">
             {value.targetWordCount || promptArticle.target_word_count} words
@@ -158,20 +151,13 @@ export function OutlineSettingsPanel({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {saveStatus === 'saving' && (
-            <span className="text-tertiary text-xs">Saving…</span>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="text-success-primary text-xs">Saved</span>
-          )}
+          {saveStatus === 'saving' && <span className="text-tertiary text-xs">Saving…</span>}
+          {saveStatus === 'saved' && <span className="text-success-primary text-xs">Saved</span>}
           {saveStatus === 'error' && (
             <span className="text-error-primary text-xs">Save failed</span>
           )}
           <ChevronDown
-            className={cx(
-              'text-fg-quaternary size-5 transition-transform',
-              isOpen && 'rotate-180'
-            )}
+            className={cx('text-fg-quaternary size-5 transition-transform', isOpen && 'rotate-180')}
           />
         </div>
       </button>
@@ -189,7 +175,7 @@ export function OutlineSettingsPanel({
             <div className="flex items-center justify-end gap-2">
               <Button
                 size="sm"
-                color="secondary"
+                variant="secondary"
                 onClick={() => {
                   if (!isValid) return;
                   void persist(articleSettingsFromValue(value));

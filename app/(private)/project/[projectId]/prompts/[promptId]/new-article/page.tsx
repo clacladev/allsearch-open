@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Edit05 } from '@untitledui/icons';
+import { FilePenLine } from 'lucide-react';
 import z from 'zod';
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
@@ -99,7 +99,7 @@ function getOutlineOpportunityContext(
   const targetSourceCleanUrl =
     opportunity.type === 'ProjectSourceNotCitedOpportunity' ||
     opportunity.type === 'ProjectSourceNeedsImprovementOpportunity'
-      ? opportunity.projectSource?.cleanUrl ?? null
+      ? (opportunity.projectSource?.cleanUrl ?? null)
       : null;
 
   return {
@@ -228,7 +228,7 @@ export default async function NewArticlePage({ params, searchParams }: Props) {
     <MainContainer>
       <Header
         text="New article"
-        icon={Edit05}
+        icon={FilePenLine}
         description="Create an article outline to improve your brand visibility for this prompt."
         startDate={startDate}
         endDate={endDate}
