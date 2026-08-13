@@ -98,7 +98,7 @@ export default function BrandForm() {
           size="lg"
           disabled={!canContinue || isUpdating}
           onClick={onContinue}
-          className="mt-10"
+          className="mt-10 h-11"
         >
           Continue <ArrowRight aria-hidden="true" /> {isUpdating && <Spinner aria-hidden="true" />}
         </Button>

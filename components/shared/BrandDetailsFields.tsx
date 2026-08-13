@@ -47,10 +47,10 @@ export function BrandDetailsFields({
             type="url"
             name="brandUrl"
             placeholder="https://brand.com"
-            className="rounded-r-none"
+            className="text-md h-11 rounded-r-none"
           />
           {(isLoadingMetadata || iconUrl) && (
-            <div className="border-input flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0">
+            <div className="border-input flex size-11 shrink-0 items-center justify-center rounded-r-md border border-l-0">
               {isLoadingMetadata ? (
                 <Spinner aria-label="Loading brand details" />
               ) : (
@@ -72,6 +72,7 @@ export function BrandDetailsFields({
           type="text"
           name="brandName"
           placeholder="Ringo"
+          className="text-md h-11"
         />
         {isNameInvalid && <FieldError>Brand name is required</FieldError>}
       </Field>
@@ -97,6 +98,7 @@ export function BrandDetailsFields({
               type="text"
               name="targetLocation"
               placeholder="Nation, state, city"
+              className="text-md h-11"
             />
           </Field>
         )}

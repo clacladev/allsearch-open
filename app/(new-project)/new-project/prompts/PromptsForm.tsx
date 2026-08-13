@@ -237,7 +237,7 @@ export default function PromptsForm() {
               </div>
 
               {topicGroup.topic === CUSTOM_TOPIC_NAME && (
-                <InputGroup className="mt-3">
+                <InputGroup className="mt-3 h-11">
                   <InputGroupInput
                     value={newCustomPrompt}
                     onChange={(event) => setNewCustomPrompt(event.target.value)}
@@ -246,12 +246,13 @@ export default function PromptsForm() {
                     type="text"
                     placeholder="Custom"
                     onKeyDown={handleKeyDown}
+                    className="text-md h-full"
                   />
                   <InputGroupAddon align="inline-end" className="pr-1">
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={onAddCustom}
                       disabled={!newCustomPrompt.length || isLoading || !canAddNewCustom}
                     >
@@ -291,13 +292,20 @@ export default function PromptsForm() {
         )}
 
         <div className="mt-10 flex gap-2">
-          <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-11"
+            onClick={() => router.back()}
+          >
             <ArrowLeft aria-hidden="true" /> Back
           </Button>
           <Button
             type="button"
             variant={promptIdeasError ? 'default' : 'outline'}
             size="lg"
+            className="h-11"
             disabled={isUpdating || isLoading}
             onClick={onReload}
           >
@@ -308,7 +316,7 @@ export default function PromptsForm() {
             size="lg"
             disabled={!canContinue || isUpdating || isLoading}
             onClick={onContinue}
-            className="flex-1"
+            className="h-11 flex-1"
           >
             Continue <ArrowRight aria-hidden="true" />{' '}
             {isUpdating && <Spinner aria-hidden="true" />}

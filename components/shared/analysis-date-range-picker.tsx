@@ -57,7 +57,7 @@ export function AnalysisDateRangePicker({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
-            <Button type="button" variant="outline" size="sm" aria-label="Date range picker" />
+            <Button type="button" variant="outline" size="sm" className="h-9 px-3" aria-label="Date range picker" />
           }
         >
           <CalendarDays aria-hidden="true" />
@@ -108,7 +108,7 @@ export function AnalysisDateRangePicker({
         </PopoverContent>
       </Popover>
       {!isDefault && (
-        <Button type="button" variant="outline" size="sm" onClick={() => onApply(defaultValue)}>
+        <Button type="button" variant="outline" size="sm" className="h-9 px-3" onClick={() => onApply(defaultValue)}>
           <RotateCcw aria-hidden="true" />
           Reset dates
         </Button>

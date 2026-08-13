@@ -1,7 +1,7 @@
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils/cn';
-import { Info, TriangleAlert } from 'lucide-react';
+import { Info, TriangleAlert, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const TONE_ICON_CLASS: Record<'warning' | 'neutral', string> = {
@@ -29,7 +29,7 @@ export function FloatingAlert({
   const Icon = tone === 'warning' ? TriangleAlert : Info;
 
   return (
-    <Alert className="flex flex-col gap-3 rounded-xl shadow-xs md:flex-row md:items-center md:justify-between">
+    <Alert className="grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-xl px-4 py-4 shadow-xs">
       <Icon aria-hidden="true" className={cn(TONE_ICON_CLASS[tone])} />
 
       <div className="flex-1">
@@ -38,7 +38,7 @@ export function FloatingAlert({
       </div>
 
       {(confirmLabel || dismissLabel) && (
-        <AlertAction className="static flex gap-2">
+        <AlertAction className="static col-start-2 row-start-2 flex gap-2">
           {onClose && dismissLabel && (
             <Button size="sm" variant="ghost" onClick={onClose}>
               {dismissLabel}
@@ -50,6 +50,18 @@ export function FloatingAlert({
             </Button>
           )}
         </AlertAction>
+      )}
+      {onClose && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="absolute top-3 right-3"
+          aria-label="Dismiss alert"
+          onClick={onClose}
+        >
+          <X aria-hidden="true" />
+        </Button>
       )}
     </Alert>
   );
