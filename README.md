@@ -88,7 +88,7 @@ Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars
 | Layer   | Choice                                                           |
 | ------- | ---------------------------------------------------------------- |
 | App     | Next.js 16 (App Router), React 19                                |
-| UI      | Tailwind CSS v4, Untitled UI / React Aria                        |
+| UI      | Tailwind CSS v4, vendored shadcn/ui (Base UI) / React Aria Components |
 | DB      | SQLite via Drizzle (`libs/database/`, `drizzle/`)                |
 | AI      | Vercel AI SDK + direct OpenAI / Google / Perplexity keys         |
 | Tooling | Bun (`install`, `test`, scripts); Node for the long-lived server |

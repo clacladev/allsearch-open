@@ -7,7 +7,7 @@ Always use `bun` instead of `npm` or `yarn`.
 ## Components
 
 - Prefer **React Server Components** by default. Use `'use client'` only when necessary (interactivity, `useState`, `useEffect`).
-- Use Tailwind CSS utility classes for styling. Use UntitledUI components for common UI elements.
+- Use Tailwind CSS utility classes for styling. Prefer existing shadcn/Base UI components in `components/ui/` for common UI elements.
 - Avoid custom CSS files unless absolutely necessary.
 - **Use existing component APIs before rolling custom solutions.** When adding loading states, check if the component already has a built-in prop (like Button's `isLoading`) rather than manually swapping children with a `LoadingIndicator`.
 
@@ -28,8 +28,8 @@ component:
 5. Re-record the component's row in the inventory's generated-source ledger
    with the new version/date and any local modifications that must survive
    the update (e.g. the `.dark-mode` theme mapping in `sonner.tsx`, or the
-   `shadcn-primary`/`shadcn-secondary` token renames needed because legacy
-   `theme.css` already claims the bare `primary`/`secondary` namespace — see
+   `shadcn-primary`/`shadcn-secondary` token names needed because the product
+   semantic catalog claims the bare `primary`/`secondary` namespace — see
    `styles/shadcn-theme.css`).
 6. Run `bun lint` and `bun tsc` before committing.
 

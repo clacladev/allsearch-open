@@ -1,7 +1,7 @@
 import { Favicon } from '@/app/(private)/components/Favicon';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
 import { PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 export type SentimentScoresBarChartItem = {
   id: string;
@@ -58,7 +58,7 @@ export default function SentimentScoresBarChart({
 
             <div className="relative h-9 flex-1 overflow-hidden rounded-lg">
               <div
-                className={cx(
+                className={cn(
                   'h-full rounded-lg',
                   isPositive
                     ? isHighlighted

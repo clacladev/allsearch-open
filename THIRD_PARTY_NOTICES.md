@@ -2,9 +2,8 @@
 
 AllSearch Local vendors generated source from the following MIT/ISC-licensed
 projects into `components/ui/` and `libs/utils/`. This is attribution, not a
-legal license review — see ADR 0005 and the public-release gate
-(`.scratch/local-app-migration/issues/22-replace-untitled-ui.md`) for the final
-release audit.
+legal license review — local product-asset provenance and explicit maintainer
+public-release signoff remain required under ADR 0005 and issue 22.
 
 ## shadcn/ui
 
@@ -28,3 +27,5 @@ MIT License. https://sonner.emilkowalski.com — toast primitive generated as
 
 Exact generated file inventory, versions, and generation dates are tracked in
 `.scratch/untitled-ui-to-shadcn/inventory.md` ("Generated-source ledger").
+Deliverable 10 removed the legacy Untitled UI source and direct package
+dependencies; no Untitled notice remains required for shipped source.

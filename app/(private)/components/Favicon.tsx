@@ -1,6 +1,6 @@
 'use client';
 
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { getBrandColor } from '@/libs/utils/brandColor';
 import { useState } from 'react';
 
@@ -33,7 +33,7 @@ export function Favicon({
 
   return (
     <div
-      className={cx(
+      className={cn(
         'bg-primary outline-tertiary flex size-10 items-center justify-center overflow-hidden rounded-lg outline-1 dark:bg-neutral-100',
         className
       )}

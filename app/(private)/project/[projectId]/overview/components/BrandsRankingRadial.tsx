@@ -6,7 +6,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { toOrdinal } from '@/libs/numberFormatters';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
 import { getBrandColor, PROJECT_BRAND_COLOR } from '@/libs/utils/brandColor';
 
@@ -81,7 +81,7 @@ export default function BrandsRankingRadial({
             <tspan
               x="50%"
               dy="-1em"
-              className={cx('text-tertiary fill-current', 'text-xs font-medium')}
+              className={cn('text-tertiary fill-current', 'text-xs font-medium')}
             >
               You rank
             </tspan>

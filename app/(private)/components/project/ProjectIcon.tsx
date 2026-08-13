@@ -2,7 +2,7 @@
 
 import { type FC, type ReactNode, useState } from 'react';
 import { User } from 'lucide-react';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { ProjectStatusIndicator, type ProjectStatus } from './ProjectStatusIndicator';
 
 type ProjectIconSize = 'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -136,14 +136,14 @@ export const ProjectIcon = ({
     }
 
     if (initials) {
-      return <span className={cx('text-quaternary', styles[size].initials)}>{initials}</span>;
+      return <span className={cn('text-quaternary', styles[size].initials)}>{initials}</span>;
     }
 
     if (PlaceholderIcon) {
-      return <PlaceholderIcon className={cx('text-fg-quaternary', styles[size].icon)} />;
+      return <PlaceholderIcon className={cn('text-fg-quaternary', styles[size].icon)} />;
     }
 
-    return placeholder || <User className={cx('text-fg-quaternary', styles[size].icon)} />;
+    return placeholder || <User className={cn('text-fg-quaternary', styles[size].icon)} />;
   };
 
   const renderBadgeContent = () => {
@@ -162,7 +162,7 @@ export const ProjectIcon = ({
     <div
       data-avatar
       style={fallbackStyle}
-      className={cx(
+      className={cn(
         'bg-primary text-tertiary relative inline-flex shrink-0 items-center justify-center rounded text-xs outline-transparent dark:bg-neutral-100',
         // Focus styles
         focusable &&

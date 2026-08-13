@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import {
   HEADING_KEY_POINT_MAX,
   HEADING_KEY_POINT_MIN,
@@ -127,7 +127,7 @@ export function EditableOutlineCard({
   return (
     <article
       aria-label="Article outline"
-      className={cx(
+      className={cn(
         'border-secondary bg-secondary rounded-xl border p-4 sm:p-5',
         isDisabled && 'pointer-events-none opacity-60'
       )}
@@ -248,7 +248,7 @@ function EditableHeadingRow({
           value={heading.text}
           onChange={(e) => onTextChange(heading._uid, e.target.value)}
           placeholder="Heading text"
-          className={cx(
+          className={cn(
             // Idle: blends with the card. Hover/focus surfaces the input shape.
             'text-primary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand h-9 flex-1 rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-snug ring-1 ring-transparent outline-hidden transition-colors ring-inset hover:ring-1 focus:ring-2',
             heading.tag === 'h1' && 'text-base font-semibold',
@@ -264,7 +264,7 @@ function EditableHeadingRow({
           onClick={() => onDelete(heading._uid)}
           disabled={!canDelete}
           aria-label="Delete heading"
-          className={cx(
+          className={cn(
             'text-fg-quaternary hover:text-error-primary inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md sm:h-9 sm:w-9 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100',
             !canDelete && 'cursor-not-allowed opacity-30'
           )}
@@ -289,7 +289,7 @@ function EditableHeadingRow({
         value={heading.keyPoint}
         onChange={(e) => onKeyPointChange(heading._uid, e.target.value)}
         placeholder="Key point covered under this heading"
-        className={cx(
+        className={cn(
           // Idle: blends with the card. Hover/focus surfaces the input shape.
           'text-tertiary hover:bg-primary hover:ring-primary focus:bg-primary focus:ring-brand w-full rounded-md bg-transparent px-2.5 py-1.5 text-sm leading-relaxed ring-1 ring-transparent outline-hidden transition-colors ring-inset hover:ring-1 focus:ring-2',
           (keyPointTooShort || keyPointTooLong) && 'ring-error-primary'

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { Spinner } from '@/components/ui/spinner';
 import { SaveStatusPill } from './SaveStatusPill';
 import { useArticleAutosave } from '../hooks/useArticleAutosave';
@@ -105,7 +105,7 @@ export function EditableArticle({
         className="pointer-events-none absolute top-2 right-3 z-20"
       />
       <div
-        className={cx('mdx-editor-allsearch-host', isDisabled && 'pointer-events-none opacity-60')}
+        className={cn('mdx-editor-allsearch-host', isDisabled && 'pointer-events-none opacity-60')}
         aria-label="Article markdown editor"
       >
         <MarkdownArticleEditor

@@ -7,7 +7,7 @@ import {
   Popover as AriaPopover,
 } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 interface TextFilterProps {
   label: string;
@@ -44,7 +44,7 @@ export function TextFilter({ label, value, onChange, placeholder }: TextFilterPr
       <div className="relative">
         <AriaButton
           className={({ isFocusVisible }) =>
-            cx(
+            cn(
               'bg-primary ring-primary flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm shadow-xs ring-1 outline-hidden transition duration-100 ring-inset',
               isFocusVisible && 'ring-brand ring-2',
               isActive ? 'text-primary' : 'text-secondary'
@@ -64,12 +64,12 @@ export function TextFilter({ label, value, onChange, placeholder }: TextFilterPr
         placement="bottom start"
         offset={4}
         className={({ isEntering, isExiting }) =>
-          cx(
+          cn(
             'w-64 rounded-lg bg-primary p-3 shadow-lg ring-1 ring-secondary_alt outline-hidden will-change-transform',
             isEntering &&
-              'duration-150 ease-out animate-in fade-in placement-bottom:slide-in-from-top-0.5',
+              'duration-150 ease-out animate-in fade-in data-[placement=bottom]:slide-in-from-top-0.5',
             isExiting &&
-              'duration-100 ease-in animate-out fade-out placement-bottom:slide-out-to-top-0.5'
+              'duration-100 ease-in animate-out fade-out data-[placement=bottom]:slide-out-to-top-0.5'
           )
         }
       >

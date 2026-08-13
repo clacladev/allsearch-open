@@ -1,6 +1,6 @@
 import { TooltipIcon } from '@/app/(private)/components/Tooltip';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { ComponentType } from 'react';
 
 export const VisualContainer = ({
@@ -28,7 +28,7 @@ export const VisualContainer = ({
 }>) => {
   const Icon = icon;
   return (
-    <Card size="sm" className={cx('gap-5', className)}>
+    <Card size="sm" className={cn('gap-5', className)}>
       <CardHeader className="gap-1">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -40,7 +40,7 @@ export const VisualContainer = ({
         </div>
         {headerTrailing && <CardAction>{headerTrailing}</CardAction>}
       </CardHeader>
-      <CardContent className={cx(isSquare ? 'min-h-50' : '', contentClassName)}>
+      <CardContent className={cn(isSquare ? 'min-h-50' : '', contentClassName)}>
         {children}
       </CardContent>
     </Card>
