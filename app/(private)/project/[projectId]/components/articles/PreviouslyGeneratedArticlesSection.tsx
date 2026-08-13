@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRight, FileCheck02 } from '@untitledui/icons';
-import { Badge } from '@/components/base/badges/badges';
-import { Button } from '@/components/base/buttons/button';
+import Link from 'next/link';
+import { ArrowRight, FileCheck2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { RouteHelper } from '@/libs/routes';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
 import type { PromptRow } from '@/libs/database/Prompts/types';
@@ -26,20 +27,32 @@ function formatRelativeTime(fromIso: string, now: number): string {
 
 type ArticleStatus = {
   label: string;
-  color: 'gray' | 'brand' | 'success';
+  className: string;
 };
 
 function getArticleStatus(article: PromptArticleRow): ArticleStatus {
   if (article.user_edited_article_markdown != null) {
-    return { label: 'Article edited', color: 'success' };
+    return {
+      label: 'Article edited',
+      className: 'border-utility-green-200 bg-utility-green-50 text-utility-green-700',
+    };
   }
   if (article.article_markdown != null) {
-    return { label: 'Article generated', color: 'success' };
+    return {
+      label: 'Article generated',
+      className: 'border-utility-green-200 bg-utility-green-50 text-utility-green-700',
+    };
   }
   if (article.user_edited_outline != null) {
-    return { label: 'Outline edited', color: 'brand' };
+    return {
+      label: 'Outline edited',
+      className: 'border-utility-brand-200 bg-utility-brand-50 text-utility-brand-700',
+    };
   }
-  return { label: 'Outline drafted', color: 'gray' };
+  return {
+    label: 'Outline drafted',
+    className: 'border-utility-neutral-200 bg-utility-neutral-50 text-utility-neutral-700',
+  };
 }
 
 const SectionHeader = ({ title, description }: { title: string; description: string }) => (
@@ -100,7 +113,7 @@ export const PreviouslyGeneratedArticlesSection = ({
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <FileCheck02 className="text-quaternary size-4 shrink-0" />
+                  <FileCheck2 className="text-quaternary size-4 shrink-0" aria-hidden="true" />
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p className="text-primary truncate text-sm font-medium">
                       {showPromptName
@@ -116,12 +129,13 @@ export const PreviouslyGeneratedArticlesSection = ({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <Badge color={status.color}>{status.label}</Badge>
+                  <Badge className={status.className}>{status.label}</Badge>
                   <span className="text-tertiary hidden text-xs sm:inline">
                     {formatRelativeTime(article.updated_at, now)}
                   </span>
-                  <Button href={href} color="tertiary" size="xs" iconTrailing={ArrowRight}>
+                  <Button render={<Link href={href} />} variant="ghost" size="xs">
                     Open
+                    <ArrowRight aria-hidden="true" />
                   </Button>
                 </div>
               </li>
