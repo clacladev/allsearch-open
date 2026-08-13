@@ -1,13 +1,9 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Edit05 } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
-import { Form } from '@/components/base/form/form';
-import {
-  ARTICLE_SETTINGS_DEFAULTS,
-  type ArticleSettings,
-} from '@/libs/ai/promptArticles/schema';
+import { FilePenLine } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ARTICLE_SETTINGS_DEFAULTS, type ArticleSettings } from '@/libs/ai/promptArticles/schema';
 import {
   ArticleSettingsFields,
   articleSettingsFromValue,
@@ -49,7 +45,7 @@ export function ArticleSettingsForm({
   };
 
   return (
-    <Form className="flex w-full max-w-180 flex-col gap-5" onSubmit={handleSubmit}>
+    <form className="flex w-full max-w-180 flex-col gap-5" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-1">
         <h2 className="text-display-xs text-primary font-semibold">Article settings</h2>
         <p className="text-md text-tertiary">
@@ -57,11 +53,7 @@ export function ArticleSettingsForm({
         </p>
       </div>
 
-      <ArticleSettingsFields
-        value={value}
-        onChange={setValue}
-        projectDomain={projectDomain}
-      />
+      <ArticleSettingsFields value={value} onChange={setValue} projectDomain={projectDomain} />
 
       {submitError && (
         <div className="border-error_subtle bg-error-primary text-error-primary rounded-lg border p-3 text-sm">
@@ -69,15 +61,14 @@ export function ArticleSettingsForm({
         </div>
       )}
 
-      <Button
-        type="submit"
-        size="lg"
-        iconLeading={Edit05}
-        isDisabled={!canSubmit}
-        isLoading={isSubmitting}
-      >
+      <Button type="submit" size="lg" disabled={!canSubmit}>
+        {isSubmitting ? (
+          <span className="animate-spin">◌</span>
+        ) : (
+          <FilePenLine aria-hidden="true" />
+        )}
         Generate outline
       </Button>
-    </Form>
+    </form>
   );
 }

@@ -7,7 +7,7 @@ import { OPPORTUNITIES_URL, TEST_DATE_RANGE, TEST_PROJECT_ID } from './constants
  * We navigate through the real opportunity page to reach the new-article page,
  * then intercept the outline generation API so we don't hit Gemini during CI.
  */
-test.describe('New Article outline page', { tag: '@ai' }, () => {
+test.describe('New Article outline page', () => {
   test('generates an outline via mocked API and lets the user copy and regenerate', async ({
     page,
     context,
@@ -43,10 +43,7 @@ test.describe('New Article outline page', { tag: '@ai' }, () => {
               headings: [
                 {
                   tag: 'h1',
-                  text:
-                    callCount === 1
-                      ? 'Mocked Outline Title'
-                      : 'Regenerated Outline Title',
+                  text: callCount === 1 ? 'Mocked Outline Title' : 'Regenerated Outline Title',
                   keyPoint: 'Introduce the topic clearly.',
                 },
                 {
@@ -73,10 +70,7 @@ test.describe('New Article outline page', { tag: '@ai' }, () => {
     // the test rather than flake.
     const firstRow = page.getByRole('row').nth(1);
     if (!(await firstRow.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(
-        true,
-        'No opportunities available in the test project for the current date range.'
-      );
+      test.skip(true, 'No opportunities available in the test project for the current date range.');
     }
     await firstRow.click();
 
@@ -186,10 +180,7 @@ test.describe('New Article outline page', { tag: '@ai' }, () => {
     await page.goto(OPPORTUNITIES_URL);
     const firstRow = page.getByRole('row').nth(1);
     if (!(await firstRow.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(
-        true,
-        'No opportunities available in the test project for the current date range.'
-      );
+      test.skip(true, 'No opportunities available in the test project for the current date range.');
     }
     await firstRow.click();
     const createOutlineCTA = page.getByRole('link', { name: /generate outline/i }).first();
