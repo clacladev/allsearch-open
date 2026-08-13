@@ -19,7 +19,7 @@ export default function SmallProgressBar({
       className={cn('h-2 w-12 overflow-hidden rounded-md bg-quaternary', className)}
     >
       <div
-        className="size-full rounded-md bg-fg-brand-primary transition duration-75 ease-linear"
+        className="size-full rounded-md bg-brand-600 transition duration-75 ease-linear"
         style={{ transform: `translateX(-${100 - boundedValue}%)` }}
       />
     </div>

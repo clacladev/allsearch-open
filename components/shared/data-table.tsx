@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ChevronsUpDown } from 'lucide-react';
+import { ArrowDown, ChevronsUpDown, Info } from 'lucide-react';
 import {
   flexRender,
   type Column,
@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table';
 import { createContext, useContext } from 'react';
 import { cn } from '@/libs/utils/cn';
+import { AppTooltip } from '@/components/shared/tooltip';
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,16 +52,33 @@ export function DataTableColumnHeader<T>({
     });
   };
 
-  if (!allowsSorting || hideSorting) return <span title={tooltip}>{label}</span>;
+  const labelContent = (
+    <>
+      <span>{label}</span>
+      {tooltip && (
+        <AppTooltip content={tooltip}>
+          <span
+            aria-label={tooltip}
+            className="inline-flex shrink-0 text-muted-foreground"
+          >
+            <Info aria-hidden="true" className="size-4" />
+          </span>
+        </AppTooltip>
+      )}
+    </>
+  );
+
+  if (!allowsSorting || hideSorting) {
+    return <span className="flex items-center gap-2">{labelContent}</span>;
+  }
 
   return (
     <button
       type="button"
-      title={tooltip}
       onClick={onClick}
-      className="focus-visible:ring-ring flex items-center gap-1 text-left focus-visible:ring-2 focus-visible:outline-none"
+      className="focus-visible:ring-ring flex items-center gap-2 text-left focus-visible:ring-2 focus-visible:outline-none"
     >
-      {label}
+      {labelContent}
       {direction ? (
         <ArrowDown
           aria-hidden="true"
