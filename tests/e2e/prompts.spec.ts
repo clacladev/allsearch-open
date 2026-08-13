@@ -466,6 +466,26 @@ test.describe('Prompt management', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Prompts table interactions', () => {
+  test('row Edit and Archive buttons are reachable by keyboard and expose their names', async ({
+    page,
+  }) => {
+    test.setTimeout(30_000);
+
+    await page.goto(PROMPTS_URL);
+
+    await expect(page.getByRole('table', { name: 'Prompts List' })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const archiveButton = page.getByRole('button', { name: 'Archive' }).first();
+    const editButton = page.getByRole('button', { name: 'Edit' }).first();
+
+    await archiveButton.focus();
+    await expect(archiveButton).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(editButton).toBeFocused();
+  });
+
   test('edit a prompt name', async ({ page }) => {
     test.setTimeout(30_000);
 

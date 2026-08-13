@@ -187,3 +187,15 @@ test.describe('Mobile navigation', () => {
     await expect(trigger).toBeFocused();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Not found
+// ---------------------------------------------------------------------------
+
+test.describe('Not found', () => {
+  test('shows the not-found page with a Dashboard link for an unknown path', async ({ page }) => {
+    await page.goto('/does-not-exist');
+    await expect(page.getByRole('heading', { name: 'We lost this page' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
+  });
+});
