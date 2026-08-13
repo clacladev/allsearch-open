@@ -58,7 +58,7 @@ export const test = base.extend<E2eFixtures>({
       ...(isVisual ? { timezoneId: 'UTC' } : {}),
     });
     try {
-      if (isVisual) await context.clock.setFixedTime(FIXED_E2E_TIME);
+      if (isVisual) await context.addInitScript(freezeBrowserDate, FIXED_E2E_TIME);
       await run(context);
     } finally {
       await context.close();
@@ -91,6 +91,22 @@ function startServer(port: number, databasePath: string, isVisual: boolean): Chi
 
 function isVisualProject(projectName: string): boolean {
   return VISUAL_PROJECT_NAMES.has(projectName);
+}
+
+function freezeBrowserDate(fixedTime: string): void {
+  const nativeDate = Date;
+  const fixedTimestamp = nativeDate.parse(fixedTime);
+  const nativeStartTimestamp = nativeDate.now();
+
+  function FixedDate(...args: unknown[]): Date {
+    if (!new.target) return new nativeDate(fixedTimestamp).toString() as unknown as Date;
+    return Reflect.construct(nativeDate, args.length === 0 ? [fixedTimestamp] : args, new.target);
+  }
+
+  Object.setPrototypeOf(FixedDate, nativeDate);
+  FixedDate.prototype = nativeDate.prototype;
+  FixedDate.now = () => fixedTimestamp + nativeDate.now() - nativeStartTimestamp;
+  Object.defineProperty(globalThis, 'Date', { configurable: true, writable: true, value: FixedDate });
 }
 
 async function getFreePort(): Promise<number> {
