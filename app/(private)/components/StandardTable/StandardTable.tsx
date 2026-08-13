@@ -28,7 +28,7 @@ export default function StandardTable<ValueType>({
   const rows = reactTable.getRowModel().rows;
 
   return (
-    <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
+    <section className="border-border overflow-hidden rounded-xl border bg-card shadow-xs">
       {tableHeader}
 
       {!!rows.length ? (

@@ -29,25 +29,90 @@ function getRangeError({ start, end }: AnalysisDateRange): string | undefined {
   }
 }
 
-export function AnalysisDateRangePicker({ value, defaultValue = defaultAnalysisRange(), onApply }: { value: AnalysisDateRange; defaultValue?: AnalysisDateRange; onApply: (value: AnalysisDateRange) => void }) {
+export function AnalysisDateRangePicker({
+  value,
+  defaultValue = defaultAnalysisRange(),
+  onApply,
+}: {
+  value: AnalysisDateRange;
+  defaultValue?: AnalysisDateRange;
+  onApply: (value: AnalysisDateRange) => void;
+}) {
   const [draft, setDraft] = useState(value);
   const [open, setOpen] = useState(false);
   useEffect(() => setDraft(value), [value]);
   const isDefault = value.start === defaultValue.start && value.end === defaultValue.end;
   const rangeError = getRangeError(draft);
+  const onCancelClick = () => {
+    setDraft(value);
+    setOpen(false);
+  };
+  const onApplyClick = () => {
+    onApply(draft);
+    setOpen(false);
+  };
 
-  return <div className="flex flex-wrap items-center gap-2">
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" aria-label="Date range picker" />}><CalendarDays aria-hidden="true" />{formatDate(value.start)} – {formatDate(value.end)}</PopoverTrigger>
-      <PopoverContent align="start" className="w-auto">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium">Start date<Input aria-label="Start date" aria-describedby={rangeError ? 'analysis-date-range-error' : undefined} type="date" value={draft.start} max={draft.end} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
-          <label className="grid gap-1 text-sm font-medium">End date<Input aria-label="End date" aria-describedby={rangeError ? 'analysis-date-range-error' : undefined} type="date" value={draft.end} min={draft.start} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
-        </div>
-        {rangeError && <p id="analysis-date-range-error" role="alert" className="text-sm text-destructive">{rangeError}</p>}
-        <div className="flex justify-end gap-2"><Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(value); setOpen(false); }}>Cancel</Button><Button type="button" size="sm" disabled={Boolean(rangeError)} onClick={() => { onApply(draft); setOpen(false); }}>Apply</Button></div>
-      </PopoverContent>
-    </Popover>
-    {!isDefault && <Button type="button" variant="ghost" size="sm" onClick={() => onApply(defaultValue)}><RotateCcw aria-hidden="true" />Reset dates</Button>}
-  </div>;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          render={
+            <Button type="button" variant="outline" size="sm" aria-label="Date range picker" />
+          }
+        >
+          <CalendarDays aria-hidden="true" />
+          {formatDate(value.start)} – {formatDate(value.end)}
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium">
+              Start date
+              <Input
+                aria-label="Start date"
+                aria-describedby={rangeError ? 'analysis-date-range-error' : undefined}
+                type="date"
+                value={draft.start}
+                max={draft.end}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, start: event.target.value }))
+                }
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium">
+              End date
+              <Input
+                aria-label="End date"
+                aria-describedby={rangeError ? 'analysis-date-range-error' : undefined}
+                type="date"
+                value={draft.end}
+                min={draft.start}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, end: event.target.value }))
+                }
+              />
+            </label>
+          </div>
+          {rangeError && (
+            <p id="analysis-date-range-error" role="alert" className="text-sm text-destructive">
+              {rangeError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={onCancelClick}>
+              Cancel
+            </Button>
+            <Button type="button" size="sm" disabled={Boolean(rangeError)} onClick={onApplyClick}>
+              Apply
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      {!isDefault && (
+        <Button type="button" variant="outline" size="sm" onClick={() => onApply(defaultValue)}>
+          <RotateCcw aria-hidden="true" />
+          Reset dates
+        </Button>
+      )}
+    </div>
+  );
 }

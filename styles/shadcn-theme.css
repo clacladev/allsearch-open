@@ -917,7 +917,9 @@
   --success-foreground: var(--color-white);
   --warning: var(--color-yellow-600);
   --warning-foreground: var(--color-neutral-900);
-  --border: var(--color-neutral-300);
+  /* Surface boundaries use the product's established quieter secondary border. Inputs keep the
+   * stronger primary border below so controls remain legible without making every container loud. */
+  --border: var(--color-border-secondary);
   --input: var(--color-neutral-300);
   --ring: var(--color-brand-500);
   --chart-1: var(--color-brand-500);
@@ -948,7 +950,7 @@
   --success-foreground: var(--color-neutral-950);
   --warning: var(--color-yellow-500);
   --warning-foreground: var(--color-neutral-950);
-  --border: var(--color-neutral-700);
+  --border: var(--color-border-secondary);
   --input: var(--color-neutral-700);
   --ring: var(--color-brand-500);
 }
