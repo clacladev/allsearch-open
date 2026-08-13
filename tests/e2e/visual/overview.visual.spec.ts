@@ -8,7 +8,7 @@ test.describe('Overview display surfaces — visual baseline', () => {
     await expect(page.getByTestId('overview-collection-run-coverage')).toBeVisible();
 
     if (testInfo.project.name === 'visual-mobile') {
-      await page.getByRole('radio', { name: 'Sentiment' }).click();
+      await page.getByRole('button', { name: 'Sentiment' }).click();
     }
 
     const expectedThemeClass = testInfo.project.name === 'visual-dark' ? 'dark-mode' : 'light-mode';

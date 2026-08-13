@@ -4,7 +4,7 @@ import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/Slid
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FieldLabel } from '@/components/ui/field';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import {
   Select,
@@ -197,6 +197,8 @@ export const NewPromptSlideoutMenu = ({
     .map((l) => l.trim())
     .filter(Boolean).length;
 
+  const topicSelectItems = topics.map((topic) => ({ value: topic.id, label: topic.name }));
+
   return (
     <>
       <SlideoutMenu
@@ -240,6 +242,7 @@ export const NewPromptSlideoutMenu = ({
                     </button>
                   </div>
                   <Select
+                    items={topicSelectItems}
                     value={singleTopicId ?? null}
                     onValueChange={(value) => setSingleTopicId(value ?? undefined)}
                   >
@@ -309,6 +312,7 @@ export const NewPromptSlideoutMenu = ({
                       </button>
                     </div>
                     <Select
+                      items={topicSelectItems}
                       value={bulkTopicId ?? null}
                       onValueChange={(value) => setBulkTopicId(value ?? undefined)}
                     >
@@ -380,7 +384,11 @@ export const NewPromptSlideoutMenu = ({
                         {topicGroup.prompts.map((prompt) => {
                           const id = `suggested-prompt-${encodeURIComponent(prompt)}`;
                           return (
-                            <div key={prompt} className="flex items-center gap-2 text-sm">
+                            <Field
+                              key={prompt}
+                              orientation="horizontal"
+                              className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                            >
                               <Checkbox
                                 id={id}
                                 checked={selectedSuggestedPrompts.includes(prompt)}
@@ -395,10 +403,10 @@ export const NewPromptSlideoutMenu = ({
                                   )
                                 }
                               />
-                              <label htmlFor={id} className="cursor-pointer">
+                              <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
                                 {prompt}
-                              </label>
-                            </div>
+                              </FieldLabel>
+                            </Field>
                           );
                         })}
                       </div>

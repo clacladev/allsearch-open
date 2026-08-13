@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Spinner } from '@/components/ui/spinner';
 import FormHeader from '../components/FormHeader';
@@ -155,28 +156,32 @@ export default function TopicsForm() {
         {!isTopicsIdeasLoading && (
           <>
             <div role="group" aria-label="Topics" className="flex flex-col gap-2">
-              {topicsItems.map((item) => (
-                <div key={item.value} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    id={`topic-${encodeURIComponent(item.value)}`}
-                    checked={selectedTopics.includes(item.value)}
-                    onCheckedChange={(checked) =>
-                      setSelectedTopics((current) =>
-                        checked
-                          ? [...current, item.value]
-                          : current.filter((topic) => topic !== item.value)
-                      )
-                    }
-                    disabled={isLoading}
-                  />
-                  <label
-                    htmlFor={`topic-${encodeURIComponent(item.value)}`}
-                    className="cursor-pointer"
+              {topicsItems.map((item) => {
+                const id = `topic-${encodeURIComponent(item.value)}`;
+                return (
+                  <Field
+                    key={item.value}
+                    orientation="horizontal"
+                    className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
                   >
-                    {item.title}
-                  </label>
-                </div>
-              ))}
+                    <Checkbox
+                      id={id}
+                      checked={selectedTopics.includes(item.value)}
+                      onCheckedChange={(checked) =>
+                        setSelectedTopics((current) =>
+                          checked
+                            ? [...current, item.value]
+                            : current.filter((topic) => topic !== item.value)
+                        )
+                      }
+                      disabled={isLoading}
+                    />
+                    <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
+                      {item.title}
+                    </FieldLabel>
+                  </Field>
+                );
+              })}
             </div>
 
             <InputGroup className="h-11">

@@ -1,9 +1,13 @@
 # Untitled UI to shadcn/ui migration
 
-Status: planning-approved
+Status: ready-for-human
 Parent gate: `.scratch/local-app-migration/issues/22-replace-untitled-ui.md`
 External prerequisite: the end-to-end UI suite being completed in a separate workspace
 Research date: 2026-08-12
+
+Implementation status: complete. The remaining manual release gate is the provenance review for
+retained product assets, recorded as `BLOCK-004` in `inventory.md`; it is not a remaining
+Untitled UI code or dependency migration task.
 
 ## Objective
 

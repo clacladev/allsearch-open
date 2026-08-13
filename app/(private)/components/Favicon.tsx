@@ -34,7 +34,7 @@ export function Favicon({
   return (
     <div
       className={cn(
-        'bg-primary outline-tertiary flex size-10 items-center justify-center overflow-hidden rounded-lg outline-1 dark:bg-neutral-100',
+        'bg-primary outline-avatar-contrast-border flex size-10 items-center justify-center overflow-hidden rounded-lg outline-1 dark:bg-neutral-100',
         className
       )}
       style={showFallback && brandColor ? { backgroundColor: brandColor } : undefined}

@@ -1,6 +1,7 @@
 'use client';
 
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Circle } from 'lucide-react';
 import { cn } from '@/libs/utils/cn';
 
 export type OverviewChartType = 'visibility' | 'sentiment';
@@ -18,24 +19,29 @@ export default function OverviewChartTypeGroup({
   onChartTypeChangeAction: (chartType: OverviewChartType) => void;
 }) {
   return (
-    <RadioGroup
+    <ToggleGroup
+      value={[chartType]}
+      onValueChange={(value) => {
+        const nextChartType = value[0] as OverviewChartType | undefined;
+        if (nextChartType) onChartTypeChangeAction(nextChartType);
+      }}
+      variant="outline"
+      size="sm"
+      spacing={0}
       aria-label="Chart type"
-      value={chartType}
-      onValueChange={(value) => onChartTypeChangeAction(value as OverviewChartType)}
-      className="border-border flex w-auto items-center gap-0 overflow-hidden rounded-md border shadow-xs"
     >
       {CHART_VARIANTS.map((item) => (
-        <label
-          key={item.chartType}
-          className={cn(
-            'border-border text-muted-foreground flex h-7 cursor-pointer items-center gap-1.5 border-l px-2 text-xs first:border-l-0',
-            chartType === item.chartType && 'bg-muted text-foreground'
-          )}
-        >
-          <RadioGroupItem key={item.chartType} value={item.chartType} aria-label={item.label} />
+        <ToggleGroupItem key={item.chartType} value={item.chartType}>
+          <Circle
+            aria-hidden="true"
+            className={cn(
+              'mr-1 size-2 fill-current',
+              chartType === item.chartType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
+            )}
+          />
           {item.label}
-        </label>
+        </ToggleGroupItem>
       ))}
-    </RadioGroup>
+    </ToggleGroup>
   );
 }

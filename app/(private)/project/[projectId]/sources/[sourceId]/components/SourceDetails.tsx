@@ -10,7 +10,9 @@ import { SourceStatisticBox } from './SourceStatisticBox';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { BrandsIconsStack, getBrandNamesList } from '../../components/BrandsIconsStack';
+import { DOMAIN_CATEGORY_DOT_CLASS } from '../../components/helpers';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
 import dayjs from 'dayjs';
 import { PromptRow } from '@/libs/database/Prompts/types';
 import Link from 'next/link';
@@ -115,7 +117,16 @@ const SourceStatistics = ({
           </>
         }
         value={
-          <Badge variant="secondary">{source.domainCategory}</Badge>
+          <Badge variant="outline">
+            <span
+              aria-hidden="true"
+              className={cn(
+                'size-1.5 rounded-full',
+                DOMAIN_CATEGORY_DOT_CLASS[source.domainCategory]
+              )}
+            />
+            {source.domainCategory}
+          </Badge>
         }
         tooltipTitle="Category of the source"
         tooltipDescription={source.domainCategory}
@@ -165,7 +176,7 @@ const SourceStatistics = ({
         value={
           source.projectIdRank !== -1 ? (
             <>
-              <CheckCircle2 className="text-primary" size={20} />
+              <CheckCircle2 className="text-brand-secondary" size={20} />
               <span>{toOrdinal(source.projectIdRank + 1)}</span>
             </>
           ) : (
@@ -207,12 +218,13 @@ const SourceStatistics = ({
 
 const PromptBadge = ({ text, href, isCited }: { text: string; href: string; isCited: boolean }) => (
   <Link href={href} className="no-underline!">
-    <Badge variant={isCited ? 'default' : 'secondary'}>
+    <Badge variant="outline">
+      {isCited && <span aria-hidden="true" className="bg-brand-solid size-1.5 rounded-full" />}
       {text}{' '}
       {isCited && (
         <>
-          <CheckCircle2 className="text-primary-foreground" size={10} />
-          <span className="text-primary-foreground">
+          <CheckCircle2 className="text-brand-secondary" size={10} />
+          <span className="text-brand-secondary">
             <Tooltip title="This source has been cited in this prompt responses">Cited</Tooltip>
           </span>
         </>

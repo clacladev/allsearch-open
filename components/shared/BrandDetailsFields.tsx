@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Favicon } from '@/app/(private)/components/Favicon';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -33,6 +34,9 @@ export function BrandDetailsFields({
   onTargetLocationSelectedChange: (isSelected: boolean) => void;
   onTargetLocationChange: (value: string) => void;
 }) {
+  const [isNameTouched, setIsNameTouched] = useState(false);
+  const showNameInvalid = isNameInvalid && isNameTouched;
+
   return (
     <>
       <Field data-invalid={isUrlInvalid || undefined}>
@@ -61,20 +65,21 @@ export function BrandDetailsFields({
         </div>
         {isUrlInvalid && <FieldError>Invalid URL</FieldError>}
       </Field>
-      <Field data-invalid={isNameInvalid || undefined}>
+      <Field data-invalid={showNameInvalid || undefined}>
         <FieldLabel htmlFor="brand-name">Brand Name</FieldLabel>
         <Input
           id="brand-name"
           value={name}
           onChange={(event) => onNameChange(event.target.value)}
-          aria-invalid={isNameInvalid || undefined}
+          onBlur={() => setIsNameTouched(true)}
+          aria-invalid={showNameInvalid || undefined}
           required
           type="text"
           name="brandName"
           placeholder="Ringo"
           className="text-md h-11"
         />
-        {isNameInvalid && <FieldError>Brand name is required</FieldError>}
+        {showNameInvalid && <FieldError>Brand name is required</FieldError>}
       </Field>
       <div className="mt-1 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-medium">
