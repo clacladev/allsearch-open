@@ -44,7 +44,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
@@ -74,7 +74,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
@@ -114,7 +114,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
@@ -152,7 +152,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
@@ -212,7 +212,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
@@ -286,7 +286,7 @@ test.describe('fresh install onboarding', () => {
     const googleFieldContainer = page
       .locator('div')
       .filter({ has: googleKeyInput })
-      // `Input` (components/base/input/input.tsx) wraps the raw <input> in its own div, which is
+      // The Input primitive wraps the raw <input> in its own div, which is
       // the innermost `has: googleKeyInput` match and does not contain the Save button — require
       // both so `.last()` resolves to ProviderKeyField's own container instead.
       .filter({ has: page.getByRole('button', { name: 'Save' }) })
