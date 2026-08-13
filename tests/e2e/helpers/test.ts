@@ -6,7 +6,11 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { test as base } from '@playwright/test';
 
 const GOLDEN_DATABASE_PATH = resolve(__dirname, '..', 'fixtures', 'golden.db');
+const FIXED_TIME_PRELOAD_PATH = resolve(__dirname, 'fixedTime.cjs');
 const SERVER_READY_TIMEOUT_MS = 90_000;
+const VISUAL_PROJECT_NAMES = new Set(['visual-light', 'visual-dark', 'visual-mobile']);
+
+export const FIXED_E2E_TIME = '2026-08-12T12:00:00.000Z';
 
 type E2eServer = {
   databasePath: string;
@@ -35,7 +39,7 @@ export const test = base.extend<E2eFixtures>({
 
       const port = await getFreePort();
       const url = `http://127.0.0.1:${port}`;
-      const server = startServer(port, databasePath);
+      const server = startServer(port, databasePath, isVisualProject(testInfo.project.name));
 
       try {
         await waitForServer(url, server);
@@ -47,9 +51,14 @@ export const test = base.extend<E2eFixtures>({
     },
     { scope: 'test' },
   ],
-  context: async ({ browser, e2eServer }, run) => {
-    const context = await browser.newContext({ baseURL: e2eServer.url });
+  context: async ({ browser, e2eServer }, run, testInfo) => {
+    const isVisual = isVisualProject(testInfo.project.name);
+    const context = await browser.newContext({
+      baseURL: e2eServer.url,
+      ...(isVisual ? { timezoneId: 'UTC' } : {}),
+    });
     try {
+      if (isVisual) await context.clock.setFixedTime(FIXED_E2E_TIME);
       await run(context);
     } finally {
       await context.close();
@@ -59,16 +68,29 @@ export const test = base.extend<E2eFixtures>({
 
 export { expect } from '@playwright/test';
 
-function startServer(port: number, databasePath: string): ChildProcess {
+function startServer(port: number, databasePath: string, isVisual: boolean): ChildProcess {
+  const nodeOptions = [process.env.NODE_OPTIONS, `--require=${FIXED_TIME_PRELOAD_PATH}`]
+    .filter(Boolean)
+    .join(' ');
   return spawn(
     process.execPath,
     ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(port)],
     {
       cwd: process.cwd(),
-      env: { ...process.env, ALLSEARCH_DB_PATH: databasePath },
+      env: {
+        ...process.env,
+        ALLSEARCH_DB_PATH: databasePath,
+        ...(isVisual
+          ? { ALLSEARCH_E2E_FIXED_TIME: FIXED_E2E_TIME, NODE_OPTIONS: nodeOptions, TZ: 'UTC' }
+          : {}),
+      },
       stdio: 'ignore',
     }
   );
+}
+
+function isVisualProject(projectName: string): boolean {
+  return VISUAL_PROJECT_NAMES.has(projectName);
 }
 
 async function getFreePort(): Promise<number> {
