@@ -5,13 +5,14 @@ import { PaginatedResult } from '@/libs/utils/PaginatedResult';
 import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ExportActionsButton } from '@/app/(private)/components/ExportActionsButton';
 import { exportBrandSourcesToCsv } from '../utils/exportBrandSourcesCsv';
 import { BrandsSourcesTable } from './BrandsSourcesTable';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
-import { Badge } from '@/components/base/badges/badges';
-import { Button } from '@/components/base/buttons/button';
-import { Settings02 } from '@untitledui/icons';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import type { SortDescriptor } from 'react-aria-components';
 import { BrandSelector, BrandOption } from './BrandSelector';
@@ -220,11 +221,11 @@ export default function Brands({
               />
             </div>
             <Button
-              color="secondary"
+              variant="secondary"
               size="sm"
-              iconLeading={Settings02}
-              href={RouteHelper.Project.Settings.getCompetitors(projectId)}
+              render={<Link href={RouteHelper.Project.Settings.getCompetitors(projectId)} />}
             >
+              <Settings />
               Settings
             </Button>
             {sourcesData.totalItems > 0 && <ExportActionsButton onExportCsvAction={onExportCsv} />}
@@ -237,9 +238,7 @@ export default function Brands({
 
           {sourcesData.totalItems > 0 && (
             <div className="flex flex-col items-end gap-1">
-              <Badge type="pill-color" size="sm" color="brand">
-                {sourcesData.totalItems} sources
-              </Badge>
+              <Badge>{sourcesData.totalItems} sources</Badge>
               <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
             </div>
           )}
