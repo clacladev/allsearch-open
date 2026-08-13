@@ -1,9 +1,9 @@
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { RouteLoading } from '@/components/shared/route-loading';
 
 export default function Loading() {
   return (
     <div className="mx-auto flex h-full w-full justify-center">
-      <LoadingIndicator label="Loading..." />
+      <RouteLoading label="Loading..." />
     </div>
   );
 }
