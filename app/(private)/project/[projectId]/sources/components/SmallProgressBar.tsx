@@ -7,5 +7,21 @@ export default function SmallProgressBar({
   value: number;
   className?: string;
 }) {
-  return <div aria-label={`${value}%`} aria-valuemax={100} aria-valuemin={0} aria-valuenow={value} role="progressbar" className={cn('h-1.5 w-12 overflow-hidden rounded-full bg-muted', className)}><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div>;
+  const boundedValue = Math.max(0, Math.min(100, value));
+
+  return (
+    <div
+      aria-label={`${value}%`}
+      aria-valuemax={100}
+      aria-valuemin={0}
+      aria-valuenow={value}
+      role="progressbar"
+      className={cn('h-2 w-12 overflow-hidden rounded-md bg-quaternary', className)}
+    >
+      <div
+        className="size-full rounded-md bg-fg-brand-primary transition duration-75 ease-linear"
+        style={{ transform: `translateX(-${100 - boundedValue}%)` }}
+      />
+    </div>
+  );
 }

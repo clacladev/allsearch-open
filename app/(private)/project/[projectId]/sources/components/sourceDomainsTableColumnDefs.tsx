@@ -2,8 +2,10 @@ import { createColumnHelper } from '@tanstack/react-table';
 import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import SmallProgressBar from './SmallProgressBar';
+import { DOMAIN_CATEGORY_DOT_CLASS } from './helpers';
 
 export interface SourceDomainsTableMeta {}
 
@@ -49,7 +51,13 @@ export const createSourceDomainsTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <Badge variant="secondary">{domainCategory}</Badge>
+        <Badge variant="outline">
+          <span
+            className={cn('size-1.5 rounded-full', DOMAIN_CATEGORY_DOT_CLASS[domainCategory])}
+            aria-hidden="true"
+          />
+          {domainCategory}
+        </Badge>
       );
     },
   }),

@@ -2,6 +2,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
@@ -10,6 +11,7 @@ import { RouteHelper } from '@/libs/routes';
 import SmallProgressBar from './SmallProgressBar';
 import { BrandPositionBadge } from './BrandPositionBadge';
 import { BrandsIconsStackWithTooltip } from './BrandsIconsStack';
+import { DOMAIN_CATEGORY_DOT_CLASS } from './helpers';
 
 export interface SourceContentsTableMeta {
   project: ProjectRow;
@@ -60,7 +62,13 @@ export const createSourceContentsTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <Badge variant="secondary">{domainCategory}</Badge>
+        <Badge variant="outline">
+          <span
+            className={cn('size-1.5 rounded-full', DOMAIN_CATEGORY_DOT_CLASS[domainCategory])}
+            aria-hidden="true"
+          />
+          {domainCategory}
+        </Badge>
       );
     },
   }),
