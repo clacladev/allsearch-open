@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { PasscodeLock } from '@untitledui/icons';
+import { ShieldCheck } from 'lucide-react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
@@ -23,7 +23,7 @@ export default async function ProjectCrawlHealthPage({ params }: Props) {
     <MainContainer>
       <Header
         text="Crawl health"
-        icon={PasscodeLock}
+        icon={ShieldCheck}
         description={`Whether AI crawlers can reach ${project.name} at ${project.url}.`}
       />
       <CrawlHealthClient

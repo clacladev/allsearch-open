@@ -1,5 +1,6 @@
-import { ArrowRight, Edit05 } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import Link from 'next/link';
+import { ArrowRight, FilePenLine } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { RouteHelper } from '@/libs/routes';
 
 export const CreateArticleOutlineCTA = ({
@@ -19,7 +20,7 @@ export const CreateArticleOutlineCTA = ({
     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
       <div className="flex items-start gap-3">
         <div className="bg-brand-solid text-primary_on-brand flex size-10 shrink-0 items-center justify-center rounded-lg">
-          <Edit05 className="size-5" />
+          <FilePenLine className="size-5" aria-hidden="true" />
         </div>
         <div className="flex flex-col gap-1">
           <p className="text-md text-primary font-semibold">Create an article outline</p>
@@ -29,19 +30,22 @@ export const CreateArticleOutlineCTA = ({
         </div>
       </div>
       <Button
-        href={RouteHelper.Project.getPromptNewArticle(
-          projectId,
-          promptId,
-          opportunityId,
-          undefined,
-          startDate,
-          endDate
-        )}
-        color="primary"
-        size="md"
-        iconTrailing={ArrowRight}
+        render={
+          <Link
+            href={RouteHelper.Project.getPromptNewArticle(
+              projectId,
+              promptId,
+              opportunityId,
+              undefined,
+              startDate,
+              endDate
+            )}
+          />
+        }
+        size="lg"
       >
         Generate outline
+        <ArrowRight aria-hidden="true" />
       </Button>
     </div>
   </div>

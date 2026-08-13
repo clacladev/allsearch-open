@@ -135,7 +135,7 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   // --- Step 5: Topics form ---
   await page.waitForURL('**/new-project/topics');
   await expect(page).toHaveURL(/\/new-project\/topics/);
-  await expect(page.getByText('Suggested Topics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Suggested Topics' })).toBeVisible();
 
   // All 5 mocked categories should be listed
   await expect(page.getByRole('checkbox', { name: 'Running Shoes' })).toBeVisible();
@@ -151,17 +151,35 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(page.getByRole('checkbox', { name: 'Athlete Stories' })).not.toBeChecked();
   await expect(page.getByRole('checkbox', { name: 'Fitness Tech' })).not.toBeChecked();
 
+  // The migrated checkboxes are role-findable and their associated labels toggle them.
+  const sportsEquipment = page.getByRole('checkbox', { name: 'Sports Equipment' });
+  await page.getByText('Sports Equipment', { exact: true }).click();
+  await expect(sportsEquipment).toBeChecked();
+
+  const athleteStories = page.getByRole('checkbox', { name: 'Athlete Stories' });
+  await athleteStories.focus();
+  await page.keyboard.press('Space');
+  await expect(athleteStories).toBeChecked();
+
   // Continue to prompts
   await page.getByRole('button', { name: 'Continue' }).click();
 
   // --- Step 6: Prompts form ---
   await page.waitForURL('**/new-project/prompts');
   await expect(page).toHaveURL(/\/new-project\/prompts/);
-  await expect(page.getByText('Suggested Prompts')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Suggested Prompts' })).toBeVisible();
 
   // Both topics and their prompts must be visible
   await expect(page.getByText('Running Shoes').first()).toBeVisible();
   await expect(page.getByText('Athletic Apparel').first()).toBeVisible();
+
+  // Continuing persists the selected Topics when navigating back to that step.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.waitForURL('**/new-project/topics');
+  await expect(sportsEquipment).toBeChecked();
+  await expect(athleteStories).toBeChecked();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForURL('**/new-project/prompts');
 
   const prompt1 = page.getByRole('checkbox', { name: 'Best running shoes for marathon training' });
   const prompt2 = page.getByRole('checkbox', { name: 'Nike running shoes vs Adidas comparison' });
@@ -178,13 +196,28 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await expect(prompt5).toBeChecked();
   await expect(prompt6).not.toBeChecked();
 
+  // The migrated prompt checkboxes are role-findable and their labels toggle them.
+  await page.getByText('Top trail running shoes reviewed', { exact: true }).click();
+  await expect(prompt3).toBeChecked();
+  await prompt6.focus();
+  await page.keyboard.press('Space');
+  await expect(prompt6).toBeChecked();
+
   // Continue to competitors
   await page.getByRole('button', { name: 'Continue' }).click();
 
   // --- Step 7: Competitors form ---
   await page.waitForURL('**/new-project/competitors');
   await expect(page).toHaveURL(/\/new-project\/competitors/);
-  await expect(page.getByText('Competitors Review')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Competitors Review' })).toBeVisible();
+
+  // Prompt selections persist after Continue as well.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.waitForURL('**/new-project/prompts');
+  await expect(prompt3).toBeChecked();
+  await expect(prompt6).toBeChecked();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForURL('**/new-project/competitors');
 
   // All 3 mocked competitors should appear in the URL inputs (disabled, type="url")
   const urlInputs = page.locator('input[type="url"][placeholder="https://brand.com"]');
@@ -202,7 +235,7 @@ test('can complete onboarding flow for a new Nike brand project', { tag: '@ai' }
   await page.getByRole('button', { name: 'Finish' }).click();
 
   // --- Step 8: Save step auto-submits and redirects to the report ---
-  await page.waitForURL(`**/new-project/report/${MOCK_PROJECT_ID}`, { timeout: 10000 });
+  await page.waitForURL(new RegExp(`/new-project/report/${MOCK_PROJECT_ID}`), { timeout: 10000 });
 
   // --- Step 9: Report page ---
   // The report page is now a Server Component that fetches `getOverviewPageData` against the

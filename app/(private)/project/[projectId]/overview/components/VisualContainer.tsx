@@ -1,5 +1,6 @@
 import { TooltipIcon } from '@/app/(private)/components/Tooltip';
-import { cx } from '@/utils/cx';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/libs/utils/cn';
 import { ComponentType } from 'react';
 
 export const VisualContainer = ({
@@ -27,26 +28,21 @@ export const VisualContainer = ({
 }>) => {
   const Icon = icon;
   return (
-    <div
-      className={cx(
-        'lg:g-primary ring-secondary flex flex-col gap-6 rounded-xl px-4 py-3 shadow-xs ring-1 lg:gap-5',
-        className
-      )}
-    >
-      <div className="flex flex-col gap-5">
+    <Card size="sm" className={cn('gap-5 px-4 py-3', className)}>
+      <CardHeader className="gap-1 px-0">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {Icon && <Icon className="text-tertiary size-4" />}
-              <span className="text-primary text-sm font-semibold">{title}</span>
-              {info && <TooltipIcon title={title} description={info} />}
-            </div>
-            {headerTrailing}
+          <div className="flex items-center gap-2">
+            {Icon && <Icon className="text-muted-foreground size-4" />}
+            <CardTitle>{title}</CardTitle>
+            {info && <TooltipIcon title={title} description={info} />}
           </div>
           {caption}
         </div>
-        <div className={cx(isSquare ? 'min-h-50' : '', contentClassName)}>{children}</div>
-      </div>
-    </div>
+        {headerTrailing && <CardAction>{headerTrailing}</CardAction>}
+      </CardHeader>
+      <CardContent className={cn('px-0', isSquare ? 'min-h-50' : '', contentClassName)}>
+        {children}
+      </CardContent>
+    </Card>
   );
 };

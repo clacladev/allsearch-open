@@ -1,16 +1,16 @@
-import { Badge } from '@/components/base/badges/badges';
-import { BADGE_COLORS } from '@/components/base/badges/badge-types';
-import { ButtonUtility } from '@/components/base/buttons/button-utility';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { AppTooltip } from '@/components/shared/tooltip';
 import { PromptAndTopicJoinRow } from '@/libs/database/Prompts/types';
 import { createColumnHelper } from '@tanstack/react-table';
-import { Edit01, RefreshCcw01, Trash01 } from '@untitledui/icons';
+import { Pencil, RefreshCw, Trash2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { stringToNumber } from '@/libs/utils/stringToNumber';
 import { RouteHelper } from '@/libs/routes';
 import Link from 'next/link';
 import { PromptAnalysis } from '@/app/api/project/[projectId]/prompts/getPromptsAnalysis';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { BrandPositionBadge } from '@/app/(private)/project/[projectId]/sources/components/BrandPositionBadge';
 import { SentimentIcon } from '@/app/(private)/project/[projectId]/components/SentimentIcon';
 import { BrandsIconsStackWithTooltip } from '@/app/(private)/project/[projectId]/sources/components/BrandsIconsStack';
@@ -19,6 +19,21 @@ import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { isDefaultDateRange } from '@/libs/utils/searchParamsHelpers';
 
 dayjs.extend(relativeTime);
+
+const TOPIC_BADGE_CLASSES: string[] = [
+  'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100',
+  'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100',
+  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
+  'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
+  'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100',
+  'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-100',
+  'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
+  'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100',
+  'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100',
+  'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-100',
+  'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100',
+];
 
 export interface PromptsTableMeta {
   projectId: string;
@@ -37,12 +52,12 @@ const columnHelper = createColumnHelper<PromptAndTopicJoinRow>();
 export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'name',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="name"
         label="Prompt"
         tooltip="The prompt text"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),
@@ -72,12 +87,8 @@ export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
     ),
     cell: (info) => {
       const { topic_name } = info.getValue();
-      const colorIndex = stringToNumber(topic_name, BADGE_COLORS.length);
-      return (
-        <Badge color={BADGE_COLORS[colorIndex]} size="sm">
-          {topic_name}
-        </Badge>
-      );
+      const colorIndex = stringToNumber(topic_name, TOPIC_BADGE_CLASSES.length);
+      return <Badge className={TOPIC_BADGE_CLASSES[colorIndex]}>{topic_name}</Badge>;
     },
   }),
 
@@ -101,11 +112,7 @@ export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
       const { id } = info.getValue();
       const { analysis } = info.table.options.meta as PromptsTableMeta;
       const promptAnalysis = analysis[id];
-      return (
-        <Badge color="gray" size="sm">
-          {promptAnalysis?.count ?? 0}
-        </Badge>
-      );
+      return <Badge variant="secondary">{promptAnalysis?.count ?? 0}</Badge>;
     },
   }),
 
@@ -184,11 +191,7 @@ export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
     ),
     cell: (info) => {
       const { created_at } = info.getValue();
-      return (
-        <Badge color="gray" size="sm">
-          {dayjs(created_at).fromNow()}
-        </Badge>
-      );
+      return <Badge variant="secondary">{dayjs(created_at).fromNow()}</Badge>;
     },
   }),
 
@@ -201,32 +204,36 @@ export const createPromptsTableColumnDefs = (allowsSorting: boolean) => [
 
       if (is_archived) {
         return (
-          <ButtonUtility
-            size="xs"
-            color="tertiary"
-            tooltip="Restore"
-            icon={RefreshCcw01}
-            onClick={() => onRestore(id)}
-          />
+          <AppTooltip content="Restore">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Restore"
+              onClick={() => onRestore(id)}
+            >
+              <RefreshCw />
+            </Button>
+          </AppTooltip>
         );
       }
 
       return (
         <div className="flex gap-0.5">
-          <ButtonUtility
-            size="xs"
-            color="tertiary"
-            tooltip="Archive"
-            icon={Trash01}
-            onClick={() => onArchive(id)}
-          />
-          <ButtonUtility
-            size="xs"
-            color="tertiary"
-            tooltip="Edit"
-            icon={Edit01}
-            onClick={() => onEdit(id)}
-          />
+          <AppTooltip content="Archive">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Archive"
+              onClick={() => onArchive(id)}
+            >
+              <Trash2 />
+            </Button>
+          </AppTooltip>
+          <AppTooltip content="Edit">
+            <Button variant="ghost" size="icon-xs" aria-label="Edit" onClick={() => onEdit(id)}>
+              <Pencil />
+            </Button>
+          </AppTooltip>
         </div>
       );
     },

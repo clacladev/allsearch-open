@@ -1,11 +1,11 @@
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
 import { useState } from 'react';
-import { Trash01 } from '@untitledui/icons';
+import { Trash } from 'lucide-react';
 import { ConfirmArchiveProjectModal } from './ConfirmArchiveProjectModal';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/libs/routes';
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from '@/app/(private)/settings/components/SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { useMessagesContext } from '@/app/(private)/components/MessagesContext';
 import { showSuccessAlertToast } from '@/components/Alerts';
@@ -41,14 +41,13 @@ export default function Others() {
         <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-          <SectionLabel.Root
-            size="sm"
+          <SettingsSectionLabel
             title="Reset messages"
             description="Reset all hidden messages cards and tips."
           />
 
           <div className="flex w-max flex-col gap-4">
-            <Button type="button" color="secondary" onClick={onResetMessages}>
+            <Button type="button" variant="outline" onClick={onResetMessages}>
               Reset messages
             </Button>
           </div>
@@ -57,8 +56,7 @@ export default function Others() {
         <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-          <SectionLabel.Root
-            size="sm"
+          <SettingsSectionLabel
             title={`Archive ${currentProject?.name} project`}
             description="This will archive this project and hide it from the application project lists."
           />
@@ -66,10 +64,10 @@ export default function Others() {
           <div className="flex w-max flex-col gap-4">
             <Button
               type="button"
-              color="secondary-destructive"
+              variant="destructive"
               onClick={() => setIsArchiveProjectModalOpen(true)}
-              iconLeading={Trash01}
             >
+              <Trash aria-hidden="true" />
               Archive project
             </Button>
           </div>

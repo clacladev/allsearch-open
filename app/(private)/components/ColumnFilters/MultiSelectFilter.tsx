@@ -8,9 +8,8 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
-import { Check, ChevronDown } from '@untitledui/icons';
-import { cx } from '@/utils/cx';
-import { Dot } from '@/components/foundations/dot-icon';
+import { Check, ChevronDown } from 'lucide-react';
+import { cn } from '@/libs/utils/cn';
 
 export type FilterOption = {
   id: string;
@@ -49,7 +48,7 @@ export function MultiSelectFilter({
       <div className="relative">
         <AriaButton
           className={({ isFocusVisible }) =>
-            cx(
+            cn(
               'bg-primary ring-primary flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm shadow-xs ring-1 outline-hidden transition duration-100 ring-inset',
               isFocusVisible && 'ring-brand ring-2',
               isActive ? 'text-primary' : 'text-secondary'
@@ -63,10 +62,7 @@ export function MultiSelectFilter({
           <ChevronDown className="text-fg-quaternary size-4 shrink-0" />
         </AriaButton>
         {isActive && (
-          <Dot
-            size="md"
-            className="text-fg-warning-primary pointer-events-none absolute -top-1 -right-1"
-          />
+          <span aria-hidden="true" className="absolute -top-1 -right-1 size-2 rounded-full bg-amber-500" />
         )}
       </div>
 
@@ -74,12 +70,12 @@ export function MultiSelectFilter({
         placement="bottom start"
         offset={4}
         className={({ isEntering, isExiting }) =>
-          cx(
+          cn(
             'min-w-40 max-h-64 overflow-y-auto rounded-lg bg-primary py-1 shadow-lg ring-1 ring-secondary_alt outline-hidden will-change-transform',
             isEntering &&
-              'duration-150 ease-out animate-in fade-in placement-bottom:slide-in-from-top-0.5',
+              'duration-150 ease-out animate-in fade-in data-[placement=bottom]:slide-in-from-top-0.5',
             isExiting &&
-              'duration-100 ease-in animate-out fade-out placement-bottom:slide-out-to-top-0.5'
+              'duration-100 ease-in animate-out fade-out data-[placement=bottom]:slide-out-to-top-0.5'
           )
         }
       >
@@ -96,7 +92,7 @@ export function MultiSelectFilter({
               id={item.id}
               textValue={item.label}
               className={({ isFocused, isHovered }) =>
-                cx(
+                cn(
                   'flex cursor-pointer items-center gap-2.5 px-3.5 py-2.5 outline-hidden',
                   (isFocused || isHovered) && 'bg-primary_hover'
                 )
@@ -111,7 +107,7 @@ export function MultiSelectFilter({
                     <span className="text-tertiary shrink-0 text-xs tabular-nums">{item.count}</span>
                   )}
                   <div
-                    className={cx(
+                    className={cn(
                       'flex size-4 shrink-0 items-center justify-center rounded ring-1',
                       isSelected ? 'bg-brand-solid ring-brand-solid' : 'ring-secondary'
                     )}

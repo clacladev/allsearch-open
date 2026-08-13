@@ -1,17 +1,22 @@
 import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/SlideoutMenu';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { Button } from '@/components/base/buttons/button';
-import { InputBase } from '@/components/base/input/input';
-import { InputGroup } from '@/components/base/input/input-group';
-import { Select, SelectItemType } from '@/components/base/select/select';
-import { SelectItem } from '@/components/base/select/select-item';
+import { Button } from '@/components/ui/button';
+import { FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
 import { PromptRow } from '@/libs/database/Prompts/types';
 import { TopicRow } from '@/libs/database/Topics/types';
 import { isPromptUnique } from '@/libs/utils/prompts';
-import { Edit01 } from '@untitledui/icons';
+import { Pencil } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 
 export const EditPromptSlideoutMenu = ({
@@ -49,11 +54,11 @@ export const EditPromptSlideoutMenu = ({
   const topicHasChanged = editedTopicId !== currentTopicId;
   const hasChanged = nameHasChanged || topicHasChanged;
   // Only check uniqueness when the name has actually changed (otherwise the prompt's own name would fail)
-  const isNewCustomPromptUnique = nameHasChanged ? isPromptUnique(existingPrompts, editedName) : true;
+  const isNewCustomPromptUnique = nameHasChanged
+    ? isPromptUnique(existingPrompts, editedName)
+    : true;
   const canUpdatePrompt =
     !!editedName.length && !isUpdatingPrompt && isNewCustomPromptUnique && hasChanged;
-
-  const topicSelectItems: SelectItemType[] = topics.map((t) => ({ id: t.id, label: t.name }));
 
   const onUpdate = () => {
     if (!canUpdatePrompt) return;
@@ -96,36 +101,53 @@ export const EditPromptSlideoutMenu = ({
       setIsOpen={setIsOpen}
       title="Edit prompt"
       description="Edit your existing prompt."
-      icon={<Edit01 />}
+      icon={<Pencil />}
       closeTitle="Done"
       content={
-        <section className="flex flex-col gap-4 mt-3">
-          {topicSelectItems.length > 0 && (
-            <Select
-              label="Topic"
-              items={topicSelectItems}
-              selectedKey={editedTopicId ?? null}
-              onSelectionChange={(key) => setEditedTopicId(key as string)}
-              placeholder="Select topic"
-              size="sm"
-            >
-              {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
-            </Select>
+        <section className="mt-3 flex flex-col gap-4">
+          {topics.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <FieldLabel>Topic</FieldLabel>
+              <Select
+                items={topics.map((topic) => ({ value: topic.id, label: topic.name }))}
+                value={editedTopicId ?? null}
+                onValueChange={(value) => setEditedTopicId(value ?? undefined)}
+              >
+                <SelectTrigger aria-label="Topic" className="w-full">
+                  <SelectValue placeholder="Select topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  {topics.map((topic) => (
+                    <SelectItem key={topic.id} value={topic.id}>
+                      {topic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           <div className="flex flex-col gap-1">
-            <InputGroup
-              value={editedName}
-              onChange={setEditedName}
-              name="promptName"
-              size="md"
-              trailingAddon={
-                <Button color="secondary" size="md" onClick={onUpdate} isDisabled={!canUpdatePrompt}>
-                  {isUpdatingPrompt ? <LoadingIndicator size="xs" /> : 'Update'}
+            <InputGroup>
+              <InputGroupInput
+                value={editedName}
+                onChange={(event) => setEditedName(event.target.value)}
+                name="promptName"
+                type="text"
+                placeholder="Prompt text"
+                onKeyDown={handleKeyDown}
+              />
+              <InputGroupAddon align="inline-end" className="pr-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onUpdate}
+                  disabled={!canUpdatePrompt}
+                >
+                  {isUpdatingPrompt ? <Spinner /> : 'Update'}
                 </Button>
-              }
-            >
-              <InputBase type="text" placeholder="Prompt text" onKeyDown={handleKeyDown} />
+              </InputGroupAddon>
             </InputGroup>
 
             {nameHasChanged && !isNewCustomPromptUnique && !hasEditedNameSuccessfully && (

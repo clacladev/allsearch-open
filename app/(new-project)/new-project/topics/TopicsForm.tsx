@@ -1,8 +1,11 @@
 'use client';
 
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
 import FormHeader from '../components/FormHeader';
-import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
 import {
   routeForStep,
   NewProjectStep,
@@ -13,14 +16,12 @@ import { useTransition } from 'react';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import useSWRImmutable from 'swr/immutable';
 import { TopicsNames } from '@/libs/ai/topicsIdeas/getTopicsIdeas';
-import { InputGroup } from '@/components/base/input/input-group';
-import { InputBase } from '@/components/base/input/input';
 import { useRouter } from 'next/navigation';
 import { NewProjectLayoutColumn } from '../../layout';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { isAiErrorCode } from '@/libs/ai/errors';
 import { AiFailureState } from '@/app/components/AiFailureState';
-import { ArrowLeft, ArrowRight, RefreshCcw01 } from '@untitledui/icons';
+import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { OnboardingProgressSteps } from '../components/OnboardingProgressSteps';
 
 const THIS_STEP = NewProjectStep.Topics;
@@ -154,32 +155,57 @@ export default function TopicsForm() {
 
         {!isTopicsIdeasLoading && (
           <>
-            <CheckboxGroup
-              aria-label="Topics"
-              items={topicsItems}
-              value={selectedTopics}
-              onChange={setSelectedTopics}
-              isDisabled={isLoading}
-            />
+            <div role="group" aria-label="Topics" className="flex flex-col gap-2">
+              {topicsItems.map((item) => {
+                const id = `topic-${encodeURIComponent(item.value)}`;
+                return (
+                  <Field
+                    key={item.value}
+                    orientation="horizontal"
+                    className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                  >
+                    <Checkbox
+                      id={id}
+                      checked={selectedTopics.includes(item.value)}
+                      onCheckedChange={(checked) =>
+                        setSelectedTopics((current) =>
+                          checked
+                            ? [...current, item.value]
+                            : current.filter((topic) => topic !== item.value)
+                        )
+                      }
+                      disabled={isLoading}
+                    />
+                    <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
+                      {item.title}
+                    </FieldLabel>
+                  </Field>
+                );
+              })}
+            </div>
 
-            <InputGroup
-              value={newCustomTopic}
-              onChange={setNewCustomTopic}
-              isDisabled={isLoading || !canAddNewCustom}
-              name="customTopic"
-              size="md"
-              trailingAddon={
+            <InputGroup className="h-11">
+              <InputGroupInput
+                value={newCustomTopic}
+                onChange={(event) => setNewCustomTopic(event.target.value)}
+                disabled={isLoading || !canAddNewCustom}
+                name="customTopic"
+                type="text"
+                placeholder="Custom"
+                onKeyDown={handleKeyDown}
+                className="text-md h-full"
+              />
+              <InputGroupAddon align="inline-end" className="pr-1">
                 <Button
-                  color="secondary"
-                  size="md"
+                  type="button"
+                  variant="outline"
+                  size="default"
                   onClick={onAddCustom}
-                  isDisabled={!newCustomTopic.length || isLoading || !canAddNewCustom}
+                  disabled={!newCustomTopic.length || isLoading || !canAddNewCustom}
                 >
                   Add
                 </Button>
-              }
-            >
-              <InputBase type="text" placeholder="Custom" onKeyDown={handleKeyDown} />
+              </InputGroupAddon>
             </InputGroup>
 
             {!canAddNewCustom && (
@@ -187,7 +213,7 @@ export default function TopicsForm() {
                 <span>You can only add {MAX_CUSTOM_TOPICS} custom topics.</span>{' '}
                 <Button
                   type="button"
-                  color="link-destructive"
+                  variant="link"
                   size="xs"
                   onClick={onResetCustomValues}
                   className="text-error-800"
@@ -215,34 +241,32 @@ export default function TopicsForm() {
         <div className="mt-10 flex gap-2">
           <Button
             type="button"
-            color="secondary"
+            variant="outline"
             size="lg"
+            className="h-11"
             onClick={() => router.back()}
-            iconLeading={ArrowLeft}
           >
-            Back
+            <ArrowLeft aria-hidden="true" /> Back
           </Button>
           <Button
             type="button"
-            color={topicsIdeasError ? 'primary' : 'secondary'}
+            variant={topicsIdeasError ? 'default' : 'outline'}
             size="lg"
-            isDisabled={isUpdating || isLoading}
-            isLoading={isLoading}
+            className="h-11"
+            disabled={isUpdating || isLoading}
             onClick={onReload}
-            iconLeading={RefreshCcw01}
           >
-            Retry
+            <RefreshCw aria-hidden="true" /> Retry {isLoading && <Spinner aria-hidden="true" />}
           </Button>
           <Button
             type="button"
             size="lg"
-            isDisabled={!canContinue || isUpdating || isLoading}
-            isLoading={isUpdating}
+            disabled={!canContinue || isUpdating || isLoading}
             onClick={onContinue}
-            className="flex-1"
-            iconTrailing={ArrowRight}
+            className="h-11 flex-1"
           >
-            Continue
+            Continue <ArrowRight aria-hidden="true" />{' '}
+            {isUpdating && <Spinner aria-hidden="true" />}
           </Button>
         </div>
 

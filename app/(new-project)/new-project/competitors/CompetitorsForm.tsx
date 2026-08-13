@@ -1,12 +1,12 @@
 'use client';
 
-import { Button } from '@/components/base/buttons/button';
-import { Input, InputBase } from '@/components/base/input/input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState, useTransition } from 'react';
 import { useDebounce } from 'use-debounce';
 import { RouteHelper, ROUTES } from '@/libs/routes';
-import { InputGroup } from '@/components/base/input/input-group';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { useDomainMetadata } from '../components/useDomainMetadata';
 import FormHeader from '../components/FormHeader';
 import {
@@ -15,7 +15,7 @@ import {
   useNewProjectContext,
 } from '../components/NewProjectContext';
 import useSWRImmutable from 'swr/immutable';
-import { ArrowLeft, ArrowRight, Minus, Plus, RefreshCcw01 } from '@untitledui/icons';
+import { ArrowLeft, ArrowRight, Minus, Plus, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { NewProjectLayoutColumn } from '../../layout';
 import { Favicon } from '@/app/(private)/components/Favicon';
@@ -194,38 +194,37 @@ export default function CompetitorsForm() {
         <div className="flex flex-col gap-2">
           {competitors.map((competitor, index) => (
             <div key={competitor.url} className="flex flex-row gap-2">
-              <InputGroup
-                value={competitor.url}
-                size="md"
-                isDisabled
-                trailingAddon={
-                  competitor.iconUrl ? (
-                    <InputGroup.Prefix>
-                      <Favicon url={competitor.iconUrl} alt={competitor.name} className="size-6" />
-                    </InputGroup.Prefix>
-                  ) : null
-                }
-                className="flex-1 border-r-0"
-              >
-                <InputBase type="url" placeholder="https://brand.com" />
+              <InputGroup className="h-11 min-w-0 flex-1 basis-0">
+                <InputGroupInput
+                  value={competitor.url}
+                  disabled
+                  type="url"
+                  placeholder="https://brand.com"
+                  className="text-md h-full"
+                />
+                {competitor.iconUrl ? (
+                  <InputGroupAddon align="inline-end">
+                    <Favicon url={competitor.iconUrl} alt={competitor.name} className="size-6" />
+                  </InputGroupAddon>
+                ) : null}
               </InputGroup>
 
               <Input
                 value={competitor.name}
-                onChange={(value) => setCompetitorName(index, value)}
-                isDisabled={isLoading}
+                onChange={(event) => setCompetitorName(index, event.target.value)}
+                disabled={isLoading}
                 type="text"
                 placeholder="Name"
-                size="md"
-                className="flex-1"
+                className="text-md h-11 flex-1 basis-0"
               />
 
               <Button
-                color="secondary"
-                size="md"
-                className="h-auto shrink-0"
+                variant="outline"
+                size="icon"
+                className="size-11 shrink-0"
                 onClick={() => onRemoveCompetitor(index)}
-                isDisabled={isLoading}
+                disabled={isLoading}
+                aria-label={`Remove ${competitor.name ?? competitor.url}`}
               >
                 <Minus size={14} />
               </Button>
@@ -237,52 +236,52 @@ export default function CompetitorsForm() {
               <div className="mt-4 -mb-1 ml-1 flex text-sm">New competitor</div>
               <div className="flex flex-row gap-2">
                 <InputGroup
-                  value={customUrl}
-                  onChange={setCustomUrl}
-                  isDisabled={isLoading}
-                  isInvalid={isUrlInvalid}
-                  isRequired
-                  name="competitorUrl"
-                  size="md"
-                  trailingAddon={
-                    isLoadingDomainMetadata ? (
-                      <InputGroup.Prefix>
-                        <LoadingIndicator size="xxs" />
-                      </InputGroup.Prefix>
-                    ) : customIconUrl ? (
-                      <InputGroup.Prefix>
-                        <Favicon url={customIconUrl} alt={customName} className="size-6" />
-                      </InputGroup.Prefix>
-                    ) : null
-                  }
-                  className="flex-1 border-r-0"
+                  className="h-11 min-w-0 flex-1 basis-0"
+                  aria-invalid={isUrlInvalid || undefined}
                 >
-                  <InputBase
+                  <InputGroupInput
+                    value={customUrl}
+                    onChange={(event) => setCustomUrl(event.target.value)}
+                    disabled={isLoading}
+                    required
+                    name="competitorUrl"
+                    aria-label="Competitor URL"
                     type="url"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
+                    className="text-md h-full"
                   />
+                  {isLoadingDomainMetadata ? (
+                    <InputGroupAddon align="inline-end">
+                      <Spinner className="size-3" />
+                    </InputGroupAddon>
+                  ) : customIconUrl ? (
+                    <InputGroupAddon align="inline-end">
+                      <Favicon url={customIconUrl} alt={customName} className="size-6" />
+                    </InputGroupAddon>
+                  ) : null}
                 </InputGroup>
 
                 <Input
                   value={customName}
-                  onChange={setCustomName}
+                  onChange={(event) => setCustomName(event.target.value)}
                   onKeyDown={handleKeyDown}
-                  isDisabled={isLoading}
-                  isInvalid={isNameInvalid}
+                  disabled={isLoading}
+                  aria-invalid={isNameInvalid || undefined}
                   type="text"
                   name="competitorName"
+                  aria-label="Competitor name"
                   placeholder="Name"
-                  size="md"
-                  className="flex-1"
+                  className="text-md h-11 flex-1 basis-0"
                 />
 
                 <Button
-                  color="secondary"
-                  size="md"
-                  className="h-auto shrink-0"
+                  variant="outline"
+                  size="icon"
+                  className="size-11 shrink-0"
                   onClick={onAddCustom}
-                  isDisabled={!canAdd || isLoading}
+                  disabled={!canAdd || isLoading}
+                  aria-label="Add competitor"
                 >
                   <Plus size={14} />
                 </Button>
@@ -305,34 +304,31 @@ export default function CompetitorsForm() {
         <div className="mt-10 flex gap-2">
           <Button
             type="button"
-            color="secondary"
+            variant="outline"
             size="lg"
+            className="h-11"
             onClick={() => router.back()}
-            iconLeading={ArrowLeft}
           >
-            Back
+            <ArrowLeft aria-hidden="true" /> Back
           </Button>
           <Button
             type="button"
-            color={error ? 'primary' : 'secondary'}
+            variant={error ? 'default' : 'outline'}
             size="lg"
-            isDisabled={isUpdating || isLoading}
-            isLoading={isLoading}
+            className="h-11"
+            disabled={isUpdating || isLoading}
             onClick={onReload}
-            iconLeading={RefreshCcw01}
           >
-            Retry
+            <RefreshCw aria-hidden="true" /> Retry {isLoading && <Spinner aria-hidden="true" />}
           </Button>
           <Button
             type="button"
             size="lg"
-            isDisabled={!canContinue || isUpdating || isLoading}
-            isLoading={isUpdating}
+            disabled={!canContinue || isUpdating || isLoading}
             onClick={onContinue}
-            className="flex-1"
-            iconTrailing={ArrowRight}
+            className="h-11 flex-1"
           >
-            Finish
+            Finish <ArrowRight aria-hidden="true" /> {isUpdating && <Spinner aria-hidden="true" />}
           </Button>
         </div>
 

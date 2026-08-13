@@ -2,18 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  AlertCircle,
-  ArrowDown,
-  ArrowLeft,
-  RefreshCcw01,
-  RefreshCw02,
-  XSquare,
-} from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import { AlertCircle, ArrowDown, ArrowLeft, RefreshCcw, RefreshCw, SquareX } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
-import { EmptyState } from '@/components/application/empty-state/empty-state';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { Spinner } from '@/components/ui/spinner';
 import { AiFailureState } from '@/app/components/AiFailureState';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
@@ -130,11 +122,7 @@ export function ArticleView({
   // Refetch the row after stream completes to load sources_used + outline_used
   // and detect failures (article_markdown still null = generation failed).
   const refetchRow = useCallback(async () => {
-    const url = RouteHelper.Api.Project.getPromptArticle(
-      projectId,
-      promptId,
-      outlineId
-    );
+    const url = RouteHelper.Api.Project.getPromptArticle(projectId, promptId, outlineId);
     const result = await appFetch<{ promptArticle: PromptArticleRow }>(
       url,
       { method: 'GET' },
@@ -274,8 +262,7 @@ export function ArticleView({
     if (mode !== 'streaming') return;
     const onScroll = () => {
       const docHeight = document.documentElement.scrollHeight;
-      const isAtBottom =
-        docHeight - window.scrollY - window.innerHeight < 24;
+      const isAtBottom = docHeight - window.scrollY - window.innerHeight < 24;
       setIsPinnedToBottom(isAtBottom);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -323,21 +310,23 @@ export function ArticleView({
 
       {showActionBar && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href={backToOutlineHref}>
-            <Button color="secondary" size="sm" iconLeading={ArrowLeft}>
-              Back to outline
-            </Button>
+          <Link
+            href={backToOutlineHref}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+          >
+            <ArrowLeft aria-hidden="true" />
+            Back to outline
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
             {mode === 'streaming' ? (
               <Button
-                color="tertiary-destructive"
+                variant="destructive"
                 size="sm"
-                iconLeading={XSquare}
                 onClick={handleStop}
                 aria-label="Stop article generation"
               >
+                <SquareX aria-hidden="true" />
                 Stop generating
               </Button>
             ) : (
@@ -350,22 +339,18 @@ export function ArticleView({
                     promptName={promptName}
                     currentMarkdown={currentMarkdown}
                   />
-                  <Button
-                    color="tertiary"
-                    size="sm"
-                    iconLeading={RefreshCw02}
-                    onClick={() => void handleRegenerateClick()}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => void handleRegenerateClick()}>
+                    <RefreshCw aria-hidden="true" />
                     Regenerate
                   </Button>
                   {hasLocalEdits && (
                     <Button
-                      color="tertiary-destructive"
+                      variant="destructive"
                       size="sm"
-                      iconLeading={RefreshCcw01}
                       onClick={() => setIsRestoreOpen(true)}
-                      isDisabled={isRestoring}
+                      disabled={isRestoring}
                     >
+                      <RefreshCcw aria-hidden="true" />
                       Restore AI version
                     </Button>
                   )}
@@ -379,9 +364,8 @@ export function ArticleView({
       {mode === 'streaming' && !isPinnedToBottom && stream.displayedMarkdown && (
         <div className="pointer-events-none fixed right-4 bottom-6 z-10 sm:right-8">
           <Button
-            color="secondary"
+            variant="secondary"
             size="sm"
-            iconLeading={ArrowDown}
             onClick={() => {
               setIsPinnedToBottom(true);
               window.scrollTo({
@@ -389,8 +373,9 @@ export function ArticleView({
                 behavior: 'smooth',
               });
             }}
-            className="pointer-events-auto animate-in fade-in slide-in-from-bottom-1 duration-200 ease-out"
+            className="animate-in fade-in slide-in-from-bottom-1 pointer-events-auto duration-200 ease-out"
           >
+            <ArrowDown aria-hidden="true" />
             Jump to latest
           </Button>
         </div>
@@ -401,48 +386,43 @@ export function ArticleView({
       )}
 
       {isPreGenerate && stream.error && !stream.errorCode && (
-        <EmptyState className="py-12">
-          <EmptyState.Header>
-            <EmptyState.FeaturedIcon icon={AlertCircle} color="gray" />
-          </EmptyState.Header>
-          <EmptyState.Content>
-            <EmptyState.Title>Could not generate the article</EmptyState.Title>
-            <EmptyState.Description>{stream.error}</EmptyState.Description>
-          </EmptyState.Content>
-          <EmptyState.Footer>
-            <Link href={backToOutlineHref}>
-              <Button color="secondary" size="md">
-                Back to outline
-              </Button>
+        <div className="flex flex-col items-center gap-4 py-12 text-center">
+          <AlertCircle className="text-muted-foreground size-8" aria-hidden="true" />
+          <div>
+            <h2 className="text-lg font-semibold">Could not generate the article</h2>
+            <p className="text-muted-foreground">{stream.error}</p>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href={backToOutlineHref}
+              className={buttonVariants({ variant: 'secondary' })}
+            >
+              Back to outline
             </Link>
-            <Button color="primary" size="md" onClick={() => void handleGenerate(false)}>
-              Try again
-            </Button>
-          </EmptyState.Footer>
-        </EmptyState>
+            <Button onClick={() => void handleGenerate(false)}>Try again</Button>
+          </div>
+        </div>
       )}
 
       {isPreGenerate && !stream.error && (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button color="primary" size="md" onClick={() => void handleGenerate(false)}>
-            Generate article
-          </Button>
-          <Link href={backToOutlineHref}>
-            <Button color="secondary" size="md">
-              Back to outline
-            </Button>
+          <Button onClick={() => void handleGenerate(false)}>Generate article</Button>
+          <Link
+            href={backToOutlineHref}
+            className={buttonVariants({ variant: 'secondary' })}
+          >
+            Back to outline
           </Link>
         </div>
       )}
 
       {mode === 'streaming' && !stream.displayedMarkdown && (
         <div className="flex min-h-40 w-full items-center justify-center py-12">
-          <LoadingIndicator label="Writing your article..." />
+          <Spinner aria-label="Writing your article..." />
         </div>
       )}
 
-      {(mode === 'editable' ||
-        (mode === 'streaming' && stream.displayedMarkdown)) && (
+      {(mode === 'editable' || (mode === 'streaming' && stream.displayedMarkdown)) && (
         <>
           {mode === 'editable' && currentMarkdown && (
             <article className="prose md:prose-lg text-primary sr-only max-w-180">
@@ -453,22 +433,16 @@ export function ArticleView({
             projectId={projectId}
             promptId={promptId}
             outlineId={outlineId}
-            initialMarkdown={
-              mode === 'streaming' ? stream.displayedMarkdown : currentMarkdown
-            }
+            initialMarkdown={mode === 'streaming' ? stream.displayedMarkdown : currentMarkdown}
             resetVersion={resetVersion}
             onSaved={(row) => setOutlineRow(row)}
             onAutosaveChange={(autosave) => {
               articleAutosaveRef.current = autosave;
             }}
             isStreaming={mode === 'streaming'}
-            streamingMarkdown={
-              mode === 'streaming' ? stream.displayedMarkdown : undefined
-            }
+            streamingMarkdown={mode === 'streaming' ? stream.displayedMarkdown : undefined}
           />
-          {mode === 'editable' && (
-            <CitationsPanel sourcesUsed={outlineRow.sources_used} />
-          )}
+          {mode === 'editable' && <CitationsPanel sourcesUsed={outlineRow.sources_used} />}
         </>
       )}
 

@@ -1,12 +1,25 @@
 'use client';
 
-import { EmptyState as EmptyStateBase } from '@/components/application/empty-state/empty-state';
-import { Button } from '@/components/base/buttons/button';
-import { cx } from '@/utils/cx';
-import { ArrowLeft } from '@untitledui/icons';
+import { Button } from '@/components/ui/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { cn } from '@/libs/utils/cn';
+import { ArrowLeft, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export type EmptyStateVariant = 'default' | 'compact';
+
+const ICON_COLOR_CLASS: Record<'gray' | 'warning' | 'error', string> = {
+  gray: 'bg-muted text-foreground',
+  warning: 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-500',
+  error: 'bg-destructive/10 text-destructive',
+};
 
 export const EmptyState = ({
   title,
@@ -31,36 +44,38 @@ export const EmptyState = ({
 }) => {
   const router = useRouter();
   return (
-    <EmptyStateBase
-      size="md"
-      className={cx(
-        'h-full **:z-0',
+    <Empty
+      className={cn(
+        'h-full',
         variant === 'default' && 'pt-50 pb-25',
         variant === 'compact' && 'pt-20 pb-2',
         className
       )}
     >
-      <EmptyStateBase.Header>
-        <EmptyStateBase.FeaturedIcon color={iconColor} />
-      </EmptyStateBase.Header>
+      <EmptyHeader>
+        <EmptyMedia variant="icon" className={cn(ICON_COLOR_CLASS[iconColor])}>
+          <Search />
+        </EmptyMedia>
 
-      <EmptyStateBase.Content>
-        <EmptyStateBase.Title>{title}</EmptyStateBase.Title>
-        <EmptyStateBase.Description>{description}</EmptyStateBase.Description>
-      </EmptyStateBase.Content>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description && <EmptyDescription>{description}</EmptyDescription>}
+      </EmptyHeader>
 
-      <EmptyStateBase.Footer>
-        {shouldShowGoBackButton && (
-          <Button size="sm" color="secondary" iconLeading={ArrowLeft} onClick={() => router.back()}>
-            Go back
-          </Button>
-        )}
-        {customAction && (
-          <Button size="sm" color="secondary" onClick={customAction}>
-            {customActionTitle ?? 'Action'}
-          </Button>
-        )}
-      </EmptyStateBase.Footer>
-    </EmptyStateBase>
+      {(shouldShowGoBackButton || customAction) && (
+        <EmptyContent className="flex-row">
+          {shouldShowGoBackButton && (
+            <Button size="sm" variant="secondary" onClick={() => router.back()}>
+              <ArrowLeft />
+              Go back
+            </Button>
+          )}
+          {customAction && (
+            <Button size="sm" variant="secondary" onClick={customAction}>
+              {customActionTitle ?? 'Action'}
+            </Button>
+          )}
+        </EmptyContent>
+      )}
+    </Empty>
   );
 };

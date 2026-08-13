@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, AlertTriangle, Check, Edit05 } from '@untitledui/icons';
-import { Badge, BadgeWithIcon } from '@/components/base/badges/badges';
-import { Button } from '@/components/base/buttons/button';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { cx } from '@/utils/cx';
+import { AlertCircle, AlertTriangle, Check, Pencil } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/libs/utils/cn';
 import type { SaveState } from '../hooks/useOutlineAutosave';
 
 type Props = {
@@ -45,44 +45,48 @@ export function SaveStatusPill({ state, onRetry, className }: Props) {
       role="status"
       aria-live="polite"
       data-testid="save-status-pill"
-      className={cx(
+      className={cn(
         // Fixed height keeps surrounding layout from shifting when the pill
         // toggles between idle (empty) and visible states.
-        'flex h-5 items-center gap-1.5 text-xs font-medium text-tertiary',
+        'text-tertiary flex h-5 items-center gap-1.5 text-xs font-medium',
         className
       )}
     >
       {state.status === 'typing' && (
-        <BadgeWithIcon size="sm" color="gray" type="pill-color" iconLeading={Edit05}>
+        <Badge variant="secondary">
+          <Pencil aria-hidden="true" />
           Editing…
-        </BadgeWithIcon>
+        </Badge>
       )}
       {state.status === 'saving' && (
-        <Badge size="sm" color="brand" type="pill-color" className="gap-1">
-          <LoadingIndicator size="xxs" color="brand" />
+        <Badge>
+          <Spinner aria-hidden="true" />
           Saving…
         </Badge>
       )}
       {state.status === 'saved' && state.lastSavedAt && (
-        <BadgeWithIcon size="sm" color="success" type="pill-color" iconLeading={Check}>
+        <Badge className="bg-emerald-600 text-white">
+          <Check aria-hidden="true" />
           Saved {formatRelative(state.lastSavedAt, now)}
-        </BadgeWithIcon>
+        </Badge>
       )}
       {state.status === 'unsaved' && (
-        <BadgeWithIcon size="sm" color="warning" type="pill-color" iconLeading={AlertTriangle}>
+        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100">
+          <AlertTriangle aria-hidden="true" />
           Edits not saved
-        </BadgeWithIcon>
+        </Badge>
       )}
       {state.status === 'error' && (
         <>
-          <BadgeWithIcon size="sm" color="error" type="pill-color" iconLeading={AlertCircle}>
+          <Badge variant="destructive">
+            <AlertCircle aria-hidden="true" />
             Could not save
-          </BadgeWithIcon>
+          </Badge>
           <Button
-            color="link-color"
+            variant="link"
             size="sm"
             onClick={onRetry}
-            className="!h-auto !p-0 text-xs pointer-events-auto"
+            className="pointer-events-auto !h-auto !p-0 text-xs"
           >
             Retry
           </Button>

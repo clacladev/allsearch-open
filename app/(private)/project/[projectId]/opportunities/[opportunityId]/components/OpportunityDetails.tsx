@@ -24,11 +24,11 @@ import {
   PriorityScoreBadgeWithTooltip,
 } from '../../components/Badges';
 import { BrandsIconsStackWithTooltip } from '../../../sources/components/BrandsIconsStack';
-import { Badge, BadgeWithDot } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import { RouteHelper } from '@/libs/routes';
 import Link from 'next/link';
-import { CheckCircleBroken, Heading01, LinkExternal01 } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import { CircleCheck, Heading, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import { OPPORTUNITY_TYPE_DESCRIPTION, OPPORTUNITY_TYPE_TITLE } from '@/libs/utils/opportunities';
 import { SourceHeadersModal } from './SourceHeadersModal';
@@ -319,9 +319,13 @@ const TargetPromptSection = ({
             )}
             className="no-underline!"
           >
-            <BadgeWithDot size="lg" color="brand" type="modern">
+            <Badge variant="outline">
+              <span
+                className="size-1.5 rounded-full bg-shadcn-primary"
+                aria-hidden="true"
+              />
               {prompt.name}
-            </BadgeWithDot>
+            </Badge>
           </Link>
         ))}
       </div>
@@ -345,7 +349,7 @@ const TargetSourceSection = ({
         className="text-tertiary hover:text-secondary mt-1 flex items-center gap-1 text-sm transition-colors"
       >
         {source.cleanUrl}
-        <LinkExternal01 className="size-3" />
+        <ExternalLink className="size-3" />
       </a>
     </div>
   </div>
@@ -430,12 +434,8 @@ const SourceItem = ({
       <div className="flex shrink-0 items-center gap-3">
         {!!source.headings?.length && (
           <>
-            <Button
-              onClick={() => setIsHeadersModalOpen(true)}
-              color="tertiary"
-              size="xs"
-              iconLeading={<Heading01 size={14} />}
-            >
+            <Button onClick={() => setIsHeadersModalOpen(true)} variant="ghost" size="xs">
+              <Heading size={14} />
               Headers
             </Button>
             <SourceHeadersModal
@@ -469,7 +469,7 @@ const CitedIndicator = ({ count }: { count?: number }) => (
     }
   >
     <div className="flex items-center gap-1">
-      <CheckCircleBroken className="text-brand-secondary" size={14} />
+      <CircleCheck className="text-brand-secondary" size={14} />
       <span className="text-tertiary text-xs">Cited{count && count > 1 ? ` ${count}x` : ''}</span>
     </div>
   </Tooltip>
@@ -507,7 +507,7 @@ const PromptInspirationGroup = ({
         <div className="flex items-center gap-3">
           <hr className="bg-border-secondary h-px flex-1 border-none" aria-hidden="true" />
           <div>
-            <Badge color="gray">{prompt.name}</Badge>
+            <Badge variant="secondary">{prompt.name}</Badge>
           </div>
           <hr className="bg-border-secondary h-px flex-1 border-none" aria-hidden="true" />
         </div>

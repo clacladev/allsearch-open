@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
 import { RouteHelper, ROUTES } from '@/libs/routes';
-import { RefreshCcw01 } from '@untitledui/icons';
+import { RefreshCw } from 'lucide-react';
 
 type BotRow = {
   name: string;
@@ -119,13 +119,8 @@ export function CrawlHealthClient({ projectId, projectName, url }: Props) {
         <p className="text-sm text-tertiary">
           Checking <span className="font-medium text-primary">{url}</span>
         </p>
-        <Button
-          size="sm"
-          color="secondary"
-          iconLeading={RefreshCcw01}
-          isDisabled={loading}
-          onClick={() => void runCheck()}
-        >
+        <Button size="sm" variant="secondary" disabled={loading} onClick={() => void runCheck()}>
+          <RefreshCw />
           {loading ? 'Checking…' : 'Re-run check'}
         </Button>
       </div>

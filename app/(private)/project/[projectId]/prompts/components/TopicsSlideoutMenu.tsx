@@ -2,17 +2,17 @@
 
 import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/SlideoutMenu';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { Tabs, TabList, Tab, TabPanel } from '@/components/application/tabs/tabs';
-import { Button } from '@/components/base/buttons/button';
-import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
-import { InputGroup } from '@/components/base/input/input-group';
-import { InputBase } from '@/components/base/input/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
 import { TopicRow, CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
 import { TopicsNames } from '@/libs/ai/topicsIdeas/getTopicsIdeas';
-import { Check, ChevronDown, Minus, Plus, RefreshCcw01 } from '@untitledui/icons';
+import { Check, ChevronDown, Minus, Plus, RefreshCw } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import useSWRImmutable from 'swr/immutable';
@@ -231,46 +231,40 @@ export const TopicsSlideoutMenu = ({
       }
       footerActionLoading={isAddingSuggested}
       content={
-        <Tabs defaultSelectedKey="edit" onSelectionChange={(key) => setActiveTab(key as string)}>
-          <TabList
-            type="underline"
-            items={[
-              { id: 'edit', label: 'Edit' },
-              { id: 'suggested', label: 'Suggested' },
-            ]}
-          >
-            {(item) => <Tab id={item.id} label={item.label} />}
-          </TabList>
+        <Tabs defaultValue="edit" onValueChange={setActiveTab}>
+          <TabsList variant="line">
+            <TabsTrigger value="edit">Edit</TabsTrigger>
+            <TabsTrigger value="suggested">Suggested</TabsTrigger>
+          </TabsList>
 
-          <TabPanel id="edit" className="flex flex-col gap-3 pt-4">
+          <TabsContent value="edit" className="flex flex-col gap-3 pt-4">
             <p className="text-secondary text-sm">Edit or remove existing topics.</p>
 
             <div className="flex flex-col gap-2">
               {activeTopics.map((topic) => (
                 <div key={topic.id} className="flex flex-row gap-2">
-                  <InputGroup
-                    value={editingNames[topic.id] ?? topic.name}
-                    onChange={(value) => onTopicNameChange(topic.id, value)}
-                    size="md"
-                    className="flex-1"
-                  >
-                    <InputBase type="text" placeholder="Topic name" />
+                  <InputGroup className="flex-1">
+                    <InputGroupInput
+                      value={editingNames[topic.id] ?? topic.name}
+                      onChange={(event) => onTopicNameChange(topic.id, event.target.value)}
+                      type="text"
+                      placeholder="Topic name"
+                    />
                   </InputGroup>
 
                   <Button
-                    color="secondary"
-                    size="md"
+                    variant="outline"
+                    size="icon-sm"
                     className="h-auto w-11 shrink-0"
                     onClick={() => onArchive(topic.id)}
-                    isDisabled={
-                      savedTopicId === topic.id ||
-                      (isRemoving && removingTopicId === topic.id)
+                    disabled={
+                      savedTopicId === topic.id || (isRemoving && removingTopicId === topic.id)
                     }
                   >
                     {savedTopicId === topic.id ? (
                       <Check size={14} className="text-success-600" />
                     ) : isRemoving && removingTopicId === topic.id ? (
-                      <LoadingIndicator size="xxs" />
+                      <Spinner className="size-3" />
                     ) : (
                       <Minus size={14} />
                     )}
@@ -280,26 +274,23 @@ export const TopicsSlideoutMenu = ({
 
               <div className="mt-4 -mb-1 ml-1 flex text-sm">New topic</div>
               <div className="flex flex-row gap-2">
-                <InputGroup
-                  value={newTopicName}
-                  onChange={setNewTopicName}
-                  size="md"
-                  className="flex-1"
-                >
-                  <InputBase
+                <InputGroup className="flex-1">
+                  <InputGroupInput
+                    value={newTopicName}
+                    onChange={(event) => setNewTopicName(event.target.value)}
                     type="text"
                     placeholder="Topic name"
                     onKeyDown={handleNewTopicKeyDown}
                   />
                 </InputGroup>
                 <Button
-                  color="secondary"
-                  size="md"
+                  variant="outline"
+                  size="icon-sm"
                   className="h-auto shrink-0"
                   onClick={onAddNew}
-                  isDisabled={!canAddNew || isAdding}
+                  disabled={!canAddNew || isAdding}
                 >
-                  {isAdding ? <LoadingIndicator size="xxs" /> : <Plus size={14} />}
+                  {isAdding ? <Spinner className="size-3" /> : <Plus size={14} />}
                 </Button>
               </div>
 
@@ -332,18 +323,23 @@ export const TopicsSlideoutMenu = ({
                           key={topic.id}
                           className="flex flex-row gap-2 opacity-60 transition-opacity hover:opacity-100"
                         >
-                          <InputGroup value={topic.name} size="md" isDisabled className="flex-1">
-                            <InputBase type="text" placeholder="Topic name" />
+                          <InputGroup className="flex-1">
+                            <InputGroupInput
+                              value={topic.name}
+                              disabled
+                              type="text"
+                              placeholder="Topic name"
+                            />
                           </InputGroup>
                           <Button
-                            color="secondary"
-                            size="md"
+                            variant="outline"
+                            size="icon-sm"
                             className="h-auto shrink-0"
                             onClick={() => onUnarchive(topic.id)}
-                            isDisabled={isRestoring && restoringTopicId === topic.id}
+                            disabled={isRestoring && restoringTopicId === topic.id}
                           >
                             {isRestoring && restoringTopicId === topic.id ? (
-                              <LoadingIndicator size="xxs" />
+                              <Spinner className="size-3" />
                             ) : (
                               <Plus size={14} />
                             )}
@@ -355,12 +351,12 @@ export const TopicsSlideoutMenu = ({
                 </div>
               </div>
             )}
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="suggested" className="flex flex-col gap-4 pt-4">
+          <TabsContent value="suggested" className="flex flex-col gap-4 pt-4">
             {isSuggestionsLoading && (
               <div className="flex items-center justify-center py-8">
-                <LoadingIndicator size="sm" />
+                <Spinner className="size-5" />
               </div>
             )}
 
@@ -375,38 +371,54 @@ export const TopicsSlideoutMenu = ({
                 {filteredSuggestions.length === 0 ? (
                   <p className="text-tertiary text-sm">All suggested topics are already added.</p>
                 ) : (
-                  <CheckboxGroup
-                    aria-label="Suggested topics"
-                    items={filteredSuggestions.map((topic) => ({
-                      title: topic,
-                      value: topic,
-                    }))}
-                    value={selectedSuggestions}
-                    onChange={(selected) => setSelectedSuggestions(selected as string[])}
-                  />
+                  <div role="group" aria-label="Suggested topics" className="flex flex-col gap-2">
+                    {filteredSuggestions.map((topic) => {
+                      const id = `suggested-topic-${encodeURIComponent(topic)}`;
+                      return (
+                        <Field
+                          key={topic}
+                          orientation="horizontal"
+                          className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                        >
+                          <Checkbox
+                            id={id}
+                            checked={selectedSuggestions.includes(topic)}
+                            onCheckedChange={(checked) =>
+                              setSelectedSuggestions((current) =>
+                                checked
+                                  ? [...current, topic]
+                                  : current.filter((item) => item !== topic)
+                              )
+                            }
+                          />
+                          <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
+                            {topic}
+                          </FieldLabel>
+                        </Field>
+                      );
+                    })}
+                  </div>
                 )}
 
                 <div className="flex gap-2">
                   <Button
-                    color="secondary"
+                    variant="outline"
                     size="sm"
                     onClick={() => mutateSuggestions()}
-                    isDisabled={isSuggestionsLoading || isSuggestionsValidating}
-                    isLoading={isSuggestionsValidating}
-                    iconLeading={RefreshCcw01}
+                    disabled={isSuggestionsLoading || isSuggestionsValidating}
                   >
-                    Retry
+                    {isSuggestionsValidating ? <Spinner /> : <RefreshCw aria-hidden="true" />} Retry
                   </Button>
 
                   {filteredSuggestions.length > 0 && (
                     <Button
-                      color="primary"
+                      variant="default"
                       size="sm"
                       onClick={onAddSuggested}
-                      isDisabled={!selectedSuggestions.length || isAddingSuggested}
+                      disabled={!selectedSuggestions.length || isAddingSuggested}
                     >
                       {isAddingSuggested ? (
-                        <LoadingIndicator size="xs" />
+                        <Spinner />
                       ) : (
                         `Add ${selectedSuggestions.length || ''} selected`
                       )}
@@ -415,7 +427,7 @@ export const TopicsSlideoutMenu = ({
                 </div>
               </>
             )}
-          </TabPanel>
+          </TabsContent>
         </Tabs>
       }
     />

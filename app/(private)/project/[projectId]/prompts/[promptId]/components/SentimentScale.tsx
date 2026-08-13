@@ -5,7 +5,7 @@ import { ProjectIcon } from '@/app/(private)/components/project/ProjectIcon';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import { getSentimentLabel } from '../../../components/SentimentIcon';
 import { PROJECT_BRAND_COLOR, getBrandColor } from '@/libs/utils/brandColor';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 const SENTIMENT_LEVELS: SentimentLevel[] = [-2, -1, 0, 1, 2];
 
@@ -77,7 +77,7 @@ export function SentimentScale({
             <div key={level} className="flex flex-1 flex-col items-center gap-1.5">
               <BrandsAtLevelDisplay brands={brandsAtLevel} project={project} />
               <div
-                className={cx(
+                className={cn(
                   'h-1.5 w-full rounded-full',
                   level <= -2
                     ? 'bg-error-secondary'

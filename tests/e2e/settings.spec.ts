@@ -21,10 +21,58 @@ test.describe('App settings navigation', () => {
 
     await page.getByRole('tab', { name: 'Chatbots' }).click();
     await expect(page.getByRole('heading', { name: 'Chatbots' })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider keys' })).not.toBeVisible();
 
     await page.getByRole('tab', { name: 'Data' }).click();
     await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+  });
+
+  test('uses the native select to switch global settings on mobile', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(ACCOUNT_SETTINGS_URL);
+
+    const tabs = page.getByRole('combobox', { name: 'Settings tabs' });
+    await expect(tabs).toHaveValue('provider-keys');
+    await tabs.selectOption('chatbots');
+    await expect(page.getByRole('heading', { name: 'Chatbots' })).toBeVisible();
+    await tabs.selectOption('data');
+    await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+  });
+
+  test('keeps a failed confirmation open for retry and allows cancelling it', async ({ page }) => {
+    let fulfillArchive: (() => void) | undefined;
+    const archiveRequest = new Promise<void>((resolve) => {
+      fulfillArchive = resolve;
+    });
+
+    await page.route('**/api/project/*/archive', async (route) => {
+      await archiveRequest;
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Archive failed' }),
+      });
+    });
+
+    await page.goto(ACCOUNT_SETTINGS_URL);
+    await page.getByRole('tab', { name: 'Developer' }).click();
+    await page.getByRole('button', { name: 'Archive' }).first().click();
+
+    const dialog = page.getByRole('alertdialog');
+    const confirmButton = dialog.getByRole('button', { name: 'Confirm' });
+    const actionButton = dialog.getByRole('button').nth(1);
+    const cancelButton = dialog.getByRole('button', { name: 'Cancel' });
+    await confirmButton.click();
+    await expect(actionButton).toBeDisabled();
+    await expect(cancelButton).toBeDisabled();
+
+    fulfillArchive?.();
+    await expect(dialog).toBeVisible();
+    await expect(actionButton).toBeEnabled();
+    await cancelButton.click();
+    await expect(dialog).not.toBeVisible();
   });
 });
 
@@ -58,6 +106,20 @@ test.describe('Settings navigation', () => {
     // Navigate back to Competitors tab
     await page.getByRole('tab', { name: 'Competitors' }).click();
     await page.waitForURL(`**${SETTINGS_COMPETITORS_URL}`);
+  });
+
+  test('uses the native select to navigate project settings on mobile', async ({ page }) => {
+    test.setTimeout(30_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(SETTINGS_COMPETITORS_URL);
+
+    const tabs = page.getByRole('combobox', { name: 'Settings tabs' });
+    await expect(tabs).toHaveValue('competitors');
+    await tabs.selectOption('brand');
+    await page.waitForURL(`**${SETTINGS_BRAND_URL}`);
+    await expect(tabs).toHaveValue('brand');
+    await tabs.selectOption('organization');
+    await page.waitForURL(`**${SETTINGS_ORGANIZATION_URL}`);
   });
 });
 
@@ -160,24 +222,18 @@ test.describe('Settings — Brand', () => {
       timeout: 15_000,
     });
 
-    // React Aria Checkbox — click the label to toggle
-    const checkboxLabel = page
-      .locator('label[data-rac]')
-      .filter({ hasText: 'I want to target a specific location' });
-    await expect(checkboxLabel).toBeVisible();
+    const checkbox = page.getByRole('checkbox', { name: 'I want to target a specific location' });
+    await expect(checkbox).toBeVisible();
 
     const targetInput = page.locator('input[name="targetLocation"]');
 
     // Toggle: click once, check input appeared/disappeared, click again to restore
-    await checkboxLabel.click();
-    // Small wait for React state update
-    await page.waitForTimeout(200);
+    await page.getByText('I want to target a specific location', { exact: true }).click();
 
     const isNowVisible = await targetInput.isVisible();
 
     // Click again to restore original state
-    await checkboxLabel.click();
-    await page.waitForTimeout(200);
+    await page.getByText('I want to target a specific location', { exact: true }).click();
 
     if (isNowVisible) {
       // First click showed the input, second click should hide it

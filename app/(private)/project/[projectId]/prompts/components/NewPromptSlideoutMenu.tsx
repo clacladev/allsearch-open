@@ -2,14 +2,20 @@
 
 import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/SlideoutMenu';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { Tabs, TabList, Tab, TabPanel } from '@/components/application/tabs/tabs';
-import { Button } from '@/components/base/buttons/button';
-import { CheckboxGroup } from '@/components/base/checkbox/checkbox-group';
-import { InputBase } from '@/components/base/input/input';
-import { InputGroup } from '@/components/base/input/input-group';
-import { Select, SelectItemType } from '@/components/base/select/select';
-import { SelectItem } from '@/components/base/select/select-item';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
 import { TopicRow } from '@/libs/database/Topics/types';
@@ -17,9 +23,8 @@ import { PromptRow } from '@/libs/database/Prompts/types';
 import { Topic, Topics } from '@/libs/ai/promptsIdeas/getPromptsIdeas';
 import { isPromptUnique } from '@/libs/utils/prompts';
 import { CUSTOM_TOPIC_NAME } from '@/libs/database/Topics/types';
-import { Label } from '@/components/base/input/label';
 import { TopicsSlideoutMenu } from './TopicsSlideoutMenu';
-import { Plus, RefreshCcw01 } from '@untitledui/icons';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useMemo, useTransition } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
@@ -80,8 +85,6 @@ export const NewPromptSlideoutMenu = ({
   const isNewCustomPromptUnique = isPromptUnique(existingPrompts, newCustomPrompt);
   const canAddNewCustomPrompt =
     !!newCustomPrompt.length && !isAddingPrompt && isNewCustomPromptUnique;
-
-  const topicSelectItems: SelectItemType[] = topics.map((t) => ({ id: t.id, label: t.name }));
 
   const {
     data: suggestedTopics,
@@ -194,105 +197,45 @@ export const NewPromptSlideoutMenu = ({
     .map((l) => l.trim())
     .filter(Boolean).length;
 
+  const topicSelectItems = topics.map((topic) => ({ value: topic.id, label: topic.name }));
+
   return (
     <>
-    <SlideoutMenu
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
-      title="Add new prompt"
-      description="New prompt to monitor for your brand."
-      icon={<Plus />}
-      closeTitle="Done"
-      footerAction={
-        activeTab === 'suggested' && selectedSuggestedPrompts.length > 0
-          ? onAddSuggested
-          : undefined
-      }
-      footerActionLabel={
-        activeTab === 'suggested' && selectedSuggestedPrompts.length > 0
-          ? `Add ${selectedSuggestedPrompts.length} selected`
-          : undefined
-      }
-      footerActionLoading={isAddingSuggested}
-      content={
-        <Tabs defaultSelectedKey="manual" onSelectionChange={(key) => setActiveTab(key as string)}>
-          <TabList
-            type="underline"
-            items={[
-              { id: 'manual', label: 'Manual' },
-              { id: 'suggested', label: 'Suggested' },
-            ]}
-          >
-            {(item) => <Tab id={item.id} label={item.label} />}
-          </TabList>
+      <SlideoutMenu
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title="Add new prompt"
+        description="New prompt to monitor for your brand."
+        icon={<Plus />}
+        closeTitle="Done"
+        footerAction={
+          activeTab === 'suggested' && selectedSuggestedPrompts.length > 0
+            ? onAddSuggested
+            : undefined
+        }
+        footerActionLabel={
+          activeTab === 'suggested' && selectedSuggestedPrompts.length > 0
+            ? `Add ${selectedSuggestedPrompts.length} selected`
+            : undefined
+        }
+        footerActionLoading={isAddingSuggested}
+        content={
+          <Tabs defaultValue="manual" onValueChange={setActiveTab}>
+            <TabsList variant="line">
+              <TabsTrigger value="manual">Manual</TabsTrigger>
+              <TabsTrigger value="suggested">Suggested</TabsTrigger>
+            </TabsList>
 
-          <TabPanel id="manual" className="flex flex-col gap-4 pt-4">
-            <p className="text-secondary text-sm">Add a new prompt text.</p>
+            <TabsContent value="manual" className="flex flex-col gap-4 pt-4">
+              <p className="text-secondary text-sm">Add a new prompt text.</p>
 
-            {topicSelectItems.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Label>Topic</Label>
-                  <button
-                    type="button"
-                    className="cursor-pointer text-sm font-medium text-brand-600 hover:text-brand-700"
-                    onClick={() => setIsTopicsOpen(true)}
-                  >
-                    (New)
-                  </button>
-                </div>
-                <Select
-                  items={topicSelectItems}
-                  selectedKey={singleTopicId ?? null}
-                  onSelectionChange={(key) => setSingleTopicId(key as string)}
-                  placeholder="Select topic"
-                  size="sm"
-                >
-                  {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
-                </Select>
-              </div>
-            )}
-
-            <section className="flex flex-col gap-1">
-              <InputGroup
-                value={newCustomPrompt}
-                onChange={setNewCustomPrompt}
-                name="customPrompt"
-                size="md"
-                trailingAddon={
-                  <Button
-                    color="secondary"
-                    size="md"
-                    onClick={onAddSingle}
-                    isDisabled={!canAddNewCustomPrompt}
-                  >
-                    {isAddingPrompt ? <LoadingIndicator size="xs" /> : 'Add'}
-                  </Button>
-                }
-              >
-                <InputBase
-                  type="text"
-                  placeholder="New prompt text"
-                  onKeyDown={handleSingleKeyDown}
-                />
-              </InputGroup>
-
-              {!isNewCustomPromptUnique && (
-                <div className="text-error-800 ml-0.5 text-xs">Prompt already exists</div>
-              )}
-            </section>
-
-            <div className="border-secondary mt-8 border-t pt-6">
-              <h3 className="text-primary mb-1 text-sm font-semibold">Bulk Import</h3>
-              <p className="text-secondary mb-3 text-sm">Add one prompt per line.</p>
-
-              {topicSelectItems.length > 0 && (
-                <div className="mb-3 flex flex-col gap-1.5">
+              {topics.length > 0 && (
+                <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5">
-                    <Label>Topic</Label>
+                    <FieldLabel>Topic</FieldLabel>
                     <button
                       type="button"
-                      className="cursor-pointer text-sm font-medium text-brand-600 hover:text-brand-700"
+                      className="text-brand-600 hover:text-brand-700 cursor-pointer text-sm font-medium"
                       onClick={() => setIsTopicsOpen(true)}
                     >
                       (New)
@@ -300,118 +243,217 @@ export const NewPromptSlideoutMenu = ({
                   </div>
                   <Select
                     items={topicSelectItems}
-                    selectedKey={bulkTopicId ?? null}
-                    onSelectionChange={(key) => setBulkTopicId(key as string)}
-                    placeholder="Select topic"
-                    size="sm"
+                    value={singleTopicId ?? null}
+                    onValueChange={(value) => setSingleTopicId(value ?? undefined)}
                   >
-                    {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
+                    <SelectTrigger aria-label="Topic" className="w-full">
+                      <SelectValue placeholder="Select topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topics.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               )}
 
-              <textarea
-                rows={8}
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-                placeholder={
-                  'What are the best [product] for [event]?\nTop rated [product] in [location]?\nHow to choose [product] for [use case]?'
-                }
-                className="ring-primary focus:ring-brand bg-primary text-primary w-full rounded-lg px-3.5 py-2.5 text-sm shadow-xs ring-1 outline-hidden ring-inset focus:ring-2"
-              />
+              <section className="flex flex-col gap-1">
+                <InputGroup>
+                  <InputGroupInput
+                    value={newCustomPrompt}
+                    onChange={(event) => setNewCustomPrompt(event.target.value)}
+                    name="customPrompt"
+                    type="text"
+                    placeholder="New prompt text"
+                    onKeyDown={handleSingleKeyDown}
+                  />
+                  <InputGroupAddon align="inline-end" className="pr-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={onAddSingle}
+                      disabled={!canAddNewCustomPrompt}
+                    >
+                      {isAddingPrompt ? (
+                        <>
+                          <Spinner aria-hidden="true" />
+                          <span className="sr-only">Add</span>
+                        </>
+                      ) : (
+                        'Add'
+                      )}
+                    </Button>
+                  </InputGroupAddon>
+                </InputGroup>
 
-              <Button
-                color="secondary"
-                size="sm"
-                onClick={onBulkAdd}
-                isDisabled={!bulkLines || isAddingBulk}
-                className="mt-2"
-              >
-                {isAddingBulk ? (
-                  <LoadingIndicator size="xs" />
-                ) : (
-                  `Add ${bulkLines || ''} prompt${bulkLines !== 1 ? 's' : ''}`
+                {!isNewCustomPromptUnique && (
+                  <div className="text-error-800 ml-0.5 text-xs">Prompt already exists</div>
                 )}
-              </Button>
-            </div>
-          </TabPanel>
+              </section>
 
-          <TabPanel id="suggested" className="flex flex-col gap-4 pt-4">
-            {isSuggestionsLoading && (
-              <div className="flex items-center justify-center py-8">
-                <LoadingIndicator size="sm" />
-              </div>
-            )}
+              <div className="border-secondary mt-8 border-t pt-6">
+                <h3 className="text-primary mb-1 text-sm font-semibold">Bulk Import</h3>
+                <p className="text-secondary mb-3 text-sm">Add one prompt per line.</p>
 
-            {suggestionsError && (
-              <div className="text-error-800 text-sm">{suggestionsError.message}</div>
-            )}
-
-            {!isSuggestionsLoading && suggestedTopics && (
-              <>
-                <p className="text-secondary text-sm">Select prompts to add to your project.</p>
-
-                {suggestedTopics.map((topicGroup: Topic) => (
-                  <div key={topicGroup.topic}>
-                    <div className="text-primary mb-1 text-sm font-semibold">
-                      {topicGroup.topic}
+                {topics.length > 0 && (
+                  <div className="mb-3 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <FieldLabel>Topic</FieldLabel>
+                      <button
+                        type="button"
+                        className="text-brand-600 hover:text-brand-700 cursor-pointer text-sm font-medium"
+                        onClick={() => setIsTopicsOpen(true)}
+                      >
+                        (New)
+                      </button>
                     </div>
-                    <CheckboxGroup
-                      aria-label={`${topicGroup.topic} prompts`}
-                      items={topicGroup.prompts.map((prompt) => ({
-                        title: prompt,
-                        value: prompt,
-                      }))}
-                      value={selectedSuggestedPrompts.filter((p) => topicGroup.prompts.includes(p))}
-                      onChange={(selected) =>
-                        toggleSuggestedPrompt(selected as string[], topicGroup.topic)
-                      }
-                    />
+                    <Select
+                      items={topicSelectItems}
+                      value={bulkTopicId ?? null}
+                      onValueChange={(value) => setBulkTopicId(value ?? undefined)}
+                    >
+                      <SelectTrigger aria-label="Topic" className="w-full">
+                        <SelectValue placeholder="Select topic" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {topics.map((topic) => (
+                          <SelectItem key={topic.id} value={topic.id}>
+                            {topic.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
+                )}
 
-                <div className="flex gap-2">
-                  <Button
-                    color="secondary"
-                    size="sm"
-                    onClick={() => mutateSuggestions()}
-                    isDisabled={isSuggestionsLoading || isSuggestionsValidating}
-                    isLoading={isSuggestionsValidating}
-                    iconLeading={RefreshCcw01}
-                  >
-                    Retry
-                  </Button>
+                <Textarea
+                  rows={8}
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  placeholder={
+                    'What are the best [product] for [event]?\nTop rated [product] in [location]?\nHow to choose [product] for [use case]?'
+                  }
+                  className="min-h-40"
+                />
 
-                  <Button
-                    color="primary"
-                    size="sm"
-                    onClick={onAddSuggested}
-                    isDisabled={!selectedSuggestedPrompts.length || isAddingSuggested}
-                  >
-                    {isAddingSuggested ? (
-                      <LoadingIndicator size="xs" />
-                    ) : (
-                      `Add ${selectedSuggestedPrompts.length || ''} selected`
-                    )}
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onBulkAdd}
+                  disabled={!bulkLines || isAddingBulk}
+                  className="mt-2"
+                >
+                  {isAddingBulk ? (
+                    <Spinner />
+                  ) : (
+                    `Add ${bulkLines || ''} prompt${bulkLines !== 1 ? 's' : ''}`
+                  )}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="suggested" className="flex flex-col gap-4 pt-4">
+              {isSuggestionsLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner className="size-5" />
                 </div>
-              </>
-            )}
-          </TabPanel>
-        </Tabs>
-      }
-    />
-    <TopicsSlideoutMenu
-      isOpen={isTopicsOpen}
-      setIsOpen={setIsTopicsOpen}
-      projectId={projectId}
-      topics={topics}
-      project={project}
-      onTopicAdded={onTopicAdded}
-      onTopicUpdated={onTopicUpdated}
-      onTopicArchived={onTopicArchived}
-      onTopicUnarchived={onTopicUnarchived}
-    />
+              )}
+
+              {suggestionsError && (
+                <div className="text-error-800 text-sm">{suggestionsError.message}</div>
+              )}
+
+              {!isSuggestionsLoading && suggestedTopics && (
+                <>
+                  <p className="text-secondary text-sm">Select prompts to add to your project.</p>
+
+                  {suggestedTopics.map((topicGroup: Topic) => (
+                    <div key={topicGroup.topic}>
+                      <div className="text-primary mb-1 text-sm font-semibold">
+                        {topicGroup.topic}
+                      </div>
+                      <div
+                        role="group"
+                        aria-label={`${topicGroup.topic} prompts`}
+                        className="flex flex-col gap-2"
+                      >
+                        {topicGroup.prompts.map((prompt) => {
+                          const id = `suggested-prompt-${encodeURIComponent(prompt)}`;
+                          return (
+                            <Field
+                              key={prompt}
+                              orientation="horizontal"
+                              className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                            >
+                              <Checkbox
+                                id={id}
+                                checked={selectedSuggestedPrompts.includes(prompt)}
+                                onCheckedChange={(checked) =>
+                                  toggleSuggestedPrompt(
+                                    topicGroup.prompts.filter((candidate) =>
+                                      candidate === prompt
+                                        ? checked
+                                        : selectedSuggestedPrompts.includes(candidate)
+                                    ),
+                                    topicGroup.topic
+                                  )
+                                }
+                              />
+                              <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
+                                {prompt}
+                              </FieldLabel>
+                            </Field>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => mutateSuggestions()}
+                      disabled={isSuggestionsLoading || isSuggestionsValidating}
+                    >
+                      {isSuggestionsValidating ? <Spinner /> : <RefreshCw aria-hidden="true" />}{' '}
+                      Retry
+                    </Button>
+
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={onAddSuggested}
+                      disabled={!selectedSuggestedPrompts.length || isAddingSuggested}
+                    >
+                      {isAddingSuggested ? (
+                        <Spinner />
+                      ) : (
+                        `Add ${selectedSuggestedPrompts.length || ''} selected`
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        }
+      />
+      <TopicsSlideoutMenu
+        isOpen={isTopicsOpen}
+        setIsOpen={setIsTopicsOpen}
+        projectId={projectId}
+        topics={topics}
+        project={project}
+        onTopicAdded={onTopicAdded}
+        onTopicUpdated={onTopicUpdated}
+        onTopicArchived={onTopicArchived}
+        onTopicUnarchived={onTopicUnarchived}
+      />
     </>
   );
 };

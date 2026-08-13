@@ -1,4 +1,4 @@
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 export default function ContentContainer({
   className,
@@ -8,6 +8,6 @@ export default function ContentContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cx('mx-auto w-full max-w-4xl space-y-10 p-4 pb-24', className)}>{children}</div>
+    <div className={cn('mx-auto w-full max-w-4xl space-y-10 p-4 pb-24', className)}>{children}</div>
   );
 }

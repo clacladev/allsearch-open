@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
+  colorScheme: 'light dark',
 };
 
 // The app runs on localhost and is never crawled, so there is no SEO metadata

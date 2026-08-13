@@ -1,5 +1,5 @@
-import { ActivityHeart } from '@untitledui/icons';
-import { TableCard } from '@/components/application/table/table';
+import { Activity } from 'lucide-react';
+import { StandardTableHeader } from '@/app/(private)/components/StandardTable/StandardTableHeader';
 import { RouteHelper } from '@/libs/routes';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
 import { PromptRow } from '@/libs/database/Prompts/types';
@@ -29,8 +29,8 @@ export const TopOpportunitiesTable = ({
     endDate={endDate}
     hideSorting
     tableHeader={
-      <TableCard.Header
-        icon={ActivityHeart}
+      <StandardTableHeader
+        icon={Activity}
         title="Opportunities"
         titleHref={RouteHelper.Project.getOpportunities(projectId, startDate, endDate)}
         tooltip="Opportunities to improve your brand visibility in the prompts answers"

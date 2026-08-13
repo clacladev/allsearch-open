@@ -1,10 +1,12 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { Button, Props } from '@/components/base/buttons/button';
-import { Monitor01, Moon01, Sun } from '@untitledui/icons';
+import { Button } from '@/components/ui/button';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import type { ComponentProps } from 'react';
 
 export type Theme = 'light' | 'dark' | 'system';
+type Props = ComponentProps<typeof Button>;
 
 const THEMES: Theme[] = ['light', 'dark', 'system'];
 
@@ -20,13 +22,12 @@ export function ThemeToggleButton(props: Props) {
   return (
     <Button
       aria-label="Toggle theme"
-      color="tertiary"
-      size="md"
-      iconLeading={nextTheme === 'light' ? Sun : nextTheme === 'dark' ? Moon01 : Monitor01}
+      variant="ghost"
+      size="default"
       onClick={() => setTheme(nextTheme as string)}
       {...props}
     >
-      Switch to {nextTheme ?? 'system'}
+      {nextTheme === 'light' ? <Sun /> : nextTheme === 'dark' ? <Moon /> : <Monitor />} Switch to {nextTheme ?? 'system'}
     </Button>
   );
 }
@@ -37,11 +38,10 @@ export function ThemeToggleCompactButton(props: Props) {
   return (
     <Button
       aria-label="Toggle theme"
-      color="tertiary"
-      size="sm"
-      iconLeading={nextTheme === 'light' ? Sun : nextTheme === 'dark' ? Moon01 : Monitor01}
+      variant="ghost"
+      size="icon-sm"
       onClick={() => setTheme(nextTheme as string)}
       {...props}
-    />
+    >{nextTheme === 'light' ? <Sun /> : nextTheme === 'dark' ? <Moon /> : <Monitor />}</Button>
   );
 }

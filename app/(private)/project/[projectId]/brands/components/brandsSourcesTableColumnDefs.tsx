@@ -1,8 +1,9 @@
 import { createColumnHelper } from '@tanstack/react-table';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { DOMAIN_CATEGORIES_COLORS } from '../../sources/components/helpers';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
+import { DOMAIN_CATEGORY_DOT_CLASS } from '../../sources/components/helpers';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import Link from 'next/link';
 import { RouteHelper } from '@/libs/routes';
@@ -19,12 +20,12 @@ const columnHelper = createColumnHelper<SourceContent>();
 export const createBrandsSourcesTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'title',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="title"
         label="URL"
         tooltip="URL of the source"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),
@@ -56,9 +57,13 @@ export const createBrandsSourcesTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <BadgeWithDot size="sm" color={DOMAIN_CATEGORIES_COLORS[domainCategory]} type="modern">
+        <Badge variant="outline">
+          <span
+            className={cn('size-1.5 rounded-full', DOMAIN_CATEGORY_DOT_CLASS[domainCategory])}
+            aria-hidden="true"
+          />
           {domainCategory}
-        </BadgeWithDot>
+        </Badge>
       );
     },
   }),

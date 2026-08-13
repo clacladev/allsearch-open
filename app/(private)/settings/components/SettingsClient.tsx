@@ -5,8 +5,8 @@ import type { ChatbotId } from '@/libs/database/shared/ChatbotId';
 import type { RedactedProviderKey } from '@/libs/database/Settings/types';
 import type { ProjectRow } from '@/libs/database/Projects/types';
 import type { DatabaseFileInfo } from '@/libs/database/paths';
-import { TabList, Tabs } from '@/components/application/tabs/tabs';
-import { NativeSelect } from '@/components/base/select/select-native';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import OrganizationSettingsForm from '@/components/settings/OrganizationSettingsForm';
 import ProviderKeysSettings from './ProviderKeysSettings';
 import ChatbotsSettings from './ChatbotsSettings';
@@ -37,7 +37,8 @@ export default function SettingsClient({
   lastCompletedRunFinishedAt: string | null;
 }) {
   const [providerKeys, setProviderKeys] = useState(initialProviderKeys);
-  const [selectedSettingsTabId, setSelectedSettingsTabId] = useState<SettingsTabId>('provider-keys');
+  const [selectedSettingsTabId, setSelectedSettingsTabId] =
+    useState<SettingsTabId>('provider-keys');
 
   const onSelectionChange = (tabId: string) => {
     if (SETTINGS_TABS.some((tab) => tab.id === tabId)) {
@@ -53,16 +54,27 @@ export default function SettingsClient({
           className="md:hidden"
           value={selectedSettingsTabId}
           onChange={(event) => onSelectionChange(event.target.value)}
-          options={SETTINGS_TABS.map((tab) => ({ label: tab.label, value: tab.id }))}
-        />
+        >
+          {SETTINGS_TABS.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </NativeSelect>
 
         <div className="scrollbar-hide -mx-4 -my-1 flex overflow-auto px-4 py-1 lg:-mx-8 lg:px-8">
           <Tabs
             className="hidden md:flex xl:w-full"
-            selectedKey={selectedSettingsTabId}
-            onSelectionChange={(value) => onSelectionChange(value as string)}
+            value={selectedSettingsTabId}
+            onValueChange={onSelectionChange}
           >
-            <TabList type="button-minimal" className="w-full" items={[...SETTINGS_TABS]} />
+            <TabsList className="border-border w-full justify-start border">
+              {SETTINGS_TABS.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex-none px-3">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </Tabs>
         </div>
       </section>

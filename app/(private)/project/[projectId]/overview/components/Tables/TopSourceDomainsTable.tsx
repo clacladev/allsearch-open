@@ -1,12 +1,12 @@
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
 import { SourcesType } from '@/app/(private)/project/[projectId]/sources/components/types';
 import { SourceDomainsTable } from '../../../sources/components/SourcesTable';
-import { Globe01 } from '@untitledui/icons';
+import { Globe } from 'lucide-react';
 import {
   OverviewTableFooter,
   TopSourceTableHeaderTrailingContent,
 } from './TopSourceTableHeaderTrailingContent';
-import { TableCard } from '@/components/application/table/table';
+import { StandardTableHeader } from '@/app/(private)/components/StandardTable/StandardTableHeader';
 import { RouteHelper } from '@/libs/routes';
 
 export const TopSourceDomainsTable = ({
@@ -28,8 +28,8 @@ export const TopSourceDomainsTable = ({
     sources={sources}
     hideSorting
     tableHeader={
-      <TableCard.Header
-        icon={Globe01}
+      <StandardTableHeader
+        icon={Globe}
         title="Top Source Domains"
         titleHref={RouteHelper.Project.getSourcesDomains(projectId, startDate, endDate)}
         tooltip="Top source domains used in the prompts answers"

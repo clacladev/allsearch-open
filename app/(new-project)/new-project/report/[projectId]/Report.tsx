@@ -2,23 +2,24 @@
 
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
-import { Button } from '@/components/base/buttons/button';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { RouteHelper } from '@/libs/routes';
 import FormHeader from '../../components/FormHeader';
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import Link from 'next/link';
+import { RouteLoading } from '@/components/shared/route-loading';
 import { VisualContainer } from '@/app/(private)/project/[projectId]/overview/components/VisualContainer';
 import BrandsRankingRadial, {
   getBrandsRankingRadialData,
 } from '@/app/(private)/project/[projectId]/overview/components/BrandsRankingRadial';
 import { NewProjectLayoutColumn } from '@/app/(new-project)/layout';
-import { ArrowRight, RefreshCcw01 } from '@untitledui/icons';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
 import VisibilityScoresBarChart, {
   getVisibilityScoresBarChartData,
 } from '../../../../(private)/project/[projectId]/overview/components/VisibilityScoresBarChart';
-import { MetricsSimple } from '@/components/application/metrics/metrics';
 import { CollectionRunProgress } from '@/components/collection-run/CollectionRunProgress';
 import { useCollectionRunProgress } from '@/components/collection-run/useCollectionRunProgress';
 import { formatCollectionRunProgressSummary } from '@/libs/collection/progress';
@@ -68,7 +69,7 @@ export default function Report({
   if (isRunInProgress === undefined) {
     return (
       <NewProjectLayoutColumn size="lg">
-        <LoadingIndicator label="Loading your Brand AI Visibility Report..." />
+        <RouteLoading label="Loading your Brand AI Visibility Report..." />
       </NewProjectLayoutColumn>
     );
   }
@@ -97,12 +98,8 @@ export default function Report({
         <div className="text-error-800 text-sm">
           Could not load the report. Check the project and run state, then retry.
         </div>
-        <Button
-          size="lg"
-          color="secondary"
-          iconLeading={RefreshCcw01}
-          onClick={() => router.refresh()}
-        >
+        <Button size="lg" variant="secondary" onClick={() => router.refresh()}>
+          <RefreshCw />
           Retry
         </Button>
       </NewProjectLayoutColumn>
@@ -142,12 +139,16 @@ export default function Report({
           </VisualContainer>
 
           {!!mentionsTotal && (
-            <MetricsSimple
-              title={`${mentionsTotal} times`}
-              trend="positive"
-              type="modern"
-              subtitle="Your Total Mentions"
-            />
+            <Card size="sm">
+              <CardHeader>
+                <h3 className="text-tertiary text-sm font-medium">Your Total Mentions</h3>
+              </CardHeader>
+              <CardContent>
+                <p className="text-display-sm text-primary font-semibold">
+                  {mentionsTotal} times
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
 
@@ -160,12 +161,9 @@ export default function Report({
         </VisualContainer>
       </div>
 
-      <Button
-        size="lg"
-        href={RouteHelper.Project.getOverview(projectId)}
-        iconTrailing={ArrowRight}
-      >
+      <Button size="lg" render={<Link href={RouteHelper.Project.getOverview(projectId)} />}>
         Start Improving Your Visibility
+        <ArrowRight />
       </Button>
     </NewProjectLayoutColumn>
   );

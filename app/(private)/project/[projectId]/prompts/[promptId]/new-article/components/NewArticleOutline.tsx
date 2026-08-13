@@ -8,28 +8,24 @@ import {
   AlertTriangle,
   ArrowLeft,
   Check,
-  Copy01,
-  Edit05,
-  RefreshCw02,
-  RefreshCcw01,
-  SearchLg,
-} from '@untitledui/icons';
+  Copy,
+  FilePenLine,
+  RefreshCcw,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
 import useSWRMutation from 'swr/mutation';
-import { Button } from '@/components/base/buttons/button';
-import { EmptyState } from '@/components/application/empty-state/empty-state';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
 import { AiFailureState, getAiFailureStateCopy } from '@/app/components/AiFailureState';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import type { ArticleSettings } from '@/libs/ai/promptArticles/schema';
-import type {
-  ArticleSourcesUsed,
-  PromptArticleRow,
-} from '@/libs/database/PromptArticles/types';
+import type { ArticleSourcesUsed, PromptArticleRow } from '@/libs/database/PromptArticles/types';
 import type { OutlineOpportunityType } from '@/libs/utils/project-analysis/types';
 import { outlineToMarkdown } from '@/libs/utils/articleOutlineMarkdown';
 import { ArticleSettingsForm } from './ArticleSettingsForm';
@@ -41,11 +37,7 @@ import { RestoreOutlineDialog } from './RestoreOutlineDialog';
 import { SaveStatusPill } from './SaveStatusPill';
 import { useOutlineAutosave } from '../hooks/useOutlineAutosave';
 
-type OutlineErrorKind =
-  | 'NOT_ENOUGH_SOURCES'
-  | 'OPPORTUNITY_GONE'
-  | 'RATE_LIMIT'
-  | 'GENERIC';
+type OutlineErrorKind = 'NOT_ENOUGH_SOURCES' | 'OPPORTUNITY_GONE' | 'RATE_LIMIT' | 'GENERIC';
 
 type Props = {
   projectId: string;
@@ -112,7 +104,7 @@ const OUTLINE_ERROR_COPY: Record<
     title: 'Not enough source data yet',
     description:
       "This prompt doesn't have cited sources with readable page headings to inspire an outline. Try back after the next analysis run.",
-    icon: SearchLg,
+    icon: Search,
     canRetry: false,
   },
   OPPORTUNITY_GONE: {
@@ -139,8 +131,7 @@ const OUTLINE_ERROR_COPY: Record<
 const OUTLINE_REGEN_ERROR_COPY: Record<OutlineErrorKind, string> = {
   NOT_ENOUGH_SOURCES:
     'Not enough source data yet to regenerate. Try back after the next analysis run.',
-  OPPORTUNITY_GONE:
-    'This opportunity is no longer available. Return to the opportunities list.',
+  OPPORTUNITY_GONE: 'This opportunity is no longer available. Return to the opportunities list.',
   RATE_LIMIT: 'The outline service is busy. Try again in a moment.',
   GENERIC: 'Failed to generate a new outline. Try again in a moment.',
 };
@@ -193,10 +184,7 @@ export function NewArticleOutline({
   const { trigger: triggerOutlineGeneration, isMutating: isMutatingOutline } =
     useGenerateArticleOutline(projectId, promptId);
 
-  const requestOutlineGeneration = async (
-    isRegeneration: boolean,
-    settings: ArticleSettings
-  ) => {
+  const requestOutlineGeneration = async (isRegeneration: boolean, settings: ArticleSettings) => {
     if (!opportunityType) return;
     setErrorKind(null);
     setAiErrorCode(undefined);
@@ -235,25 +223,19 @@ export function NewArticleOutline({
   if (!opportunityType) {
     return (
       <div className="flex w-full items-center justify-center py-12">
-        <EmptyState className="min-h-[600px] py-16">
-          <EmptyState.Header>
-            <EmptyState.FeaturedIcon icon={AlertTriangle} color="gray" />
-          </EmptyState.Header>
-          <EmptyState.Content>
-            <EmptyState.Title>This opportunity is no longer available</EmptyState.Title>
-            <EmptyState.Description>
+        <div className="flex min-h-[600px] flex-col items-center justify-center gap-4 py-16 text-center">
+          <AlertTriangle className="text-muted-foreground size-8" aria-hidden="true" />
+          <div>
+            <h2 className="text-lg font-semibold">This opportunity is no longer available</h2>
+            <p className="text-muted-foreground">
               The opportunity may have changed in the selected date range. Return to the
               opportunities list and try again.
-            </EmptyState.Description>
-          </EmptyState.Content>
-          <EmptyState.Footer>
-            <Link href={backHref}>
-              <Button color="secondary" size="md">
-                {backLabel}
-              </Button>
-            </Link>
-          </EmptyState.Footer>
-        </EmptyState>
+            </p>
+          </div>
+          <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
+            {backLabel}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -265,16 +247,18 @@ export function NewArticleOutline({
     return (
       <div className="flex w-full flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href={backHref}>
-            <Button color="secondary" size="sm" iconLeading={ArrowLeft}>
-              {backLabel}
-            </Button>
+          <Link
+            href={backHref}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+          >
+            <ArrowLeft aria-hidden="true" />
+            {backLabel}
           </Link>
         </div>
 
         {isMutatingOutline ? (
           <div className="flex min-h-96 w-full items-center justify-center py-12">
-            <LoadingIndicator label="Generating your outline..." />
+            <Spinner aria-label="Generating your outline..." />
           </div>
         ) : aiErrorCode ? (
           <AiFailureState code={aiErrorCode} provider="google" className="min-h-[400px] py-16" />
@@ -282,27 +266,23 @@ export function NewArticleOutline({
           (() => {
             const errorCopy = OUTLINE_ERROR_COPY[errorKind];
             return (
-              <EmptyState className="min-h-[400px] py-16">
-                <EmptyState.Header>
-                  <EmptyState.FeaturedIcon icon={errorCopy.icon} color="gray" />
-                </EmptyState.Header>
-                <EmptyState.Content>
-                  <EmptyState.Title>{errorCopy.title}</EmptyState.Title>
-                  <EmptyState.Description>{errorCopy.description}</EmptyState.Description>
-                </EmptyState.Content>
-                <EmptyState.Footer>
-                  <Link href={backHref}>
-                    <Button color="secondary" size="md">
-                      {backLabel}
-                    </Button>
+              <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 py-16 text-center">
+                <errorCopy.icon className="text-muted-foreground size-8" aria-hidden="true" />
+                <div>
+                  <h2 className="text-lg font-semibold">{errorCopy.title}</h2>
+                  <p className="text-muted-foreground">{errorCopy.description}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
+                    {backLabel}
                   </Link>
                   {errorCopy.canRetry && (
-                    <Button color="primary" size="md" onClick={() => setErrorKind(null)}>
+                    <Button onClick={() => setErrorKind(null)}>
                       Adjust settings and try again
                     </Button>
                   )}
-                </EmptyState.Footer>
-              </EmptyState>
+                </div>
+              </div>
             );
           })()
         ) : (
@@ -416,7 +396,10 @@ function OutlineEditor({
     onSaved: (row) => setOutline(row),
   });
 
-  const handleEdit = (next: typeof currentOutline, kind: Parameters<typeof autosave.notifyEdit>[0]) => {
+  const handleEdit = (
+    next: typeof currentOutline,
+    kind: Parameters<typeof autosave.notifyEdit>[0]
+  ) => {
     setCurrentOutline(next);
     setHasLocalEdits(true);
     autosave.notifyEdit(kind);
@@ -517,49 +500,45 @@ function OutlineEditor({
           view so the two surfaces feel consistent and Regenerate / Generate
           aren't buried under a long outline. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href={backHref}>
-          <Button color="secondary" size="sm" iconLeading={ArrowLeft}>
-            {backLabel}
-          </Button>
+        <Link
+          href={backHref}
+          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+        >
+          <ArrowLeft aria-hidden="true" />
+          {backLabel}
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            color="tertiary"
-            size="sm"
-            iconLeading={copied ? Check : Copy01}
-            onClick={handleCopy}
-            isDisabled={isMutatingOutline}
-          >
+          <Button variant="outline" size="sm" onClick={handleCopy} disabled={isMutatingOutline}>
+            {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
             {copied ? 'Copied' : 'Copy markdown'}
           </Button>
           <Button
-            color="tertiary"
+            variant="outline"
             size="sm"
-            iconLeading={RefreshCw02}
-            isLoading={isMutatingOutline}
+            disabled={isMutatingOutline}
             onClick={handleRegenerateClick}
           >
+            {isMutatingOutline ? <Spinner aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
             Regenerate
           </Button>
           {hasLocalEdits && (
             <Button
-              color="tertiary-destructive"
+              variant="destructive"
               size="sm"
-              iconLeading={RefreshCcw01}
               onClick={() => setIsRestoreOpen(true)}
-              isDisabled={isMutatingOutline || isRestoring}
+              disabled={isMutatingOutline || isRestoring}
             >
+              <RefreshCcw aria-hidden="true" />
               Restore AI version
             </Button>
           )}
           <Button
-            color="primary"
             size="sm"
-            iconLeading={Edit05}
             onClick={() => void handleGenerateArticleClick()}
-            isDisabled={isMutatingOutline}
+            disabled={isMutatingOutline}
           >
+            <FilePenLine aria-hidden="true" />
             Generate article
           </Button>
         </div>
@@ -575,7 +554,7 @@ function OutlineEditor({
           className="pointer-events-none absolute top-3 right-4 z-10 sm:top-4 sm:right-5"
         />
         <div
-          className={cx(
+          className={cn(
             'transition-opacity',
             isMutatingOutline && 'pointer-events-none opacity-50'
           )}
@@ -590,7 +569,7 @@ function OutlineEditor({
         </div>
         {isMutatingOutline && (
           <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-            <LoadingIndicator label="Generating new outline..." size="md" />
+            <Spinner aria-label="Generating new outline..." />
           </div>
         )}
       </div>

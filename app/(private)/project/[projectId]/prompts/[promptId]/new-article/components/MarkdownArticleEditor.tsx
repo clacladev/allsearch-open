@@ -20,7 +20,7 @@ import {
   Separator,
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 type Props = {
   initialMarkdown: string;
@@ -124,7 +124,7 @@ export function MarkdownArticleEditor({
         onChange(value);
       }}
       readOnly={isDisabled || streamingMarkdown !== undefined}
-      contentEditableClassName={cx(
+      contentEditableClassName={cn(
         'prose md:prose-lg text-primary max-w-none px-4 py-4 sm:px-5 sm:py-5 focus:outline-none',
         isDisabled && 'pointer-events-none opacity-60'
       )}

@@ -1,5 +1,5 @@
-import { Button } from '@/components/base/buttons/button';
-import { X } from '@untitledui/icons';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface SidebarCardProps {
@@ -31,13 +31,14 @@ export const SidebarCard = ({
           {!!supportingText && <span className="text-quaternary text-sm">{supportingText}</span>}
           {!!onClose && (
             <Button
-              color="tertiary"
-              size="xs"
-              iconLeading={<X data-icon />}
+              variant="ghost"
+              size="icon-xs"
               aria-label="Close card"
               onClick={onClose}
               className="absolute top-1 right-1"
-            />
+            >
+              <X />
+            </Button>
           )}
         </div>
       </div>

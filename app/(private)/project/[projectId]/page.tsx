@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { Home02 } from '@untitledui/icons';
+import { House } from 'lucide-react';
 import { Metadata } from 'next';
 import ProjectOverview from './overview/Overview';
 import { getDefaultAnalysisDateRange } from '@/libs/utils/searchParamsHelpers';
@@ -45,7 +45,7 @@ export default async function ProjectOverviewPage({ params, searchParams }: Prop
     <MainContainer>
       <Header
         text="Overview"
-        icon={Home02}
+        icon={House}
         description="Your brand's AI visibility at a glance — track how often you appear in AI-generated responses over time."
       />
       <ProjectOverview

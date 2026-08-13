@@ -1,0 +1,158 @@
+'use client';
+
+import { ArrowDown, ChevronsUpDown, Info } from 'lucide-react';
+import {
+  flexRender,
+  type Column,
+  type RowData,
+  type Table as ReactTable,
+} from '@tanstack/react-table';
+import { createContext, useContext } from 'react';
+import { cn } from '@/libs/utils/cn';
+import { AppTooltip } from '@/components/shared/tooltip';
+
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    isRowHeader?: boolean;
+    textAlign?: 'left' | 'right';
+  }
+}
+
+export type DataTableSort = { column: string | number; direction: 'ascending' | 'descending' };
+
+const DataTableContext = createContext<{
+  sort?: DataTableSort;
+  onSortChange?: (sort: DataTableSort) => void;
+  hideSorting?: boolean;
+}>({});
+
+export function DataTableColumnHeader<T>({
+  column,
+  id,
+  label,
+  tooltip,
+  allowsSorting = false,
+}: {
+  column?: Column<T>;
+  id?: string;
+  label: string;
+  tooltip?: string;
+  allowsSorting?: boolean;
+  isRowHeader?: boolean;
+}) {
+  const { sort, onSortChange, hideSorting } = useContext(DataTableContext);
+  const columnId = column?.id ?? id;
+  const direction = sort && sort.column === columnId ? sort.direction : undefined;
+  const onClick = () => {
+    if (!columnId) return;
+    onSortChange?.({
+      column: columnId,
+      direction: direction === 'ascending' ? 'descending' : 'ascending',
+    });
+  };
+
+  const labelContent = (
+    <>
+      <span>{label}</span>
+      {tooltip && (
+        <AppTooltip content={tooltip}>
+          <span
+            aria-label={tooltip}
+            className="inline-flex shrink-0 text-muted-foreground"
+          >
+            <Info aria-hidden="true" className="size-4" />
+          </span>
+        </AppTooltip>
+      )}
+    </>
+  );
+
+  if (!allowsSorting || hideSorting) {
+    return <span className="flex items-center gap-2">{labelContent}</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="focus-visible:ring-ring flex items-center gap-2 text-left focus-visible:ring-2 focus-visible:outline-none"
+    >
+      {labelContent}
+      {direction ? (
+        <ArrowDown
+          aria-hidden="true"
+          className={cn('size-3', direction === 'ascending' && 'rotate-180')}
+        />
+      ) : (
+        <ChevronsUpDown aria-hidden="true" className="size-3" />
+      )}
+    </button>
+  );
+}
+
+export const DataTableColumns = { Head: DataTableColumnHeader };
+
+export function DataTable<T>({
+  reactTable,
+  ariaLabel,
+  sort,
+  onSortChange,
+  hideSorting = false,
+}: {
+  reactTable: ReactTable<T>;
+  ariaLabel: string;
+  sort?: DataTableSort;
+  onSortChange?: (sort: DataTableSort) => void;
+  hideSorting?: boolean;
+}) {
+  return (
+    <DataTableContext.Provider value={{ sort, onSortChange, hideSorting }}>
+      <div className="overflow-x-auto">
+        <table aria-label={ariaLabel} className="w-full min-w-max text-sm">
+          <thead className="bg-muted/60 text-muted-foreground h-7 text-left text-xs font-semibold">
+            {reactTable.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="border-border border-b">
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} scope="col" className="px-4 py-2 whitespace-nowrap">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {reactTable.getRowModel().rows.map((row) => (
+              <tr
+                key={row.id}
+                className="border-border hover:bg-muted/40 h-12 border-b last:border-0"
+              >
+                {row.getVisibleCells().map((cell) => {
+                  const textAlign =
+                    cell.column.columnDef.meta?.textAlign === 'right' ? 'text-right' : 'text-left';
+                  const content = flexRender(cell.column.columnDef.cell, cell.getContext());
+
+                  return cell.column.columnDef.meta?.isRowHeader ? (
+                    <th
+                      key={cell.id}
+                      scope="row"
+                      className={cn('px-4 py-2 align-middle', textAlign)}
+                    >
+                      {content}
+                    </th>
+                  ) : (
+                    <td key={cell.id} className={cn('px-4 py-2 align-middle', textAlign)}>
+                      {content}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </DataTableContext.Provider>
+  );
+}

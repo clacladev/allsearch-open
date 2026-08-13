@@ -3,10 +3,8 @@
 import { RouteHelper } from '@/libs/routes';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import * as Paginations from '@/components/application/pagination/pagination';
-import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
-import { parseDate } from '@internationalized/date';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { DataTablePagination } from '@/components/shared/data-table-pagination';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrivateLayoutContext } from '@/app/(private)/components/PrivateLayoutContext';
@@ -15,7 +13,7 @@ import { exportOpportunitiesToCsv } from '@/app/(private)/project/[projectId]/op
 import { OpportunitiesTable } from './OpportunitiesTable';
 import { EmptyState } from '@/app/(private)/components/EmptyState';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
-import { Badge } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import type { SortDescriptor } from 'react-aria-components';
 import type { OpportunitiesSortField } from '../page';
 import {
@@ -75,14 +73,14 @@ export function Opportunities({
 
   const onExportCsv = () =>
     exportOpportunitiesToCsv(opportunitiesData.data, currentPrompts, projectId, startDate, endDate);
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
-  const onDateRangeChange = (dateRange: DateRangePickerValue) =>
+  const onDateRangeChange = (dateRange: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        dateRange.start.toString(),
-        dateRange.end.toString(),
+        dateRange.start,
+        dateRange.end,
         undefined,
         sortBy,
         sortDir,
@@ -94,8 +92,8 @@ export function Opportunities({
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         page - 1,
         sortBy,
         sortDir,
@@ -113,8 +111,8 @@ export function Opportunities({
       router.push(
         RouteHelper.Project.getOpportunities(
           projectId,
-          selectedDateRange.start.toString(),
-          selectedDateRange.end.toString(),
+          selectedDateRange.start,
+          selectedDateRange.end,
           0,
           undefined,
           undefined,
@@ -128,8 +126,8 @@ export function Opportunities({
     router.push(
       RouteHelper.Project.getOpportunities(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         0,
         newSortBy,
         newSortDir,
@@ -210,10 +208,7 @@ export function Opportunities({
       <div>
         <div className="flex items-end justify-between gap-2">
           <div className="flex gap-2">
-            <DateRangePickerCard
-              selectedDateRange={selectedDateRange}
-              onApplyAction={onDateRangeChange}
-            />
+            <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
             <ExportActionsButton onExportCsvAction={onExportCsv} />
             <FilterToggle
               isExpanded={isFiltersExpanded}
@@ -223,9 +218,7 @@ export function Opportunities({
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            <Badge type="pill-color" size="sm" color="brand">
-              {opportunitiesData.totalItems} opportunities
-            </Badge>
+            <Badge>{opportunitiesData.totalItems} opportunities</Badge>
             <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
           </div>
         </div>
@@ -264,14 +257,14 @@ export function Opportunities({
           totalPages={opportunitiesData.totalPages}
           prompts={currentPrompts}
           projectId={projectId}
-          startDate={selectedDateRange.start.toString()}
-          endDate={selectedDateRange.end.toString()}
+          startDate={selectedDateRange.start}
+          endDate={selectedDateRange.end}
           sortDescriptor={sortDescriptor}
           onSortChange={onSortChange}
           tableFooter={
-            <Paginations.PaginationPageDefault
+            <DataTablePagination
               page={opportunitiesData.currentPage + 1}
-              total={opportunitiesData.totalPages}
+              totalPages={opportunitiesData.totalPages}
               onPageChange={onPageChange}
               className="px-4 py-3 md:px-6 md:py-1.5"
             />
