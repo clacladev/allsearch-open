@@ -127,7 +127,7 @@ export default function OrganizationForm() {
                 key={option.value}
                 orientation="horizontal"
                 onClick={() => setOrganizationType(option.value)}
-                className="has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 cursor-pointer rounded-lg border p-4"
+                className="border-border has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 cursor-pointer rounded-lg border p-4"
               >
                 <RadioGroupItem id={id} value={option.value} />
                 <FieldContent>

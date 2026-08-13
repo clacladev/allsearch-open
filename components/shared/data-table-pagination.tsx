@@ -18,7 +18,7 @@ export function DataTablePagination({
   if (totalPages <= 1) return null;
 
   return (
-    <nav aria-label="Pagination" className={cn('flex items-center justify-between gap-3 border-t px-4 py-3 md:px-6', className)}>
+    <nav aria-label="Pagination" className={cn('border-border flex items-center justify-between gap-3 border-t px-4 py-3 md:px-6', className)}>
       <Button
         type="button"
         variant="outline"

@@ -10,7 +10,7 @@ export function getCollectionRunCoverageText(runCount: number): string {
 export function CollectionRunCoverageBanner({ runCount }: { runCount: number }) {
   return (
     <div
-      className="bg-muted/40 text-muted-foreground rounded-md border px-3 py-2 text-sm"
+      className="border-border bg-muted/40 text-muted-foreground rounded-md border px-3 py-2 text-sm"
       data-testid="overview-collection-run-coverage"
     >
       {getCollectionRunCoverageText(runCount)}

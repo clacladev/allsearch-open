@@ -98,7 +98,7 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
       data-slot="field-label"
       className={cn(
         'group/field-label peer/field-label has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 dark:has-data-checked:border-shadcn-primary/20 dark:has-data-checked:bg-shadcn-primary/10 flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3',
-        'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
+        'has-[>[data-slot=field]]:border-border has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
         className
       )}
       {...props}
