@@ -15,14 +15,13 @@ export function DataTablePagination({
   onPageChange: (page: number) => void;
   className?: string;
 }) {
-  if (totalPages <= 1) return null;
-
   return (
     <nav aria-label="Pagination" className={cn('border-border flex items-center justify-between gap-3 border-t px-4 py-3 md:px-6', className)}>
       <Button
         type="button"
-        variant="outline"
+        variant="link"
         size="sm"
+        className="px-0"
         aria-label="Go to previous page"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
@@ -35,8 +34,9 @@ export function DataTablePagination({
       </span>
       <Button
         type="button"
-        variant="outline"
+        variant="link"
         size="sm"
+        className="px-0"
         aria-label="Go to next page"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
