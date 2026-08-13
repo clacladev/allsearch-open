@@ -72,6 +72,7 @@ WebKit/iPhone, so it needs no extra browser binary). The default `chromium` proj
 other's runtime.
 
 - Run visual specs: `bun run test:e2e:visual`.
+- Visual-test time is centrally frozen; change screenshot baselines only deliberately when that fixed time changes.
 - Add a baseline for a new or changed screen: write the spec, wait for the page to reach a
   stable, deterministic state (no in-flight async fetches, no `Date.now()`-driven banners),
   then `await expect(page).toHaveScreenshot()`. Generate the baseline images with
