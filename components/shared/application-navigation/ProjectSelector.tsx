@@ -44,7 +44,8 @@ export function ProjectSelector({
               key={project.id}
               type="button"
               onClick={() => navigate(RouteHelper.Project.getOverview(project.id))}
-              className="hover:bg-muted focus-visible:ring-ring flex w-full flex-col rounded-md px-2 py-2 text-left focus-visible:ring-2"
+              aria-current={project.id === selectedProjectId ? 'page' : undefined}
+              className="hover:bg-muted focus-visible:ring-shadcn-primary/50 flex w-full flex-col rounded-md px-2 py-2 text-left outline-none focus-visible:ring-2 aria-[current=page]:bg-muted"
             >
               <span className="text-sm font-medium">{project.name}</span>
               <span className="text-muted-foreground text-xs">{project.hostname}</span>

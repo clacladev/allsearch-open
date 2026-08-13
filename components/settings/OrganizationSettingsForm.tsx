@@ -109,7 +109,7 @@ export default function OrganizationSettingsForm() {
 
   return (
     <div className="max-w-md">
-      <form className="flex flex-col gap-5" onSubmit={onSave}>
+      <form className="flex flex-col gap-5" noValidate onSubmit={onSave}>
         <SettingsFormHeader
           title="Your Organization"
           description="Information about who you are."
@@ -129,7 +129,7 @@ export default function OrganizationSettingsForm() {
                 key={organizationTypeOption.value}
                 orientation="horizontal"
                 onClick={() => setOrganizationType(organizationTypeOption.value)}
-                className="border-border has-data-checked:border-shadcn-primary/30 has-data-checked:bg-shadcn-primary/5 dark:has-data-checked:border-shadcn-primary/20 dark:has-data-checked:bg-shadcn-primary/10 cursor-pointer rounded-lg border p-4"
+                className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 has-data-checked:ring-1 has-data-checked:ring-shadcn-primary/30 dark:has-data-checked:bg-shadcn-primary/10 cursor-pointer rounded-lg border p-4"
               >
                 <RadioGroupItem id={inputId} value={organizationTypeOption.value} />
                 <FieldContent>
@@ -156,10 +156,10 @@ export default function OrganizationSettingsForm() {
                   type="url"
                   name="agencyUrl"
                   placeholder="https://agency.com"
-                  className="rounded-r-none"
+                  className="h-11 rounded-r-none text-md"
                 />
                 {(isLoadingDomainMetadata || iconUrl) && (
-                  <div className="border-input flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 bg-transparent">
+                  <div className="border-input flex size-11 shrink-0 items-center justify-center rounded-r-md border border-l-0 bg-transparent">
                     {isLoadingDomainMetadata ? (
                       <Spinner aria-label="Loading agency details" />
                     ) : (
@@ -182,13 +182,14 @@ export default function OrganizationSettingsForm() {
                 type="text"
                 name="agencyName"
                 placeholder="Superstar"
+                className="h-11 text-md"
               />
               {isNameInvalid && <FieldError>Agency name is required</FieldError>}
             </Field>
           </>
         )}
 
-        <Button type="submit" size="lg" disabled={!canSave || isSaving}>
+        <Button type="submit" size="lg" className="h-11" disabled={!canSave || isSaving}>
           {isSaving && <Spinner aria-hidden="true" />}
           Save
         </Button>
