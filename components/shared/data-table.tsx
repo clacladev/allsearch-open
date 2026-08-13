@@ -71,18 +71,18 @@ export function DataTable<T>({
     <DataTableContext.Provider value={{ sort, onSortChange, hideSorting }}>
       <div className="overflow-x-auto">
         <table aria-label={ariaLabel} className="w-full min-w-max text-sm">
-          <thead className="bg-muted/60 text-left text-xs font-semibold text-muted-foreground">
+          <thead className="h-7 bg-muted/60 text-left text-xs font-semibold text-muted-foreground">
             {reactTable.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id} className="border-border border-b">
-              {headerGroup.headers.map((header) => <th key={header.id} scope="col" className="whitespace-nowrap px-4 py-3 md:px-5">
+              {headerGroup.headers.map((header) => <th key={header.id} scope="col" className="whitespace-nowrap px-4 py-2">
                 {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
               </th>)}
             </tr>)}
           </thead>
           <tbody>
-            {reactTable.getRowModel().rows.map((row) => <tr key={row.id} className="border-border border-b last:border-0 hover:bg-muted/40">
+            {reactTable.getRowModel().rows.map((row) => <tr key={row.id} className="border-border h-12 border-b last:border-0 hover:bg-muted/40">
               {row.getVisibleCells().map((cell) => cell.column.columnDef.meta?.isRowHeader
-                ? <th key={cell.id} scope="row" className="px-4 py-3 align-middle md:px-5">{flexRender(cell.column.columnDef.cell, cell.getContext())}</th>
-                : <td key={cell.id} className="px-4 py-3 align-middle md:px-5">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
+                ? <th key={cell.id} scope="row" className="px-4 py-2 align-middle">{flexRender(cell.column.columnDef.cell, cell.getContext())}</th>
+                : <td key={cell.id} className="px-4 py-2 align-middle">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
             </tr>)}
           </tbody>
         </table>

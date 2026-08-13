@@ -49,6 +49,6 @@ export default function StandardTable<ValueType>({
 
 export function StandardTableFooterContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-t-secondary flex justify-center border-t px-4 py-1">{children}</div>
+    <div className="border-border flex justify-center border-t px-4 py-1">{children}</div>
   );
 }

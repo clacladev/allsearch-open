@@ -194,12 +194,13 @@ export default function CompetitorsForm() {
         <div className="flex flex-col gap-2">
           {competitors.map((competitor, index) => (
             <div key={competitor.url} className="flex flex-row gap-2">
-              <InputGroup className="flex-1">
+              <InputGroup className="h-11 min-w-0 flex-1 basis-0">
                 <InputGroupInput
                   value={competitor.url}
                   disabled
                   type="url"
                   placeholder="https://brand.com"
+                  className="text-md h-full"
                 />
                 {competitor.iconUrl ? (
                   <InputGroupAddon align="inline-end">
@@ -214,13 +215,13 @@ export default function CompetitorsForm() {
                 disabled={isLoading}
                 type="text"
                 placeholder="Name"
-                className="flex-1"
+                className="text-md h-11 flex-1 basis-0"
               />
 
               <Button
                 variant="outline"
                 size="icon"
-                className="h-auto shrink-0"
+                className="size-11 shrink-0"
                 onClick={() => onRemoveCompetitor(index)}
                 disabled={isLoading}
                 aria-label={`Remove ${competitor.name ?? competitor.url}`}
@@ -234,7 +235,10 @@ export default function CompetitorsForm() {
             <>
               <div className="mt-4 -mb-1 ml-1 flex text-sm">New competitor</div>
               <div className="flex flex-row gap-2">
-                <InputGroup className="flex-1" aria-invalid={isUrlInvalid || undefined}>
+                <InputGroup
+                  className="h-11 min-w-0 flex-1 basis-0"
+                  aria-invalid={isUrlInvalid || undefined}
+                >
                   <InputGroupInput
                     value={customUrl}
                     onChange={(event) => setCustomUrl(event.target.value)}
@@ -245,6 +249,7 @@ export default function CompetitorsForm() {
                     type="url"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
+                    className="text-md h-full"
                   />
                   {isLoadingDomainMetadata ? (
                     <InputGroupAddon align="inline-end">
@@ -267,13 +272,13 @@ export default function CompetitorsForm() {
                   name="competitorName"
                   aria-label="Competitor name"
                   placeholder="Name"
-                  className="flex-1"
+                  className="text-md h-11 flex-1 basis-0"
                 />
 
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-auto shrink-0"
+                  className="size-11 shrink-0"
                   onClick={onAddCustom}
                   disabled={!canAdd || isLoading}
                   aria-label="Add competitor"
@@ -297,13 +302,20 @@ export default function CompetitorsForm() {
         )}
 
         <div className="mt-10 flex gap-2">
-          <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-11"
+            onClick={() => router.back()}
+          >
             <ArrowLeft aria-hidden="true" /> Back
           </Button>
           <Button
             type="button"
             variant={error ? 'default' : 'outline'}
             size="lg"
+            className="h-11"
             disabled={isUpdating || isLoading}
             onClick={onReload}
           >
@@ -314,7 +326,7 @@ export default function CompetitorsForm() {
             size="lg"
             disabled={!canContinue || isUpdating || isLoading}
             onClick={onContinue}
-            className="flex-1"
+            className="h-11 flex-1"
           >
             Finish <ArrowRight aria-hidden="true" /> {isUpdating && <Spinner aria-hidden="true" />}
           </Button>

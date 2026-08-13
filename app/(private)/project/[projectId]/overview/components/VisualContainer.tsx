@@ -28,8 +28,8 @@ export const VisualContainer = ({
 }>) => {
   const Icon = icon;
   return (
-    <Card size="sm" className={cn('gap-5', className)}>
-      <CardHeader className="gap-1">
+    <Card size="sm" className={cn('gap-5 px-4 py-3', className)}>
+      <CardHeader className="gap-1 px-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             {Icon && <Icon className="text-muted-foreground size-4" />}
@@ -40,7 +40,7 @@ export const VisualContainer = ({
         </div>
         {headerTrailing && <CardAction>{headerTrailing}</CardAction>}
       </CardHeader>
-      <CardContent className={cn(isSquare ? 'min-h-50' : '', contentClassName)}>
+      <CardContent className={cn('px-0', isSquare ? 'min-h-50' : '', contentClassName)}>
         {children}
       </CardContent>
     </Card>

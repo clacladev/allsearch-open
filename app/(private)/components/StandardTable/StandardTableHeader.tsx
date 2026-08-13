@@ -27,14 +27,14 @@ export function StandardTableHeader({
   const titleContent = (
     <div className="flex items-center gap-2">
       {Icon && <Icon className="text-muted-foreground size-4" />}
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
     </div>
   );
 
   return (
     <div
       className={cn(
-        'relative flex items-center gap-4 border-b border-border px-4 py-5 md:px-6',
+        'relative flex items-center gap-4 border-b border-border px-4 py-3',
         className
       )}
     >

@@ -121,7 +121,7 @@ export default function BrandSettings() {
           onTargetLocationChange={setTargetLocation}
         />
 
-        <Button type="submit" size="lg" disabled={!canSave || isSaving}>
+        <Button type="submit" size="lg" className="h-11" disabled={!canSave || isSaving}>
           Save {isSaving && <Spinner aria-hidden="true" />}
         </Button>
       </form>
