@@ -13,7 +13,7 @@ import { exportOpportunitiesToCsv } from '@/app/(private)/project/[projectId]/op
 import { OpportunitiesTable } from './OpportunitiesTable';
 import { EmptyState } from '@/app/(private)/components/EmptyState';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
-import { Badge } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import type { SortDescriptor } from 'react-aria-components';
 import type { OpportunitiesSortField } from '../page';
 import {
@@ -218,9 +218,7 @@ export function Opportunities({
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            <Badge type="pill-color" size="sm" color="brand">
-              {opportunitiesData.totalItems} opportunities
-            </Badge>
+            <Badge>{opportunitiesData.totalItems} opportunities</Badge>
             <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />
           </div>
         </div>

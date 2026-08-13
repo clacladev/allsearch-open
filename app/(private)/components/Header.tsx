@@ -1,5 +1,5 @@
 import { ComponentType } from 'react';
-import { Badge } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { isDefaultDateRange } from '@/libs/utils/searchParamsHelpers';
@@ -35,7 +35,7 @@ export default function Header({
 
         {startDate && endDate && !isDefaultDateRange(startDate, endDate) && (
           <div className="flex-none">
-            <Badge color="gray" size="sm">
+            <Badge variant="secondary">
               {dayjs(startDate).format('ll')} – {dayjs(endDate).format('ll')}
             </Badge>
           </div>

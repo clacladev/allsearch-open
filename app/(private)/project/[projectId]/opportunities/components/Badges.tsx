@@ -1,26 +1,39 @@
-import { Badge, BadgeWithDot } from '@/components/base/badges/badges';
-import { Feather, MessageTextCircle02, Tool01 } from '@untitledui/icons';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
+import { Feather, MessageCircleMore, Wrench } from 'lucide-react';
 import { OpportunityType } from '@/libs/utils/project-analysis/types';
 import { OPPORTUNITY_TYPE_NAME } from '@/libs/utils/opportunities';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
+
+const OPPORTUNITY_TYPE_BADGE_CLASS: Record<OpportunityType, string> = {
+  ProjectSourceNotCitedOpportunity:
+    'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  ProjectSourceNeedsImprovementOpportunity:
+    'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  ProjectSourceNotConsistentlyFoundOpportunity:
+    'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  ProjectSourceNotFoundOpportunity: '',
+  UgcSourceNeedsImprovementOpportunity:
+    'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100',
+};
 
 export const ActionBadge = ({ opportunityType }: { opportunityType: OpportunityType }) => (
   <>
     {opportunityType === 'ProjectSourceNotCitedOpportunity' ||
     opportunityType === 'ProjectSourceNeedsImprovementOpportunity' ||
     opportunityType === 'ProjectSourceNotConsistentlyFoundOpportunity' ? (
-      <Badge size="sm" color="orange" type="color" className="flex gap-2">
-        <Tool01 className="size-4" />
+      <Badge variant="outline" className={cn('gap-2', OPPORTUNITY_TYPE_BADGE_CLASS[opportunityType])}>
+        <Wrench className="size-4" />
         {OPPORTUNITY_TYPE_NAME[opportunityType]}
       </Badge>
     ) : opportunityType === 'ProjectSourceNotFoundOpportunity' ? (
-      <Badge size="sm" color="brand" type="color" className="flex gap-2">
+      <Badge variant="outline" className="gap-2">
         <Feather className="size-4" />
         {OPPORTUNITY_TYPE_NAME[opportunityType]}
       </Badge>
     ) : opportunityType === 'UgcSourceNeedsImprovementOpportunity' ? (
-      <Badge size="sm" color="purple" type="color" className="flex gap-2">
-        <MessageTextCircle02 className="size-4" />
+      <Badge variant="outline" className={cn('gap-2', OPPORTUNITY_TYPE_BADGE_CLASS[opportunityType])}>
+        <MessageCircleMore className="size-4" />
         {OPPORTUNITY_TYPE_NAME[opportunityType]}
       </Badge>
     ) : null}
@@ -30,9 +43,9 @@ export const ActionBadge = ({ opportunityType }: { opportunityType: OpportunityT
 // ---------------------------------------------
 
 const PRIORITY_LEVELS = {
-  high: { text: 'High', color: 'error' as const },
-  medium: { text: 'Medium', color: 'warning' as const },
-  low: { text: 'Low', color: 'success' as const },
+  high: { text: 'High', dotClass: 'bg-red-500' },
+  medium: { text: 'Medium', dotClass: 'bg-amber-500' },
+  low: { text: 'Low', dotClass: 'bg-emerald-500' },
 };
 
 export const getPriorityLabel = (score: number) => {
@@ -53,11 +66,12 @@ export const PriorityScoreBadge = ({
   priorityScore,
   variation = 'short',
 }: PriorityScoreBadgeProps) => {
-  const { text, color } = getPriorityLabel(priorityScore);
+  const { text, dotClass } = getPriorityLabel(priorityScore);
   return (
-    <BadgeWithDot size="sm" type="modern" color={color}>
+    <Badge variant="outline">
+      <span className={cn('size-1.5 rounded-full', dotClass)} aria-hidden="true" />
       {variation === 'long' ? `Priority: ${text}` : text}
-    </BadgeWithDot>
+    </Badge>
   );
 };
 
@@ -90,7 +104,7 @@ type DifficultyBadgeProps = {
 };
 
 export const DifficultyBadge = ({ opportunityType, variation = 'short' }: DifficultyBadgeProps) => (
-  <Badge size="sm" type="modern">
+  <Badge variant="outline">
     {variation === 'long'
       ? `Difficulty: ${DIFFICULTY_MAP[opportunityType]}`
       : DIFFICULTY_MAP[opportunityType]}
