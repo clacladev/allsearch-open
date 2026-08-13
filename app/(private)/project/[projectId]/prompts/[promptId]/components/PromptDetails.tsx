@@ -14,11 +14,11 @@ import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
 import { SourceContentsTable } from '../../../sources/components/SourcesTable';
-import { PaginationPageDefault } from '@/components/application/pagination/pagination';
+import { DataTablePagination } from '@/components/shared/data-table-pagination';
 import { useRouter } from 'next/navigation';
 import { RouteHelper } from '@/libs/routes';
-import { TableCard } from '@/components/application/table/table';
-import { Badge } from '@/components/base/badges/badges';
+import { StandardTableHeader } from '@/app/(private)/components/StandardTable/StandardTableHeader';
+import { Badge } from '@/components/ui/badge';
 import { PromptResponseDetailModal } from './PromptResponseDetailModal';
 import { PromptResponseContent } from '../types';
 import { CreateArticleOutlineCTA } from '../../../components/articles/CreateArticleOutlineCTA';
@@ -164,20 +164,16 @@ const PromptSourcesTable = ({
     endDate={endDate}
     totalPages={sourceData.totalPages}
     tableHeader={
-      <TableCard.Header
+      <StandardTableHeader
         title="Used Sources"
         description="Sources used to generate the responses for this prompt"
-        contentTrailing={
-          <Badge color="brand" size="sm">
-            {sourceData.totalItems} sources
-          </Badge>
-        }
+        contentTrailing={<Badge>{sourceData.totalItems} sources</Badge>}
       />
     }
     tableFooter={
-      <PaginationPageDefault
+      <DataTablePagination
         page={sourceData.currentPage + 1}
-        total={sourceData.totalPages}
+        totalPages={sourceData.totalPages}
         onPageChange={onPageChange}
         className="px-4 py-3 md:px-6 md:py-1.5"
       />

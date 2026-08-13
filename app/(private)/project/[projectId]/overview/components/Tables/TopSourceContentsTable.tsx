@@ -1,5 +1,5 @@
-import { Globe01 } from '@untitledui/icons';
-import { TableCard } from '@/components/application/table/table';
+import { Globe } from 'lucide-react';
+import { StandardTableHeader } from '@/app/(private)/components/StandardTable/StandardTableHeader';
 import {
   OverviewTableFooter,
   TopSourceTableHeaderTrailingContent,
@@ -36,8 +36,8 @@ export const TopSourceContentsTable = ({
     endDate={endDate}
     hideSorting
     tableHeader={
-      <TableCard.Header
-        icon={Globe01}
+      <StandardTableHeader
+        icon={Globe}
         title="Top Source Contents"
         titleHref={RouteHelper.Project.getSourcesContents(project.id, startDate, endDate)}
         tooltip="Top source contents used in the prompts answers"
