@@ -31,7 +31,9 @@ export const OnboardingProgressSteps = ({
               aria-hidden="true"
               className={cn(
                 'z-10 flex size-4 items-center justify-center rounded-full',
-                isComplete || isCurrent ? 'bg-shadcn-primary' : 'ring-1.5 opacity-50 ring-inset',
+                isComplete || isCurrent
+                  ? 'bg-shadcn-primary'
+                  : 'ring-[1.5px] opacity-50 ring-inset',
                 isCurrent && 'ring-ring ring-offset-background ring-2 ring-offset-2'
               )}
             >

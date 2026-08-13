@@ -131,7 +131,7 @@ export default async function ProjectBrandsPage({ params, searchParams }: Props)
       <Header
         text="Brands"
         icon={Building2}
-        description="See which sources your brand and competitors have created that are being cited by AI models."
+        description="See which sources mention your brand and competitors and are being cited by AI models."
       />
       <Brands
         projectId={projectId}

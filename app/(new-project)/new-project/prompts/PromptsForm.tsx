@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Spinner } from '@/components/ui/spinner';
 import FormHeader from '../components/FormHeader';
@@ -206,10 +207,15 @@ export default function PromptsForm() {
               >
                 {topicGroup.prompts.map((prompt) => {
                   const id = getPromptAndTopicId(topicGroup.topic, prompt);
+                  const inputId = `prompt-${encodeURIComponent(id)}`;
                   return (
-                    <div key={id} className="flex items-center gap-2 text-sm">
+                    <Field
+                      key={id}
+                      orientation="horizontal"
+                      className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                    >
                       <Checkbox
-                        id={`prompt-${encodeURIComponent(id)}`}
+                        id={inputId}
                         checked={selectedPromptAndTopicIds.includes(id)}
                         onCheckedChange={(checked) => {
                           const selected = selectedPromptAndTopicIds.filter((selectedId) => {
@@ -225,13 +231,10 @@ export default function PromptsForm() {
                         }}
                         disabled={isLoading}
                       />
-                      <label
-                        htmlFor={`prompt-${encodeURIComponent(id)}`}
-                        className="cursor-pointer"
-                      >
+                      <FieldLabel htmlFor={inputId} className="cursor-pointer text-sm font-normal">
                         {prompt}
-                      </label>
-                    </div>
+                      </FieldLabel>
+                    </Field>
                   );
                 })}
               </div>

@@ -109,6 +109,7 @@ export const EditPromptSlideoutMenu = ({
             <div className="flex flex-col gap-1.5">
               <FieldLabel>Topic</FieldLabel>
               <Select
+                items={topics.map((topic) => ({ value: topic.id, label: topic.name }))}
                 value={editedTopicId ?? null}
                 onValueChange={(value) => setEditedTopicId(value ?? undefined)}
               >

@@ -19,7 +19,7 @@ export const BrandPositionBadge = ({
   return (
     <Tooltip title={`Your brand position is ${ordinal}`}>
       <div className="flex items-center gap-1.5">
-        <CheckCircle2 className="text-primary" size={14} />
+        <CheckCircle2 className="text-brand-secondary" size={14} />
         <span className="text-tertiary">{ordinal}</span>
       </div>
     </Tooltip>

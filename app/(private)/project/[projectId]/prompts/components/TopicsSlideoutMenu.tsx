@@ -4,6 +4,7 @@ import { SlideoutMenu, SlideoutMenuProps } from '@/app/(private)/components/Slid
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -374,7 +375,11 @@ export const TopicsSlideoutMenu = ({
                     {filteredSuggestions.map((topic) => {
                       const id = `suggested-topic-${encodeURIComponent(topic)}`;
                       return (
-                        <div key={topic} className="flex items-center gap-2 text-sm">
+                        <Field
+                          key={topic}
+                          orientation="horizontal"
+                          className="border-border has-data-checked:border-shadcn-primary has-data-checked:bg-shadcn-primary/5 rounded-lg border p-3"
+                        >
                           <Checkbox
                             id={id}
                             checked={selectedSuggestions.includes(topic)}
@@ -386,10 +391,10 @@ export const TopicsSlideoutMenu = ({
                               )
                             }
                           />
-                          <label htmlFor={id} className="cursor-pointer">
+                          <FieldLabel htmlFor={id} className="cursor-pointer text-sm font-normal">
                             {topic}
-                          </label>
-                        </div>
+                          </FieldLabel>
+                        </Field>
                       );
                     })}
                   </div>

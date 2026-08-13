@@ -315,10 +315,10 @@ export default function PromptsTable({
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2">
             <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
-            <Button variant="secondary" size="sm" onClick={() => setIsAddPromptModalOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsAddPromptModalOpen(true)}>
               New Prompt
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setIsTopicsModalOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsTopicsModalOpen(true)}>
               Topics
             </Button>
             <ExportActionsButton onExportCsvAction={onExportCsv} />

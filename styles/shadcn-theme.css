@@ -369,6 +369,7 @@
   --background-color-success-primary: var(--color-bg-success-primary);
   --background-color-success-secondary: var(--color-bg-success-secondary);
   --background-color-success-solid: var(--color-bg-success-solid);
+  --background-color-border-secondary: var(--color-border-secondary);
   --background-color-fg-brand-secondary: var(--color-fg-brand-secondary);
   --background-color-fg-success-secondary: var(--color-fg-success-secondary);
   --background-color-fg-warning-secondary: var(--color-fg-warning-secondary);
@@ -399,12 +400,14 @@
 
   --border-color-primary: var(--color-border-primary);
   --border-color-secondary: var(--color-border-secondary);
+  --border-color-border-secondary: var(--color-border-secondary);
   --border-color-secondary_alt: var(--color-border-secondary_alt);
   --border-color-tertiary: var(--color-border-tertiary);
   --border-color-brand: var(--color-border-brand);
   --border-color-brand_alt: var(--color-border-brand_alt);
   --border-color-error: var(--color-border-error);
   --border-color-error_subtle: var(--color-border-error_subtle);
+  --ring-color-bg-primary: var(--color-bg-primary);
   --ring-color-primary: var(--color-border-primary);
   --ring-color-secondary: var(--color-border-secondary);
   --ring-color-secondary_alt: var(--color-border-secondary_alt);
