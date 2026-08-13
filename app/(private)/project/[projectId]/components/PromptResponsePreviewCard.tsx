@@ -31,7 +31,7 @@ export const PromptResponsePreviewCard = ({
         onSelect(promptResponse);
       }
     }}
-    className="border-border-secondary bg-primary hover:bg-primary_hover flex cursor-pointer flex-col rounded-xl border text-left shadow-xs transition-colors"
+    className="border-[color:var(--color-border-secondary)] bg-primary hover:bg-primary_hover flex cursor-pointer flex-col rounded-xl border text-left shadow-xs transition-colors"
   >
     <div className="flex flex-col gap-1 px-4 pt-4 pb-3">
       <p className="text-tertiary text-xs font-medium">
@@ -40,7 +40,7 @@ export const PromptResponsePreviewCard = ({
       <p className="text-secondary line-clamp-3 text-sm">{promptResponse.text}</p>
     </div>
 
-    <div className="border-border-secondary flex items-center justify-between border-t px-4 py-2">
+    <div className="border-t border-[color:var(--color-border-secondary)] flex items-center justify-between px-4 py-2">
       <div className="flex h-6 items-center gap-2 text-xs font-medium">
         <ChatbotLogoImage chatbotId={promptResponse.chatbotId} />
         <BrandPositionBadge projectIdRank={promptResponse.projectIdRank} />
