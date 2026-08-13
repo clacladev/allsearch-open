@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { MainContainer } from '@/app/(private)/components/Containers';
 import Header from '@/app/(private)/components/Header';
-import { Settings02 } from '@untitledui/icons';
+import { Settings as SettingsIcon } from 'lucide-react';
 import Settings from './components/Settings';
 import { SETTINGS_TABS } from './components/helpers';
 import { redirect } from 'next/navigation';
@@ -26,7 +26,7 @@ export default async function ProjectSettingsPage({ params }: Props) {
     <MainContainer>
       <Header
         text="Settings"
-        icon={Settings02}
+        icon={SettingsIcon}
         description="Configure your project to control what gets monitored."
       />
       <Settings projectId={projectId} selectedSettingsTabId={tabId} />

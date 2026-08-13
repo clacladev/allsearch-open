@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { MessageCircle01 } from '@untitledui/icons';
+import { MessageCircle } from 'lucide-react';
 import { Metadata } from 'next';
 import z from 'zod';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
@@ -59,7 +59,7 @@ export default async function ProjectPromptsPage({ params, searchParams }: Props
     <MainContainer>
       <Header
         text="Prompt Details"
-        icon={MessageCircle01}
+        icon={MessageCircle}
         description="See how AI models responded to this specific prompt and which sources they cited."
         startDate={startDate}
         endDate={endDate}
