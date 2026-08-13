@@ -8,7 +8,7 @@ import { appFetch } from '@/hooks/appFetch';
 import { RouteHelper } from '@/libs/routes';
 import { type ArticleSettings, type ArticleSettingsPartial } from '@/libs/ai/promptArticles/schema';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import {
   ArticleSettingsFields,
   articleSettingsFromValue,
@@ -157,7 +157,7 @@ export function OutlineSettingsPanel({
             <span className="text-error-primary text-xs">Save failed</span>
           )}
           <ChevronDown
-            className={cx('text-fg-quaternary size-5 transition-transform', isOpen && 'rotate-180')}
+            className={cn('text-fg-quaternary size-5 transition-transform', isOpen && 'rotate-180')}
           />
         </div>
       </button>

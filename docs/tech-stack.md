@@ -5,8 +5,8 @@
 | Language        | TypeScript                                                         |
 | Framework       | Next.js 16 (App Router)                                            |
 | UI              | React 19                                                           |
-| Styling         | Tailwind CSS v4 + Untitled UI / React Aria Components              |
-| Icons           | `@untitledui/icons`                                                |
+| Styling         | Tailwind CSS v4 + vendored shadcn/ui (Base UI) / React Aria Components |
+| Icons           | `lucide-react`                                                     |
 | AI              | Vercel AI SDK (`ai`) with direct OpenAI, Google, Perplexity keys   |
 | Database        | SQLite via Drizzle (`drizzle-orm` / `drizzle-kit` 1.0.0-rc.4)      |
 | Runtime         | Node 22+ for the server; Bun for install, scripts, and unit tests  |

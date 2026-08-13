@@ -1,6 +1,6 @@
 import { PageHeading } from '@/libs/utils/urlAnalysis';
 import { Badge } from '@/components/ui/badge';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 const HEADING_LEVEL: Record<string, number> = {
   h1: 0,
@@ -17,7 +17,7 @@ type SourceHeadingsListProps = {
 };
 
 export const SourceHeadingsList = ({ headings, className }: SourceHeadingsListProps) => (
-  <div className={cx(`border-secondary bg-secondary rounded-xl border p-4`, className)}>
+  <div className={cn(`border-secondary bg-secondary rounded-xl border p-4`, className)}>
     <ul className="flex list-none flex-col gap-1">
       {headings.map((heading, index) => {
         const level = HEADING_LEVEL[heading.tag] ?? 0;

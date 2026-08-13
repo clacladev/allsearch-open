@@ -1,4 +1,4 @@
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import Image, { ImageProps } from 'next/image';
 
 type SquareIconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -31,7 +31,7 @@ export const SquareIcon = ({
       {...rest}
       width={width}
       height={width}
-      className={cx('aspect-square rounded', rest.className)}
+      className={cn('aspect-square rounded', rest.className)}
     />
   );
 };

@@ -1,5 +1,5 @@
 import { CHATBOT_DISPLAY_LABELS, type ChatbotId } from '@/libs/database/shared/ChatbotId';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 /** Oxford-comma-free "A, B and C" join, matching this codebase's other list-of-labels copy. */
 function joinLabels(labels: string[]): string {
@@ -33,7 +33,7 @@ export function ChatbotCoverageCaption({
   className?: string;
 }) {
   return (
-    <span className={cx('text-tertiary text-xs', className)}>
+    <span className={cn('text-tertiary text-xs', className)}>
       {getChatbotCoverageCaption(enabledChatbotIds)}
     </span>
   );

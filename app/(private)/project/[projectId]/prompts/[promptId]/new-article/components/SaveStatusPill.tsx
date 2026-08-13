@@ -5,7 +5,7 @@ import { AlertCircle, AlertTriangle, Check, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import type { SaveState } from '../hooks/useOutlineAutosave';
 
 type Props = {
@@ -45,7 +45,7 @@ export function SaveStatusPill({ state, onRetry, className }: Props) {
       role="status"
       aria-live="polite"
       data-testid="save-status-pill"
-      className={cx(
+      className={cn(
         // Fixed height keeps surrounding layout from shifting when the pill
         // toggles between idle (empty) and visible states.
         'text-tertiary flex h-5 items-center gap-1.5 text-xs font-medium',

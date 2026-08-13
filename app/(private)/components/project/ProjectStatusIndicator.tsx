@@ -1,4 +1,4 @@
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 export type ProjectStatus = 'running' | 'paused';
 
@@ -30,7 +30,7 @@ export const ProjectStatusIndicator = ({
   className,
 }: ProjectStatusIndicatorProps) => (
   <span
-    className={cx(
+    className={cn(
       'ring-bg-primary absolute right-0 bottom-0 rounded-full ring-[1.5px]',
       STATUS_COLOR_CLASS[status],
       sizes[size],

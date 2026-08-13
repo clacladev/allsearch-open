@@ -7,7 +7,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import type { SentimentDataset } from '@/libs/utils/project-analysis/getSentimentDataset';
 
 const SENTIMENT_LABELS: Record<number, string> = {
@@ -143,7 +143,7 @@ export default function SentimentChart({
                 className={
                   brandColor
                     ? '[&_.recharts-area-area]:translate-y-[6px] [&_.recharts-area-area]:[clip-path:inset(0_0_6px_0)]'
-                    : cx(
+                    : cn(
                         '[&_.recharts-area-area]:translate-y-[6px] [&_.recharts-area-area]:[clip-path:inset(0_0_6px_0)]',
                         isHighlighted ? 'text-utility-brand-400' : 'text-utility-neutral-400'
                       )

@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { ProjectIcon, type ProjectIconProps } from './ProjectIcon';
 
 const styles = {
@@ -25,12 +25,12 @@ export const ProjectIconLabelGroup = ({
 }: ProjectIconLabelGroupProps) => {
   return (
     <figure
-      className={cx('group flex min-w-0 flex-1 items-center', styles[props.size].root, className)}
+      className={cn('group flex min-w-0 flex-1 items-center', styles[props.size].root, className)}
     >
       <ProjectIcon {...props} />
       <figcaption className="min-w-0 flex-1">
-        <p className={cx('text-primary', styles[props.size].title)}>{title}</p>
-        <p className={cx('text-tertiary truncate', styles[props.size].subtitle)}>{subtitle}</p>
+        <p className={cn('text-primary', styles[props.size].title)}>{title}</p>
+        <p className={cn('text-tertiary truncate', styles[props.size].subtitle)}>{subtitle}</p>
       </figcaption>
     </figure>
   );

@@ -1,5 +1,5 @@
 import { AppTooltip } from '@/components/shared/tooltip';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { CircleHelp, Info } from 'lucide-react';
 
 export function Tooltip({
@@ -15,7 +15,7 @@ export function Tooltip({
 }) {
   return (
     <AppTooltip content={<><span>{title}</span>{description ? <span className="sr-only"> {description}</span> : null}</>}>
-      <span className={cx('group relative inline-flex flex-col items-center gap-2 transition duration-100 ease-linear', className)}>{children}</span>
+      <span className={cn('group relative inline-flex flex-col items-center gap-2 transition duration-100 ease-linear', className)}>{children}</span>
     </AppTooltip>
   );
 }

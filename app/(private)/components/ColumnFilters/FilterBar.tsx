@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Filter, X } from 'lucide-react';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 
 interface FilterToggleProps {
   isExpanded: boolean;
@@ -17,7 +17,7 @@ export function FilterToggle({ isExpanded, onToggle, hasActiveFilters }: FilterT
       <AriaButton
         onPress={onToggle}
         className={({ isFocusVisible }) =>
-          cx(
+          cn(
             'bg-primary ring-primary flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold shadow-xs ring-1 outline-hidden transition duration-100 ring-inset',
             isFocusVisible && 'ring-brand ring-2',
             isExpanded ? 'text-primary' : 'text-secondary'
@@ -44,7 +44,7 @@ interface FilterBarProps {
 export function FilterBar({ children, isExpanded, hasActiveFilters, onClearAll }: FilterBarProps) {
   return (
     <div
-      className={cx(
+      className={cn(
         'grid transition-[grid-template-rows,opacity,margin] duration-200 ease-in-out',
         isExpanded ? 'mt-2 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       )}

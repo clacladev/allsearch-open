@@ -23,7 +23,7 @@ import { useClipboard } from '@/hooks/use-clipboard';
 import { RouteHelper, ROUTES } from '@/libs/routes';
 import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
 import { AiFailureState, getAiFailureStateCopy } from '@/app/components/AiFailureState';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import type { ArticleSettings } from '@/libs/ai/promptArticles/schema';
 import type { ArticleSourcesUsed, PromptArticleRow } from '@/libs/database/PromptArticles/types';
 import type { OutlineOpportunityType } from '@/libs/utils/project-analysis/types';
@@ -554,7 +554,7 @@ function OutlineEditor({
           className="pointer-events-none absolute top-3 right-4 z-10 sm:top-4 sm:right-5"
         />
         <div
-          className={cx(
+          className={cn(
             'transition-opacity',
             isMutatingOutline && 'pointer-events-none opacity-50'
           )}
