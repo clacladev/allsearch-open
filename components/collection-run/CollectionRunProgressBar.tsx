@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { XClose } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CollectionRunProgress } from './CollectionRunProgress';
 import { useCollectionRunContext } from './CollectionRunContext';
 
@@ -55,12 +55,14 @@ export function CollectionRunProgressBar() {
 
         {isDismissable && (
           <Button
-            size="sm"
-            color="tertiary"
+            size="icon-xs"
+            variant="ghost"
+            aria-label="Dismiss"
             data-testid="collection-run-progress-dismiss"
-            iconLeading={XClose}
             onClick={clear}
-          />
+          >
+            <X />
+          </Button>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from './SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { ProviderKeyField } from '@/app/components/ProviderKeyField';
 import type { ProviderId } from '@/libs/database/shared/ProviderId';
@@ -59,8 +59,7 @@ export default function ProviderKeysSettings({
       {PROVIDER_ROWS.map((row, index) => (
         <div key={row.provider}>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-            <SectionLabel.Root
-              size="sm"
+            <SettingsSectionLabel
               title={row.title}
               isRequired={row.isRequired}
               description={
