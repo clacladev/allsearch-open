@@ -2,7 +2,7 @@
 
 ## Snapshot and contract
 
-Audit date: 2026-08-13 (Deliverable 8 article-workflow reconciliation; the broader reachability/provenance audit remains dated 2026-08-12). `HEAD`: `9ca3acc79d5625480e6adaa7ab09dbc07a9f6d7c`; `origin/dev` merge-base: `660790950d3bd72090def9fcb0d07b1eb4a45757`. In scope: `components/base`, `components/application`, `components/foundations`, `components/shared-assets`, their resolved TypeScript callers, current `app/**/page.tsx` and boundaries, E2E, packages, assets, fonts, and live URL references.
+Audit date: 2026-08-13 (Deliverable 8 article-workflow reconciliation; the broader reachability/provenance audit remains dated 2026-08-12). `HEAD`: `c687a2b8b49ee32ac993a77394408fa4b68faa5a`; `origin/dev` merge-base: `660790950d3bd72090def9fcb0d07b1eb4a45757`. In scope: `components/base`, `components/application`, `components/foundations`, `components/shared-assets`, their resolved TypeScript callers, current `app/**/page.tsx` and boundaries, E2E, packages, assets, fonts, and live URL references.
 
 This is the authoritative inventory/provenance and current behavioral-coverage ledger for this snapshot. **Candidate deliverable 0 is not complete:** the E2E visual-baseline harness uses light/dark/mobile projects (`visual-light`, `visual-dark`, `visual-mobile`) and currently has committed coverage for 14 screens, including the partial D8 SCREEN-017 baseline — see the Visual baselines burn-down row and BLOCK-001/002/003. Eleven of 25 screens still have no visual baseline; each captures its own when its migration slice lands.
 

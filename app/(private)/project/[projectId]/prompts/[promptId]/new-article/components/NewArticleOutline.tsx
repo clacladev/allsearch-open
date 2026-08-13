@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 import useSWRMutation from 'swr/mutation';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
@@ -232,13 +232,9 @@ export function NewArticleOutline({
               opportunities list and try again.
             </p>
           </div>
-          <Button
-            render={<Link href={backHref} />}
-            nativeButton={false}
-            variant="secondary"
-          >
+          <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
             {backLabel}
-          </Button>
+          </Link>
         </div>
       </div>
     );
@@ -251,15 +247,13 @@ export function NewArticleOutline({
     return (
       <div className="flex w-full flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button
-            render={<Link href={backHref} />}
-            nativeButton={false}
-            variant="secondary"
-            size="sm"
+          <Link
+            href={backHref}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
           >
             <ArrowLeft aria-hidden="true" />
             {backLabel}
-          </Button>
+          </Link>
         </div>
 
         {isMutatingOutline ? (
@@ -279,13 +273,9 @@ export function NewArticleOutline({
                   <p className="text-muted-foreground">{errorCopy.description}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    render={<Link href={backHref} />}
-                    nativeButton={false}
-                    variant="secondary"
-                  >
+                  <Link href={backHref} className={buttonVariants({ variant: 'secondary' })}>
                     {backLabel}
-                  </Button>
+                  </Link>
                   {errorCopy.canRetry && (
                     <Button onClick={() => setErrorKind(null)}>
                       Adjust settings and try again
@@ -510,15 +500,13 @@ function OutlineEditor({
           view so the two surfaces feel consistent and Regenerate / Generate
           aren't buried under a long outline. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
-          render={<Link href={backHref} />}
-          nativeButton={false}
-          variant="secondary"
-          size="sm"
+        <Link
+          href={backHref}
+          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
         >
           <ArrowLeft aria-hidden="true" />
           {backLabel}
-        </Button>
+        </Link>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleCopy} disabled={isMutatingOutline}>

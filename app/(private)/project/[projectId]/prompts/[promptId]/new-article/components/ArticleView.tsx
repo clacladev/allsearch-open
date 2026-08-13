@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, ArrowDown, ArrowLeft, RefreshCcw, RefreshCw, SquareX } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { Spinner } from '@/components/ui/spinner';
 import { AiFailureState } from '@/app/components/AiFailureState';
@@ -310,15 +310,13 @@ export function ArticleView({
 
       {showActionBar && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button
-            render={<Link href={backToOutlineHref} />}
-            nativeButton={false}
-            variant="secondary"
-            size="sm"
+          <Link
+            href={backToOutlineHref}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
           >
             <ArrowLeft aria-hidden="true" />
             Back to outline
-          </Button>
+          </Link>
 
           <div className="flex flex-wrap items-center gap-2">
             {mode === 'streaming' ? (
@@ -395,13 +393,12 @@ export function ArticleView({
             <p className="text-muted-foreground">{stream.error}</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              render={<Link href={backToOutlineHref} />}
-              nativeButton={false}
-              variant="secondary"
+            <Link
+              href={backToOutlineHref}
+              className={buttonVariants({ variant: 'secondary' })}
             >
               Back to outline
-            </Button>
+            </Link>
             <Button onClick={() => void handleGenerate(false)}>Try again</Button>
           </div>
         </div>
@@ -410,13 +407,12 @@ export function ArticleView({
       {isPreGenerate && !stream.error && (
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button onClick={() => void handleGenerate(false)}>Generate article</Button>
-          <Button
-            render={<Link href={backToOutlineHref} />}
-            nativeButton={false}
-            variant="secondary"
+          <Link
+            href={backToOutlineHref}
+            className={buttonVariants({ variant: 'secondary' })}
           >
             Back to outline
-          </Button>
+          </Link>
         </div>
       )}
 
