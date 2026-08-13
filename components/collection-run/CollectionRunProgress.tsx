@@ -102,8 +102,7 @@ export function CollectionRunProgress({
                     <span className="text-secondary text-sm">{prompt.promptName}</span>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {prompt.chatbots.map((chatbot) => (
-                        // Wrapped rather than passing `title` to the badge: `BadgeWithDot` is a
-                        // shared Untitled UI component with a closed prop list. The tooltip is the
+                        // Wrapped so the compact shadcn Badge can keep its status label. The tooltip is the
                         // only place a dropped item says WHY it was dropped — an ungrounded Google
                         // answer (issue 25) is not the same failure as a rate limit.
                         <span
