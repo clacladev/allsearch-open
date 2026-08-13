@@ -310,12 +310,15 @@ export function ArticleView({
 
       {showActionBar && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href={backToOutlineHref}>
-            <Button variant="secondary" size="sm">
-              <ArrowLeft aria-hidden="true" />
-              Back to outline
-            </Button>
-          </Link>
+          <Button
+            render={<Link href={backToOutlineHref} />}
+            nativeButton={false}
+            variant="secondary"
+            size="sm"
+          >
+            <ArrowLeft aria-hidden="true" />
+            Back to outline
+          </Button>
 
           <div className="flex flex-wrap items-center gap-2">
             {mode === 'streaming' ? (
@@ -392,9 +395,13 @@ export function ArticleView({
             <p className="text-muted-foreground">{stream.error}</p>
           </div>
           <div className="flex gap-2">
-            <Link href={backToOutlineHref}>
-              <Button variant="secondary">Back to outline</Button>
-            </Link>
+            <Button
+              render={<Link href={backToOutlineHref} />}
+              nativeButton={false}
+              variant="secondary"
+            >
+              Back to outline
+            </Button>
             <Button onClick={() => void handleGenerate(false)}>Try again</Button>
           </div>
         </div>
@@ -403,9 +410,13 @@ export function ArticleView({
       {isPreGenerate && !stream.error && (
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button onClick={() => void handleGenerate(false)}>Generate article</Button>
-          <Link href={backToOutlineHref}>
-            <Button variant="secondary">Back to outline</Button>
-          </Link>
+          <Button
+            render={<Link href={backToOutlineHref} />}
+            nativeButton={false}
+            variant="secondary"
+          >
+            Back to outline
+          </Button>
         </div>
       )}
 

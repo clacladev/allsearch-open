@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type KeyboardEvent } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
@@ -30,9 +30,11 @@ export function ArticleTagInput({
 }: Props) {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string>();
+  const inputId = useId();
+  const descriptionId = useId();
 
-  const addDraft = () => {
-    const next = draft.trim();
+  const addDraft = (raw = draft) => {
+    const next = raw.trim();
     if (!next) return;
     const validationError = onValidate?.(next);
     if (validationError) {
@@ -53,15 +55,48 @@ export function ArticleTagInput({
     setError(undefined);
   };
 
+  const addAllDrafts = (raw: string) => {
+    const nextValues = [...value];
+    let isAtCapacity = false;
+    for (const part of raw.split(',')) {
+      const next = part.trim();
+      if (!next || nextValues.includes(next)) continue;
+      if (nextValues.length >= maxItems) {
+        isAtCapacity = true;
+        break;
+      }
+      const validationError = onValidate?.(next);
+      if (validationError) {
+        setDraft(next);
+        setError(validationError);
+        onChange(nextValues);
+        return;
+      }
+      nextValues.push(next);
+    }
+    onChange(nextValues);
+    setDraft('');
+    setError(isAtCapacity ? `Add up to ${maxItems} items.` : undefined);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Enter' && event.key !== ',') return;
-    event.preventDefault();
-    addDraft();
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addDraft();
+      return;
+    }
+    if (event.key === 'Backspace' && !draft && value.length > 0) {
+      event.preventDefault();
+      onChange(value.slice(0, -1));
+      setError(undefined);
+    }
   };
 
   return (
-    <Field>
-      <FieldLabel title={tooltip}>{label}</FieldLabel>
+    <Field data-invalid={!!error}>
+      <FieldLabel htmlFor={inputId} title={tooltip}>
+        {label}
+      </FieldLabel>
       <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex flex-wrap gap-1.5 rounded-md border p-1.5 focus-within:ring-3">
         {value.map((tag) => (
           <span
@@ -80,20 +115,27 @@ export function ArticleTagInput({
           </span>
         ))}
         <Input
+          id={inputId}
           value={draft}
           onChange={(event) => {
-            setDraft(event.target.value);
+            const next = event.target.value;
+            if (next.includes(',')) {
+              addAllDrafts(next);
+              return;
+            }
+            setDraft(next);
             setError(undefined);
           }}
           onKeyDown={onKeyDown}
-          onBlur={addDraft}
+          onBlur={() => addDraft()}
           placeholder={placeholder}
-          disabled={value.length >= maxItems}
-          aria-invalid={!!error}
+          aria-describedby={descriptionId}
+          aria-errormessage={error ? descriptionId : undefined}
+          aria-invalid={!!error || undefined}
           className="h-7 min-w-40 flex-1 border-0 px-1 shadow-none focus-visible:ring-0"
         />
       </div>
-      <FieldDescription className={error ? 'text-destructive' : undefined}>
+      <FieldDescription id={descriptionId} className={error ? 'text-destructive' : undefined}>
         {error ?? hint}
       </FieldDescription>
     </Field>
