@@ -15,7 +15,12 @@ test.describe('Prompt article workflow — visual baseline', () => {
       `/project/${TEST_PROJECT_ID}/prompts/${promptId}/new-article?promptArticleId=${E2E_ARTICLE_ID}`
     );
     if (testInfo.project.name === 'visual-mobile') {
-      await expect(page.getByLabel('Article markdown editor')).toBeVisible();
+      const editor = page.getByLabel('Article markdown editor');
+      await expect(editor.locator('.mdx-editor-allsearch-toolbar')).toBeVisible();
+      await expect(
+        editor.getByText('This saved article gives the editor a stable visual state.')
+      ).toBeVisible();
+      await expect(page.locator('[data-slot="spinner"]')).toHaveCount(0);
       await expect(page).toHaveScreenshot('article-editor.png');
       return;
     }

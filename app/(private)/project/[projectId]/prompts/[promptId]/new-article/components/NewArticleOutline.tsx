@@ -232,9 +232,13 @@ export function NewArticleOutline({
               opportunities list and try again.
             </p>
           </div>
-          <Link href={backHref}>
-            <Button variant="secondary">{backLabel}</Button>
-          </Link>
+          <Button
+            render={<Link href={backHref} />}
+            nativeButton={false}
+            variant="secondary"
+          >
+            {backLabel}
+          </Button>
         </div>
       </div>
     );
@@ -247,12 +251,15 @@ export function NewArticleOutline({
     return (
       <div className="flex w-full flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href={backHref}>
-            <Button variant="secondary" size="sm">
-              <ArrowLeft aria-hidden="true" />
-              {backLabel}
-            </Button>
-          </Link>
+          <Button
+            render={<Link href={backHref} />}
+            nativeButton={false}
+            variant="secondary"
+            size="sm"
+          >
+            <ArrowLeft aria-hidden="true" />
+            {backLabel}
+          </Button>
         </div>
 
         {isMutatingOutline ? (
@@ -272,9 +279,13 @@ export function NewArticleOutline({
                   <p className="text-muted-foreground">{errorCopy.description}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href={backHref}>
-                    <Button variant="secondary">{backLabel}</Button>
-                  </Link>
+                  <Button
+                    render={<Link href={backHref} />}
+                    nativeButton={false}
+                    variant="secondary"
+                  >
+                    {backLabel}
+                  </Button>
                   {errorCopy.canRetry && (
                     <Button onClick={() => setErrorKind(null)}>
                       Adjust settings and try again
@@ -499,12 +510,15 @@ function OutlineEditor({
           view so the two surfaces feel consistent and Regenerate / Generate
           aren't buried under a long outline. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href={backHref}>
-          <Button variant="secondary" size="sm">
-            <ArrowLeft aria-hidden="true" />
-            {backLabel}
-          </Button>
-        </Link>
+        <Button
+          render={<Link href={backHref} />}
+          nativeButton={false}
+          variant="secondary"
+          size="sm"
+        >
+          <ArrowLeft aria-hidden="true" />
+          {backLabel}
+        </Button>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleCopy} disabled={isMutatingOutline}>
