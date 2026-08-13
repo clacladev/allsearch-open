@@ -11,11 +11,11 @@ export default function SettingsSectionLabel({
 }) {
   return (
     <div>
-      <h3 className="text-secondary flex items-center gap-0.5 text-sm font-semibold">
+      <h3 className="text-secondary flex items-center gap-0.5 text-sm leading-5 font-semibold">
         {title}
         {isRequired && <span className="text-brand-tertiary">*</span>}
       </h3>
-      {description && <p className="text-tertiary text-sm">{description}</p>}
+      {description && <p className="text-tertiary text-sm leading-5">{description}</p>}
     </div>
   );
 }

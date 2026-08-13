@@ -27,16 +27,13 @@ export function StandardTableHeader({
   const titleContent = (
     <div className="flex items-center gap-2">
       {Icon && <Icon className="text-muted-foreground size-4" />}
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <h2 className="text-foreground text-sm font-semibold">{title}</h2>
     </div>
   );
 
   return (
     <div
-      className={cn(
-        'relative flex items-center gap-4 border-b border-border px-4 py-3',
-        className
-      )}
+      className={cn('border-border relative flex items-center gap-4 border-b px-4 py-3', className)}
     >
       <div className="flex flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
@@ -47,12 +44,17 @@ export function StandardTableHeader({
             </AppTooltip>
           )}
         </div>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
 
       {badgeTrailing &&
         (typeof badgeTrailing === 'string' || typeof badgeTrailing === 'number' ? (
-          <Badge>{badgeTrailing}</Badge>
+          <Badge
+            variant="outline"
+            className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+          >
+            {badgeTrailing}
+          </Badge>
         ) : (
           badgeTrailing
         ))}

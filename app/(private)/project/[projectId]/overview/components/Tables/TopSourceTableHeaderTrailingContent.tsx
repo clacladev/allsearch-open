@@ -16,7 +16,14 @@ export const TopSourceTableHeaderTrailingContent = ({
   badgeText?: string;
 }) => (
   <div className="flex items-center gap-4">
-    {!!badgeText && <Badge>{badgeText}</Badge>}
+    {!!badgeText && (
+      <Badge
+        variant="outline"
+        className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+      >
+        {badgeText}
+      </Badge>
+    )}
 
     <SourcesTypeButtonGroup
       size="xs"
