@@ -25,17 +25,18 @@ export function ProjectSelector({
   };
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className="border-border relative flex min-w-0 items-center gap-3 rounded-xl border p-3">
+      <div className="border-border flex min-w-0 items-center gap-3 rounded-xl border p-3">
         <ProjectIconLabelGroup
           size="md"
           src={selected?.iconUrl}
-          title={selected?.name ?? 'Project'}
+          alt=""
+          title={<span className="block truncate">{selected?.name ?? 'Project'}</span>}
           subtitle={selected?.hostname ?? ''}
           status={selected?.status}
         />
         <PopoverTrigger
           aria-label="Select project"
-          render={<Button variant="ghost" size="icon-sm" className="absolute top-1.5 right-1.5 p-1.5 text-muted-foreground hover:text-foreground" />}
+          render={<Button variant="ghost" size="icon-sm" className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground" />}
         >
           <ChevronDown className="size-4 stroke-[2.5]" />
         </PopoverTrigger>

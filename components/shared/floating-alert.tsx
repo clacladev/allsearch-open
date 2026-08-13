@@ -51,7 +51,7 @@ export function FloatingAlert({
           )}
         </AlertAction>
       )}
-      {onClose && (
+      {onClose && !dismissLabel && (
         <Button
           type="button"
           variant="ghost"
