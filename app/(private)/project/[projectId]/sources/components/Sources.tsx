@@ -2,9 +2,7 @@
 
 import { RouteHelper } from '@/libs/routes';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import { DateRangePickerCard } from '../../overview/components/DateRangePickerCard';
-import { parseDate } from '@internationalized/date';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SourcesType } from '@/app/(private)/project/[projectId]/sources/components/types';
@@ -19,7 +17,7 @@ import {
 } from '@/app/(private)/project/[projectId]/sources/utils/exportSourcesCsv';
 import { SourceContents, SourceDomains } from './SourcesTable';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
-import { Badge } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import type { SortDescriptor } from 'react-aria-components';
 import {
   TextFilter,
@@ -70,7 +68,7 @@ export default function Sources({
 }) {
   const router = useRouter();
   const { currentProject, currentCompetitors } = usePrivateLayoutContext();
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
 
   const getSourceUrl =
@@ -78,12 +76,12 @@ export default function Sources({
       ? RouteHelper.Project.getSourcesContents
       : RouteHelper.Project.getSourcesDomains;
 
-  const onDateRangeChange = (value: DateRangePickerValue) =>
+  const onDateRangeChange = (value: { start: string; end: string }) =>
     router.push(
       getSourceUrl(
         projectId,
-        value.start.toString(),
-        value.end.toString(),
+        value.start,
+        value.end,
         undefined,
         sortBy,
         sortDir,
@@ -95,8 +93,8 @@ export default function Sources({
     router.push(
       getSourceUrl(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         value - 1,
         sortBy,
         sortDir,
@@ -114,8 +112,8 @@ export default function Sources({
       router.push(
         getSourceUrl(
           projectId,
-          selectedDateRange.start.toString(),
-          selectedDateRange.end.toString(),
+          selectedDateRange.start,
+          selectedDateRange.end,
           0,
           undefined,
           undefined,
@@ -129,8 +127,8 @@ export default function Sources({
     router.push(
       getSourceUrl(
         projectId,
-        selectedDateRange.start.toString(),
-        selectedDateRange.end.toString(),
+        selectedDateRange.start,
+        selectedDateRange.end,
         0,
         newSortBy,
         newSortDir,
@@ -146,7 +144,15 @@ export default function Sources({
         : RouteHelper.Project.getSourcesDomains;
 
     router.push(
-      getSourceUrl(projectId, selectedDateRange.start.toString(), selectedDateRange.end.toString())
+      getSourceUrl(
+        projectId,
+        selectedDateRange.start,
+        selectedDateRange.end,
+        0,
+        sortBy,
+        sortDir,
+        filters
+      )
     );
   };
 
@@ -253,10 +259,7 @@ export default function Sources({
       <div>
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2">
-            <DateRangePickerCard
-              selectedDateRange={selectedDateRange}
-              onApplyAction={onDateRangeChange}
-            />
+            <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
             <SourcesTypeButtonGroup
               sourceType={sourceType}
               onSourceTypeChangeAction={onSourceTypeChange}
@@ -270,7 +273,7 @@ export default function Sources({
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            <Badge type="pill-color" size="sm" color="brand">
+            <Badge>
               {sourceContentsData?.totalItems ?? sourceDomainsData?.totalItems ?? 0} sources
             </Badge>
             <ChatbotCoverageCaption enabledChatbotIds={enabledChatbotIds} />

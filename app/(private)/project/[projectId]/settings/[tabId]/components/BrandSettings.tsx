@@ -3,13 +3,9 @@ import { useDebounce } from 'use-debounce';
 import { useEffect, useState } from 'react';
 import { useTransition } from 'react';
 import { useDomainMetadata } from '@/app/(new-project)/new-project/components/useDomainMetadata';
-import { Form } from '@/components/base/form/form';
-import { InputGroup } from '@/components/base/input/input-group';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { Favicon } from '@/app/(private)/components/Favicon';
-import { Input, InputBase } from '@/components/base/input/input';
-import { Button } from '@/components/base/buttons/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { BrandDetailsFields } from '@/components/shared/BrandDetailsFields';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { RouteHelper } from '@/libs/routes';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
@@ -102,85 +98,33 @@ export default function BrandSettings() {
   const isNameInvalid = !name.length;
   const canSave = !!urlDebounced.length && !isUrlInvalid && !isDebouncePending() && !isNameInvalid;
 
-  const error = (isUrlInvalid && 'Invalid URL') || undefined;
-
   return (
     <div className="flex max-w-md flex-col gap-10">
-      <Form className="flex flex-col gap-5" onSubmit={onSave}>
+      <form className="flex flex-col gap-5" onSubmit={onSave}>
         <SettingsFormHeader
           title="Your Brand"
           description="The brand you want to monitor and analyze."
         />
 
-        <InputGroup
-          value={url}
-          onChange={onUrlChange}
-          isInvalid={isUrlInvalid}
-          isRequired
-          label="Brand URL"
-          name="brandUrl"
-          size="md"
-          trailingAddon={
-            isLoadingDomainMetadata ? (
-              <InputGroup.Prefix>
-                <LoadingIndicator size="xxs" />
-              </InputGroup.Prefix>
-            ) : iconUrl ? (
-              <InputGroup.Prefix>
-                <Favicon url={iconUrl} alt={name} className="size-6" />
-              </InputGroup.Prefix>
-            ) : null
-          }
-          className="border-r-0"
-        >
-          <InputBase type="url" placeholder="https://brand.com" />
-        </InputGroup>
-
-        {error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error}</div>}
-
-        <Input
-          value={name}
-          onChange={setName}
-          isRequired
-          label="Brand Name"
-          type="text"
-          name="brandName"
-          placeholder="Ringo"
-          size="md"
+        <BrandDetailsFields
+          url={url}
+          name={name}
+          iconUrl={iconUrl}
+          targetLocation={targetLocation}
+          isTargetLocationSelected={isTargetLocationSelected}
+          isLoadingMetadata={isLoadingDomainMetadata}
+          isUrlInvalid={isUrlInvalid}
+          isNameInvalid={isNameInvalid}
+          onUrlChange={onUrlChange}
+          onNameChange={setName}
+          onTargetLocationSelectedChange={setIsTargetLocationSelected}
+          onTargetLocationChange={setTargetLocation}
         />
 
-        <div className="mt-1 flex flex-col gap-3">
-          <Checkbox
-            isSelected={isTargetLocationSelected}
-            onChange={setIsTargetLocationSelected}
-            size="sm"
-            label="I want to target a specific location"
-            hint="Leave unchecked to keep worldwide."
-          />
-
-          {isTargetLocationSelected && (
-            <Input
-              value={targetLocation}
-              onChange={setTargetLocation}
-              label="Target location"
-              type="text"
-              name="targetLocation"
-              placeholder="Nation, state, city"
-              size="md"
-            />
-          )}
-        </div>
-
-        <Button
-          type="submit"
-          size="lg"
-          isDisabled={!canSave || isSaving}
-          isLoading={isSaving}
-          onClick={onSave}
-        >
-          Save
+        <Button type="submit" size="lg" className="h-11" disabled={!canSave || isSaving}>
+          Save {isSaving && <Spinner aria-hidden="true" />}
         </Button>
-      </Form>
+      </form>
     </div>
   );
 }

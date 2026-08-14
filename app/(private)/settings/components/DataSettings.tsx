@@ -3,9 +3,10 @@
 import { useState, useTransition } from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Copy01, FolderCode } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import { Copy, FolderCode } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import SettingsSectionLabel from './SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
@@ -66,8 +67,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Database file"
           description="Copy this file to move your data to another machine. Quit the app first so nothing is mid-write."
         />
@@ -78,19 +78,13 @@ export default function DataSettings({
           </code>
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" color="secondary" iconLeading={Copy01} onClick={onCopyPath}>
-              {hasCopied ? 'Copied' : 'Copy path'}
+            <Button type="button" variant="secondary" onClick={onCopyPath}>
+              <Copy aria-hidden="true" /> {hasCopied ? 'Copied' : 'Copy path'}
             </Button>
 
-            <Button
-              type="button"
-              color="secondary"
-              iconLeading={FolderCode}
-              isDisabled={isRevealing}
-              isLoading={isRevealing}
-              onClick={onReveal}
-            >
-              Reveal in file manager
+            <Button type="button" variant="secondary" disabled={isRevealing} onClick={onReveal}>
+              <FolderCode aria-hidden="true" /> Reveal in file manager{' '}
+              {isRevealing && <Spinner aria-hidden="true" />}
             </Button>
           </div>
         </div>
@@ -99,8 +93,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Size on disk"
           description="Includes the write-ahead log alongside the database file."
         />
@@ -115,8 +108,7 @@ export default function DataSettings({
       <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-        <SectionLabel.Root
-          size="sm"
+        <SettingsSectionLabel
           title="Last Collection Run"
           description="When collected data was last written to this database."
         />

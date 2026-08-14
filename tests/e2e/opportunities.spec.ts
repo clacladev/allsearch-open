@@ -18,7 +18,7 @@ test.describe('Opportunities page', () => {
     await page.goto(`${OPPORTUNITIES_URL}${TEST_DATE_RANGE}`);
 
     await expect(
-      page.getByRole('grid', { name: 'Opportunities List' })
+      page.getByRole('table', { name: 'Opportunities List' })
     ).toBeVisible({ timeout: 15_000 });
   });
 
@@ -29,7 +29,7 @@ test.describe('Opportunities page', () => {
 
     // Wait for table to load before exporting
     await expect(
-      page.getByRole('grid', { name: 'Opportunities List' })
+      page.getByRole('table', { name: 'Opportunities List' })
     ).toBeVisible({ timeout: 15_000 });
 
     const downloadPromise = page.waitForEvent('download');

@@ -1,4 +1,4 @@
-import { SectionLabel } from '@/components/application/section-headers/section-label';
+import SettingsSectionLabel from './SettingsSectionLabel';
 import SettingsFormHeader from '@/components/settings/SettingsFormHeader';
 import { ProviderKeyField } from '@/app/components/ProviderKeyField';
 import type { ProviderId } from '@/libs/database/shared/ProviderId';
@@ -54,13 +54,12 @@ export default function ProviderKeysSettings({
         description="Direct API keys for the AI providers this app calls on your behalf — never routed through us."
       />
 
-      <hr className="bg-border-secondary h-px w-full border-none" aria-hidden="true" />
+      <hr className="bg-border h-px w-full border-none" aria-hidden="true" />
 
       {PROVIDER_ROWS.map((row, index) => (
         <div key={row.provider}>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-16">
-            <SectionLabel.Root
-              size="sm"
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-12">
+            <SettingsSectionLabel
               title={row.title}
               isRequired={row.isRequired}
               description={
@@ -88,7 +87,7 @@ export default function ProviderKeysSettings({
           </div>
 
           {index < PROVIDER_ROWS.length - 1 && (
-            <hr className="bg-border-secondary mt-5 h-px w-full border-none" aria-hidden="true" />
+            <hr className="bg-border mt-4 h-px w-full border-none" aria-hidden="true" />
           )}
         </div>
       ))}

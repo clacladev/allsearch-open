@@ -13,7 +13,7 @@ import {
 } from '../components/NewProjectContext';
 import { SaveNewProjectResponse } from '@/app/api/new-project/save/types';
 import useSWRImmutable from 'swr/immutable';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { RouteLoading } from '@/components/shared/route-loading';
 import { PromptAndTopicId } from '@/libs/utils/PromptAndTopicId';
 import { NewProjectLayoutColumn } from '../../layout';
 import { appFetch } from '@/hooks/appFetch';
@@ -68,7 +68,7 @@ export default function SaveProject() {
   return (
     <NewProjectLayoutColumn>
       <FormHeader title="Saving your project..." description="" />
-      {isLoading && <LoadingIndicator />}
+      {isLoading && <RouteLoading />}
       {error && <div className="text-error-800 -mt-4 ml-0.5 text-xs">{error.message}</div>}
     </NewProjectLayoutColumn>
   );

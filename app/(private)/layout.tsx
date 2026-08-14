@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { PrivateLayoutContextProvider } from './components/PrivateLayoutContext';
 import { EventContextProvider } from './components/EventContext';
-import { Sidebar } from './components/Sidebar/Sidebar';
+import { ApplicationShell } from '@/components/shared/application-navigation/ApplicationShell';
 import ClientLayout from '@/components/ClientLayout';
 import { getProjectRows } from '@/libs/database/Projects/queries';
 import { getOrganization } from '@/libs/database/Organizations/queries';
@@ -13,6 +13,7 @@ import { MessagesContextProvider } from './components/MessagesContext';
 import { CollectionRunProgressBar } from '@/components/collection-run/CollectionRunProgressBar';
 import { CollectionRunProvider } from '@/components/collection-run/CollectionRunContext';
 import { CollectionCadenceSurfaces } from '@/components/collection-run/CollectionCadenceSurfaces';
+import { CollectionCadenceSidebarCard } from './components/Sidebar/Cards/CollectionCadenceSidebarCard';
 
 // This app has no user identity, so nothing here reads a session cookie or other
 // dynamic API — the signal that used to force per-request rendering implicitly.
@@ -51,7 +52,9 @@ export default async function PrivateLayout({ children }: { children: ReactNode 
           >
             <EventContextProvider>
               <CollectionRunProvider>
-                <Sidebar />
+                <ApplicationShell
+                  footer={<CollectionCadenceSidebarCard hasProjects={activeProjects.length > 0} />}
+                />
                 <div style={{ paddingBottom: 'var(--collection-run-bar-height, 0px)' }}>
                   {children}
                 </div>

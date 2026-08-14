@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { NewProjectContextProvider } from './new-project/components/NewProjectContext';
 import ClientLayout from '@/components/ClientLayout';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import Image from 'next/image';
 
 // This app has no user identity, so nothing here reads a session cookie or other
@@ -21,7 +21,7 @@ export function NewProjectLayoutColumn({
 }) {
   return (
     <div
-      className={cx('flex w-full flex-col gap-8', size === 'md' ? 'md:max-w-md' : 'md:max-w-2xl')}
+      className={cn('flex w-full flex-col gap-8', size === 'md' ? 'md:max-w-md' : 'md:max-w-2xl')}
     >
       {children}
     </div>

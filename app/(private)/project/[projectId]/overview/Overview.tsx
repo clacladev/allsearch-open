@@ -1,18 +1,16 @@
 'use client';
 
-import { BarChart11, Eye, FaceSmile } from '@untitledui/icons';
+import { BarChart3, Eye, Smile, TriangleAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
-import { AlertFloating } from '@/components/application/alerts/alerts';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { LatestRunNotice } from './components/LatestRunNotice';
 import { CollectionRunCoverageBanner } from './components/CollectionRunCoverageBanner';
 import { VisualContainer } from './components/VisualContainer';
 import VisibilityChart from './components/VisibilityChart';
-import { DateRangePickerCard } from './components/DateRangePickerCard';
-import { DateRangePickerValue } from '@/components/application/date-picker/range-calendar';
+import { AnalysisDateRangePicker } from '@/components/shared/analysis-date-range-picker';
 import { RouteHelper } from '@/libs/routes';
 import { OverviewData } from '@/libs/utils/project-analysis/getOverviewData';
-import { parseDate } from '@internationalized/date';
 import { useRouter } from 'next/navigation';
 import { ISODateString } from '@/libs/database/shared/ISODateString';
 import { useMemo, useState } from 'react';
@@ -70,7 +68,7 @@ export default function ProjectOverview({
   const { currentProject, currentCompetitors, currentPrompts } = usePrivateLayoutContext();
   const [sourcesType, setSourcesType] = useState<SourcesType>('contents');
   const [chartType, setChartType] = useState<OverviewChartType>('visibility');
-  const selectedDateRange = { start: parseDate(startDate), end: parseDate(endDate) };
+  const selectedDateRange = { start: startDate, end: endDate };
 
   const [
     projectVisibilityScore,
@@ -87,12 +85,12 @@ export default function ProjectOverview({
     [overviewData]
   );
 
-  const onDateRangeChange = (dateRange: DateRangePickerValue) =>
+  const onDateRangeChange = (dateRange: { start: string; end: string }) =>
     router.push(
       RouteHelper.Project.getOverview(
         projectId,
-        dateRange.start.toString(),
-        dateRange.end.toString()
+        dateRange.start,
+        dateRange.end
       )
     );
 
@@ -126,12 +124,11 @@ export default function ProjectOverview({
   return (
     <div className="flex flex-col gap-4">
       {currentProject.is_paused && (
-        <AlertFloating
-          color="warning"
-          title="This project is paused"
-          description="Prompt tracking is currently disabled for this project."
-          confirmLabel=""
-        />
+        <Alert>
+          <TriangleAlert aria-hidden="true" />
+          <AlertTitle>This project is paused</AlertTitle>
+          <AlertDescription>Prompt tracking is currently disabled for this project.</AlertDescription>
+        </Alert>
       )}
 
       {overviewData.latestRun && (
@@ -143,11 +140,8 @@ export default function ProjectOverview({
         />
       )}
 
-      <div className="flex items-center gap-2">
-        <DateRangePickerCard
-          selectedDateRange={selectedDateRange}
-          onApplyAction={onDateRangeChange}
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <AnalysisDateRangePicker value={selectedDateRange} onApply={onDateRangeChange} />
         <ExportActionsButton onExportCsvAction={onExportCsv} />
         {overviewData.latestRun && (
           <span className="text-tertiary text-sm" data-testid="overview-latest-run-provenance">
@@ -165,7 +159,7 @@ export default function ProjectOverview({
               <VisualContainer
                 title="Sentiment over time"
                 info="Average sentiment expressed about each brand across AI responses over time."
-                icon={FaceSmile}
+                icon={Smile}
                 className="grow"
                 contentClassName="h-70"
                 headerTrailing={chartToggle}
@@ -182,7 +176,7 @@ export default function ProjectOverview({
             <VisualContainer
               title="Brand sentiment"
               info="Average sentiment expressed about each brand across all prompt responses in the selected period."
-              icon={FaceSmile}
+              icon={Smile}
               className={hasManyDaysOfSentiment ? 'md:w-1/3 md:min-w-60 xl:max-w-80' : 'grow'}
               contentClassName="h-70 overflow-auto"
               headerTrailing={hasManyDaysOfSentiment ? undefined : chartToggle}
@@ -214,7 +208,7 @@ export default function ProjectOverview({
             <VisualContainer
               title="Brand visibility"
               info="How often each brand appears across all prompt responses in the selected period."
-              icon={BarChart11}
+              icon={BarChart3}
               className={hasManyDaysOfVisibility ? 'md:w-1/3 md:min-w-60 xl:max-w-80' : 'grow'}
               contentClassName="h-70 overflow-auto"
               headerTrailing={hasManyDaysOfVisibility ? undefined : chartToggle}

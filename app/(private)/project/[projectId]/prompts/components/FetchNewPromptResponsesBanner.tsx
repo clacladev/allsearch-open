@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { RouteHelper } from '@/libs/routes';
 import { appFetch } from '@/hooks/appFetch';
-import { AlertFloating } from '@/components/application/alerts/alerts';
+import { FloatingAlert } from '@/components/shared/floating-alert';
 import useSWRMutation from 'swr/mutation';
 
 const FETCH_PROMPT_RESPONSES_TIMEOUT = 20_000;
@@ -34,19 +34,18 @@ export default function FetchNewPromptResponsesBanner({
 
   if (isMutating) {
     return (
-      <AlertFloating
-        color="gray"
+      <FloatingAlert
+        tone="neutral"
         title="Fetching prompt responses"
         description="This may take a few minutes. You can continue using the app."
-        confirmLabel=""
       />
     );
   }
 
   if (isFetchSuccessful) {
     return (
-      <AlertFloating
-        color="brand"
+      <FloatingAlert
+        tone="neutral"
         title="Responses are being fetched"
         description="New prompt responses are being processed in the background. Refresh the page in a few minutes to see results."
         confirmLabel="Dismiss"
@@ -56,8 +55,8 @@ export default function FetchNewPromptResponsesBanner({
   }
 
   return (
-    <AlertFloating
-      color="brand"
+    <FloatingAlert
+      tone="neutral"
       title="New prompts without responses detected"
       description="Some prompts in this project don't have responses yet. Would you like to fetch them now?"
       confirmLabel="Fetch responses"

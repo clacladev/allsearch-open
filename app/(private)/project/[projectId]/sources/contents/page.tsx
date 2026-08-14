@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { Globe01 } from '@untitledui/icons';
+import { Globe } from 'lucide-react';
 import { Metadata } from 'next';
 import Sources from '../components/Sources';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
@@ -126,7 +126,7 @@ export default async function ProjectSourcesContentsPage({ params, searchParams 
     <MainContainer>
       <Header
         text="Sources Contents"
-        icon={Globe01}
+        icon={Globe}
         description="Individual pages and articles that AI models cite when responding to your tracked prompts."
       />
       <Sources

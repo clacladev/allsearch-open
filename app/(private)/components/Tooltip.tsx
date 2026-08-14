@@ -1,6 +1,6 @@
-import { Tooltip as BaseTooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
-import { cx } from '@/utils/cx';
-import { HelpCircle, InfoCircle } from '@untitledui/icons';
+import { AppTooltip } from '@/components/shared/tooltip';
+import { cn } from '@/libs/utils/cn';
+import { CircleHelp, Info } from 'lucide-react';
 
 export function Tooltip({
   children,
@@ -14,16 +14,9 @@ export function Tooltip({
   className?: string;
 }) {
   return (
-    <BaseTooltip title={title} description={description}>
-      <TooltipTrigger
-        className={cx(
-          'group relative inline-flex flex-col items-center gap-2 transition duration-100 ease-linear',
-          className
-        )}
-      >
-        {children}
-      </TooltipTrigger>
-    </BaseTooltip>
+    <AppTooltip content={<><span>{title}</span>{description ? <span className="sr-only"> {description}</span> : null}</>}>
+      <span className={cn('group relative inline-flex flex-col items-center gap-2 transition duration-100 ease-linear', className)}>{children}</span>
+    </AppTooltip>
   );
 }
 
@@ -41,10 +34,10 @@ export function TooltipIcon({
   let Icon = null;
   switch (variant) {
     case 'info':
-      Icon = InfoCircle;
+      Icon = Info;
       break;
     case 'question':
-      Icon = HelpCircle;
+      Icon = CircleHelp;
       break;
       break;
   }

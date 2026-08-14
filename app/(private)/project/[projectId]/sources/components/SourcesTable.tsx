@@ -5,7 +5,7 @@ import {
   SourceDomainsTableMeta,
 } from './sourceDomainsTableColumnDefs';
 import { PaginatedResult } from '@/libs/utils/PaginatedResult';
-import { PaginationPageDefault } from '@/components/application/pagination/pagination';
+import { DataTablePagination } from '@/components/shared/data-table-pagination';
 import StandardTable from '@/app/(private)/components/StandardTable/StandardTable';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
 import {
@@ -40,9 +40,9 @@ export function SourceDomains({
       sortDescriptor={sortDescriptor}
       onSortChange={onSortChange}
       tableFooter={
-        <PaginationPageDefault
+        <DataTablePagination
           page={sourcesData.currentPage + 1}
-          total={sourcesData.totalPages}
+          totalPages={sourcesData.totalPages}
           onPageChange={onPageChange}
           className="px-4 py-3 md:px-6 md:py-1.5"
         />
@@ -81,9 +81,9 @@ export function SourceContents({
       sortDescriptor={sortDescriptor}
       onSortChange={onSortChange}
       tableFooter={
-        <PaginationPageDefault
+        <DataTablePagination
           page={sourcesData.currentPage + 1}
-          total={sourcesData.totalPages}
+          totalPages={sourcesData.totalPages}
           onPageChange={onPageChange}
           className="px-4 py-3 md:px-6 md:py-1.5"
         />

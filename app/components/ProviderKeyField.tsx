@@ -6,9 +6,9 @@
 // import from (see app/components/AiFailureState.tsx for the same reasoning).
 
 import { useState, useTransition } from 'react';
-import { Input } from '@/components/base/input/input';
-import { Button } from '@/components/base/buttons/button';
-import { Badge } from '@/components/base/badges/badges';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { showErrorAlertToast, showSuccessAlertToast } from '@/components/Alerts';
 import { appFetch } from '@/hooks/appFetch';
 import { ROUTES } from '@/libs/routes';
@@ -48,7 +48,6 @@ export function ProviderKeyField({
   storedKey,
   onChange,
   onSaved,
-  size = 'md',
 }: {
   provider: ProviderId;
   storedKey: RedactedProviderKey | undefined;
@@ -56,7 +55,6 @@ export function ProviderKeyField({
   onChange: (providerKeys: RedactedProviderKey[]) => void;
   /** Called only after a successful save — e.g. to auto-advance onboarding. */
   onSaved?: (providerKeys: RedactedProviderKey[]) => void;
-  size?: 'sm' | 'md';
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [keyValue, setKeyValue] = useState('');
@@ -102,10 +100,7 @@ export function ProviderKeyField({
         setIsEditing(true);
         showSuccessAlertToast(`${label} key removed`, 'The key has been removed.');
       } catch (error) {
-        showErrorAlertToast(
-          'Something went wrong',
-          error instanceof Error ? error.message : ''
-        );
+        showErrorAlertToast('Something went wrong', error instanceof Error ? error.message : '');
       }
     });
   };
@@ -121,23 +116,22 @@ export function ProviderKeyField({
       <div className="flex flex-col gap-2">
         <Input
           value={keyValue}
-          onChange={setKeyValue}
+          onChange={(event) => setKeyValue(event.target.value)}
           onKeyDown={onKeyDown}
           type="password"
           aria-label={`${label} API key`}
           placeholder={`Paste your ${label} key`}
-          size={size}
         />
         <div className="flex gap-2">
-          <Button size="sm" onClick={onSave} isDisabled={!keyValue.trim().length || isSaving} isLoading={isSaving}>
+          <Button size="sm" onClick={onSave} disabled={!keyValue.trim().length || isSaving}>
             Save
           </Button>
           {storedKey && (
             <Button
               type="button"
-              color="secondary"
+              variant="outline"
               size="sm"
-              isDisabled={isSaving}
+              disabled={isSaving}
               onClick={() => {
                 setIsEditing(false);
                 setKeyValue('');
@@ -159,12 +153,18 @@ export function ProviderKeyField({
       <div className="flex items-center gap-2">
         <Input
           value={`•••• ${storedKey.lastFour}`}
-          isDisabled
           aria-label={`${label} API key`}
-          size={size}
           className="flex-1"
+          disabled
         />
-        <Badge color={badge.color} size="sm">
+        <Badge
+          variant="outline"
+          className={
+            badge.color === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+              : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+          }
+        >
           {badge.label}
         </Badge>
       </div>
@@ -172,15 +172,16 @@ export function ProviderKeyField({
       {hint && <p className="text-tertiary text-xs">{hint}</p>}
 
       <div className="flex gap-2">
-        <Button type="button" color="secondary" size="sm" onClick={() => setIsEditing(true)}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(true)}>
           Replace
         </Button>
         <Button
           type="button"
-          color="secondary-destructive"
+          variant="outline"
+          className="border-destructive/30 text-destructive hover:border-destructive/50 hover:bg-destructive/10"
           size="sm"
           onClick={onRemove}
-          isLoading={isRemoving}
+          disabled={isRemoving}
         >
           Remove
         </Button>

@@ -1,6 +1,6 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import { Opportunity } from '@/libs/utils/project-analysis/types';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import Link from 'next/link';
 import { PromptRow } from '@/libs/database/Prompts/types';
 import {
@@ -37,12 +37,12 @@ function DescriptionContent({ title, detail }: { title: React.ReactNode; detail:
 export const createOpportunitiesTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'type',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="type"
         label="Type"
         tooltip="Type of action"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),

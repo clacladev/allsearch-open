@@ -1,8 +1,8 @@
 'use client';
 
-import { ButtonGroup, ButtonGroupItem } from '@/components/base/button-group/button-group';
-import { Dot } from '@/components/foundations/dot-icon';
-import { cx } from '@/utils/cx';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Circle } from 'lucide-react';
+import { cn } from '@/libs/utils/cn';
 
 export type OverviewChartType = 'visibility' | 'sentiment';
 
@@ -12,33 +12,36 @@ const CHART_VARIANTS: { chartType: OverviewChartType; label: string }[] = [
 ];
 
 export default function OverviewChartTypeGroup({
-  size = 'xs',
   chartType,
   onChartTypeChangeAction,
 }: {
-  size?: 'xs' | 'sm';
   chartType: OverviewChartType;
   onChartTypeChangeAction: (chartType: OverviewChartType) => void;
 }) {
   return (
-    <ButtonGroup selectedKeys={[chartType]} size={size}>
+    <ToggleGroup
+      value={[chartType]}
+      onValueChange={(value) => {
+        const nextChartType = value[0] as OverviewChartType | undefined;
+        if (nextChartType) onChartTypeChangeAction(nextChartType);
+      }}
+      variant="outline"
+      size="sm"
+      spacing={0}
+      aria-label="Chart type"
+    >
       {CHART_VARIANTS.map((item) => (
-        <ButtonGroupItem
-          key={item.chartType}
-          id={item.chartType}
-          iconLeading={
-            <Dot
-              className={cx(
-                'mx-0.75 size-2',
-                chartType === item.chartType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
-              )}
-            />
-          }
-          onClick={() => onChartTypeChangeAction(item.chartType)}
-        >
+        <ToggleGroupItem key={item.chartType} value={item.chartType}>
+          <Circle
+            aria-hidden="true"
+            className={cn(
+              'mr-1 size-2 fill-current',
+              chartType === item.chartType ? 'text-fg-success-secondary' : 'text-fg-tertiary'
+            )}
+          />
           {item.label}
-        </ButtonGroupItem>
+        </ToggleGroupItem>
       ))}
-    </ButtonGroup>
+    </ToggleGroup>
   );
 }

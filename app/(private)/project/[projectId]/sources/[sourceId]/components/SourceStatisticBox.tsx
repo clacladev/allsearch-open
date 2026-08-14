@@ -1,5 +1,5 @@
 import { Tooltip } from '@/app/(private)/components/Tooltip';
-import { cx } from '@/utils/cx';
+import { cn } from '@/libs/utils/cn';
 import { ReactNode } from 'react';
 
 export const SourceStatisticBox = ({
@@ -17,7 +17,7 @@ export const SourceStatisticBox = ({
 }) => {
   const body = (
     <div
-      className={cx('bg-primary ring-secondary rounded-xl shadow-xs ring-1 ring-inset', className)}
+      className={cn('bg-primary ring-secondary rounded-xl shadow-xs ring-1 ring-inset', className)}
     >
       <div className="relative flex flex-col gap-2 px-4 py-5 md:px-5">
         <h3 className="text-tertiary flex items-center gap-1 text-sm font-medium">{title}</h3>

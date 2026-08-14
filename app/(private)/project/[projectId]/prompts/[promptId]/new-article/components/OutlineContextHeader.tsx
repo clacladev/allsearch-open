@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Badge } from '@/components/base/badges/badges';
+import { Badge } from '@/components/ui/badge';
 import { OPPORTUNITY_TYPE_NAME } from '@/libs/utils/opportunities';
 import type { OutlineOpportunityType } from '@/libs/utils/project-analysis/types';
 
@@ -24,13 +24,11 @@ type Props = {
   trailingDetail?: string;
 };
 
-const OPPORTUNITY_TYPE_BADGE_COLOR: Record<
-  OutlineOpportunityType,
-  'brand' | 'success' | 'warning'
-> = {
-  ProjectSourceNotFoundOpportunity: 'brand',
-  ProjectSourceNeedsImprovementOpportunity: 'warning',
-  ProjectSourceNotCitedOpportunity: 'success',
+const OPPORTUNITY_TYPE_BADGE_CLASS: Record<OutlineOpportunityType, string> = {
+  ProjectSourceNotFoundOpportunity: '',
+  ProjectSourceNeedsImprovementOpportunity:
+    'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  ProjectSourceNotCitedOpportunity: 'bg-emerald-600 text-white',
 };
 
 const MONTH_DAY = new Intl.DateTimeFormat('en-US', {
@@ -55,8 +53,7 @@ function formatDateRange(start: string, end: string): string {
   // which would shift the displayed day in negative-offset timezones.
   const startDate = new Date(sy, sm - 1, sd);
   const endDate = new Date(ey, em - 1, ed);
-  const startLabel =
-    sy === ey ? MONTH_DAY.format(startDate) : MONTH_DAY_YEAR.format(startDate);
+  const startLabel = sy === ey ? MONTH_DAY.format(startDate) : MONTH_DAY_YEAR.format(startDate);
   return `${startLabel} – ${MONTH_DAY_YEAR.format(endDate)}`;
 }
 
@@ -94,7 +91,7 @@ export function OutlineContextHeader({
     <div className="flex flex-col gap-1.5">
       {opportunityType && (
         <div>
-          <Badge color={OPPORTUNITY_TYPE_BADGE_COLOR[opportunityType]} size="sm">
+          <Badge className={OPPORTUNITY_TYPE_BADGE_CLASS[opportunityType]}>
             {OPPORTUNITY_TYPE_NAME[opportunityType]}
           </Badge>
         </div>

@@ -1,10 +1,11 @@
 import { createColumnHelper } from '@tanstack/react-table';
-import { Table } from '@/components/application/table/table';
+import { DataTableColumns as Table } from '@/components/shared/data-table';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
-import { BadgeWithDot } from '@/components/base/badges/badges';
-import { DOMAIN_CATEGORIES_COLORS } from './helpers';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils/cn';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 import SmallProgressBar from './SmallProgressBar';
+import { DOMAIN_CATEGORY_DOT_CLASS } from './helpers';
 
 export interface SourceDomainsTableMeta {}
 
@@ -13,12 +14,12 @@ const columnHelper = createColumnHelper<SourceDomain>();
 export const createSourceDomainsTableColumnDefs = (allowsSorting: boolean) => [
   columnHelper.accessor((row) => row, {
     id: 'hostname',
+    meta: { isRowHeader: true },
     header: () => (
       <Table.Head
         id="hostname"
         label="Domain"
         tooltip="Domain name of the source"
-        isRowHeader
         allowsSorting={allowsSorting}
       />
     ),
@@ -50,9 +51,13 @@ export const createSourceDomainsTableColumnDefs = (allowsSorting: boolean) => [
     cell: (info) => {
       const { domainCategory } = info.getValue();
       return (
-        <BadgeWithDot size="sm" color={DOMAIN_CATEGORIES_COLORS[domainCategory]} type="modern">
+        <Badge variant="outline">
+          <span
+            className={cn('size-1.5 rounded-full', DOMAIN_CATEGORY_DOT_CLASS[domainCategory])}
+            aria-hidden="true"
+          />
           {domainCategory}
-        </BadgeWithDot>
+        </Badge>
       );
     },
   }),

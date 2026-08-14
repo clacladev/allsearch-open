@@ -1,6 +1,6 @@
 import Header from '@/app/(private)/components/Header';
 import { MainContainer } from '@/app/(private)/components/Containers';
-import { Globe01 } from '@untitledui/icons';
+import { Globe } from 'lucide-react';
 import { Metadata } from 'next';
 import { getISODateString } from '@/libs/database/shared/ISODateString';
 import { getSourcesContentData } from '../helpers';
@@ -46,7 +46,7 @@ export default async function ProjectSourceDetailsPage({ params, searchParams }:
     <MainContainer>
       <Header
         text="Source Details"
-        icon={Globe01}
+        icon={Globe}
         description="Performance breakdown for this source — how often it's cited and which prompts reference it."
         startDate={startDate}
         endDate={endDate}

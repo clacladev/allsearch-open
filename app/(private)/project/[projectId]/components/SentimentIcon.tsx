@@ -1,19 +1,18 @@
-import { FaceHappy, FaceSmile, FaceNeutral, FaceFrown, FaceSad } from '@untitledui/icons';
+import { Laugh, Smile, Meh, Frown, Angry } from 'lucide-react';
 import { Tooltip } from '@/app/(private)/components/Tooltip';
 
 type SentimentInfo = {
   label: string;
-  icon: typeof FaceHappy;
+  icon: typeof Laugh;
   color: string;
 };
 
 function getSentimentInfo(score: number): SentimentInfo {
-  if (score >= 1.5)
-    return { label: 'Very Positive', icon: FaceHappy, color: 'text-success-primary' };
-  if (score >= 0.5) return { label: 'Positive', icon: FaceSmile, color: 'text-success-tertiary' };
-  if (score > -0.5) return { label: 'Neutral', icon: FaceNeutral, color: 'text-tertiary' };
-  if (score > -1.5) return { label: 'Negative', icon: FaceFrown, color: 'text-warning-primary' };
-  return { label: 'Very Negative', icon: FaceSad, color: 'text-error-primary' };
+  if (score >= 1.5) return { label: 'Very Positive', icon: Laugh, color: 'text-success-primary' };
+  if (score >= 0.5) return { label: 'Positive', icon: Smile, color: 'text-success-tertiary' };
+  if (score > -0.5) return { label: 'Neutral', icon: Meh, color: 'text-tertiary' };
+  if (score > -1.5) return { label: 'Negative', icon: Frown, color: 'text-warning-primary' };
+  return { label: 'Very Negative', icon: Angry, color: 'text-error-primary' };
 }
 
 export function SentimentIcon({

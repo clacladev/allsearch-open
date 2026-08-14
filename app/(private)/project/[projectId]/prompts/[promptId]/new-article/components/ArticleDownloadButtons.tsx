@@ -1,8 +1,13 @@
 'use client';
 
-import { ChevronDown, Download01 } from '@untitledui/icons';
-import { Button } from '@/components/base/buttons/button';
-import { Dropdown } from '@/components/base/dropdown/dropdown';
+import { ChevronDown, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { RouteHelper } from '@/libs/routes';
 
 type Props = {
@@ -76,7 +81,6 @@ export function ArticleDownloadButtons({
     outlineId
   );
 
-
   // Using location.assign rather than window.open avoids opening a new tab
   // for a Content-Disposition: attachment response.
   const handleDownloadHtml = () => window.location.assign(htmlDownloadUrl);
@@ -84,25 +88,22 @@ export function ArticleDownloadButtons({
   const handleDownloadPdf = () => window.location.assign(pdfDownloadUrl);
 
   return (
-    <Dropdown.Root>
-      <Button
-        color="tertiary"
-        size="sm"
-        iconLeading={Download01}
-        iconTrailing={ChevronDown}
-        isDisabled={isDisabled}
-        aria-label="Download article"
-      >
-        Download
-      </Button>
-      <Dropdown.Popover className="w-44">
-        <Dropdown.Menu>
-          <Dropdown.Item label="Markdown (.md)" onAction={handleDownloadMd} />
-          <Dropdown.Item label="HTML (.html)" onAction={handleDownloadHtml} />
-          <Dropdown.Item label="Word (.docx)" onAction={handleDownloadDocx} />
-          <Dropdown.Item label="PDF (.pdf)" onAction={handleDownloadPdf} />
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown.Root>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" size="sm" disabled={isDisabled} aria-label="Download article">
+            <Download aria-hidden="true" />
+            Download
+            <ChevronDown aria-hidden="true" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent aria-label="Article downloads" className="w-44">
+        <DropdownMenuItem onClick={handleDownloadMd}>Markdown (.md)</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownloadHtml}>HTML (.html)</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownloadDocx}>Word (.docx)</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownloadPdf}>PDF (.pdf)</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

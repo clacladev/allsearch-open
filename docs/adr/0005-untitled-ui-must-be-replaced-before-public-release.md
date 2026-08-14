@@ -1,26 +1,18 @@
-# Untitled UI PRO must be replaced before the repo goes public
+# Replace legacy UI before public release
 
-`components/` is 17,040 lines of vendored Untitled UI **PRO**, a commercially
-licensed library. AllSearch Local is intended to ship MIT, and publishing that
-source would redistribute components others are meant to pay for.
+## Status
 
-The replacement is **shadcn/ui**: MIT, vendored into the repository rather than
-installed as a dependency (the same model Untitled UI uses, so the shape of
-`components/` is unchanged), and built on Radix with Tailwind, which is already
-the stack.
+Implemented locally; public release remains maintainer-gated.
 
-We build the app on Untitled UI first and swap it out as the final phase of the
-plan, rather than replacing it up front. Sequencing it this way keeps
-the port itself mechanical: the dashboard, which is 80% of the value being
-carried over, keeps compiling and rendering throughout, and the component swap
-becomes an isolated, visually-reviewable project instead of being tangled up with
-the database and provider migrations.
+## Decision
+
+AllSearch vendors reviewed shadcn/ui source in `components/ui/`, using Base UI primitives, Tailwind CSS v4, and Lucide icons. The legacy Untitled UI source trees, the `@untitledui/icons` direct dependency, and the obsolete direct React Aria Tailwind plugin have been removed.
+
+The canonical styling seam is `styles/shadcn-theme.css`, which contains the established product semantic catalog and the shadcn mappings. `libs/utils/cn.ts` is the only class-name merge helper. `react-aria-components` remains a direct dependency because application tables, filters, and route integration use it; its `react-aria` and internationalization packages remain legitimate transitive dependencies.
 
 ## Consequences
 
-- **The repository stays private until the swap is complete.** This is a hard
-  gate on the first public release, not a nice-to-have.
-- The swap touches essentially every page under `app/(private)`, so it needs its
-  own visual regression pass.
-- Asking Untitled UI for an open-source exception is worth doing in parallel; a
-  grant would remove this work entirely.
+- `components/ui/` is vendored generated source, not a package. Update one reviewed component at a time with the pinned shadcn CLI's `--view`/`--diff` workflow; never bulk-overwrite it.
+- `package.json` remains `private: true`. Agents may build and inspect packages locally but must not publish.
+- Deliverable 10's source, dependency, standalone-output, and package-content audits found no live legacy UI, icon-package, or `untitledui.com` references.
+- Local product assets still require maintainer provenance review, and public release requires the maintainer's explicit signoff. Those gates are not resolved by this implementation.
