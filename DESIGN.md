@@ -25,4 +25,4 @@ Build interactive controls from the existing Base UI or React Aria Components se
 
 ## Release boundary
 
-The legacy Untitled UI source and direct packages were removed in Deliverable 10. Product-asset provenance and explicit maintainer public-release signoff remain open gates; this repository stays private until they are resolved.
+The legacy Untitled UI source and direct packages were removed in Deliverable 10. The unused SaaS-era marketing assets under `public/index/` (landing page, pricing, testimonials, AI-provider logos) were removed as dead weight; the only assets remaining under `public/index/` are the two first-party dashboard screenshots used in onboarding (`dashboard-desktop-{light,dark}.webp`). The maintainer gave explicit public-release signoff on 2026-08-14 and removed the `private` guard from `package.json` (see `AGENTS.md`); this repository is no longer private-by-policy.

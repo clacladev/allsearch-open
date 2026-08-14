@@ -2,7 +2,8 @@
 
 ## Status
 
-Implemented locally; public release remains maintainer-gated.
+Implemented. The maintainer reviewed local product-asset provenance, gave explicit public-release
+signoff, and removed the `private` guard from `package.json` on 2026-08-14 (see AGENTS.md).
 
 ## Decision
 
@@ -13,6 +14,6 @@ The canonical styling seam is `styles/shadcn-theme.css`, which contains the esta
 ## Consequences
 
 - `components/ui/` is vendored generated source, not a package. Update one reviewed component at a time with the pinned shadcn CLI's `--view`/`--diff` workflow; never bulk-overwrite it.
-- `package.json` remains `private: true`. Agents may build and inspect packages locally but must not publish.
+- `package.json`'s `private` guard was removed by the maintainer on 2026-08-14 once the gates below were resolved (AGENTS.md). Publishing to npm itself remains the maintainer's own deliberate action, not something an agent runs unprompted.
 - Deliverable 10's source, dependency, standalone-output, and package-content audits found no live legacy UI, icon-package, or `untitledui.com` references.
-- Local product assets still require maintainer provenance review, and public release requires the maintainer's explicit signoff. Those gates are not resolved by this implementation.
+- Local product-asset provenance review and the maintainer's explicit public-release signoff — both flagged as open by this implementation — were completed 2026-08-14. The unused SaaS-era marketing assets under `public/index/` were deleted as part of that review; the only assets remaining there are first-party dashboard screenshots.
