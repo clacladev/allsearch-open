@@ -6,7 +6,12 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { getDatabasePath } from '../libs/database/paths';
-import { acquireInstanceLock, type AcquiredLock, type InstanceLockRecord } from './instanceLock';
+import {
+  acquireInstanceLock,
+  releaseInstanceLock,
+  transferInstanceLock,
+  type InstanceLockRecord,
+} from './instanceLock';
 import { PortUnavailableError, resolveServerPort } from './port';
 
 export const LOCALHOST = '127.0.0.1';
@@ -21,6 +26,8 @@ export type RuntimeOptions = {
   preferredPort?: number;
   runnerEntry?: string;
   serverEntry?: string;
+  /** Test-only override for the graceful shutdown grace period. */
+  stopTimeoutMs?: number;
 };
 
 export type RunningServer = { url: string; port: number; databasePath: string };
@@ -30,7 +37,7 @@ export type RunningServer = { url: string; port: number; databasePath: string };
  * has no authentication boundary. */
 export class AllSearchRuntime {
   private child: ChildProcess | undefined;
-  private lock: AcquiredLock | undefined;
+  private lockOwnerPid: number | undefined;
   private stopping: Promise<void> | undefined;
   private running: RunningServer | undefined;
 
@@ -48,7 +55,7 @@ export class AllSearchRuntime {
     const lock = acquireInstanceLock(lockPath, record);
     if (!lock.acquired) throw new RuntimeLockError(describeRunningInstance(lock.heldBy, lockPath));
 
-    this.lock = lock;
+    this.lockOwnerPid = record.pid;
     const child = spawn(process.execPath, [this.runnerEntry, serverEntry], {
       cwd: dirname(serverEntry),
       env: {
@@ -57,6 +64,7 @@ export class AllSearchRuntime {
         HOSTNAME: LOCALHOST,
         NEXT_MANUAL_SIG_HANDLE: '1',
         ALLSEARCH_DB_PATH: databasePath,
+        ALLSEARCH_PARENT_PID: String(process.pid),
         ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
         // The server starts from the standalone directory, while migrations intentionally remain
         // beside the packaged application root in the CLI and desktop bundles.
@@ -65,6 +73,18 @@ export class AllSearchRuntime {
       stdio: 'inherit',
     });
     this.child = child;
+    if (!child.pid) {
+      this.releaseLock();
+      throw new Error('AllSearch server process did not provide a pid.');
+    }
+    const childRecord: InstanceLockRecord = { ...record, pid: child.pid, parentPid: process.pid };
+    if (!transferInstanceLock(lockPath, record.pid, childRecord)) {
+      child.kill('SIGKILL');
+      await onceExited(child);
+      this.releaseLock();
+      throw new Error('AllSearch server lock ownership could not be transferred to its child process.');
+    }
+    this.lockOwnerPid = child.pid;
     child.once('exit', () => {
       this.child = undefined;
       this.running = undefined;
@@ -100,15 +120,24 @@ export class AllSearchRuntime {
     child.kill('SIGTERM');
     await Promise.race([
       new Promise<void>((resolve) => child.once('exit', () => resolve())),
-      sleep(STOP_TIMEOUT_MS),
+      sleep(this.options.stopTimeoutMs ?? STOP_TIMEOUT_MS),
     ]);
-    if (child.exitCode === null) child.kill('SIGKILL');
-    this.releaseLock();
+    if (child.exitCode === null) {
+      child.kill('SIGKILL');
+      // SIGKILL is not a synchronous operation. Do not make the database available to another
+      // launcher until the server child has actually exited and can no longer write to SQLite.
+      await onceExited(child);
+    }
   }
 
   private releaseLock(): void {
-    this.lock?.release();
-    this.lock = undefined;
+    if (this.lockOwnerPid !== undefined) releaseInstanceLock(this.lockPath, this.lockOwnerPid);
+    this.lockOwnerPid = undefined;
+  }
+
+  private get lockPath(): string {
+    const databasePath = this.running?.databasePath ?? this.options.databasePath ?? getDatabasePath();
+    return join(dirname(databasePath), LOCK_FILE_NAME);
   }
 
   private get packageRoot(): string {
@@ -166,4 +195,9 @@ async function waitForServerReady(url: string, child: ChildProcess): Promise<boo
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function onceExited(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null) return Promise.resolve();
+  return new Promise((resolve) => child.once('exit', () => resolve()));
 }

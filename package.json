@@ -44,7 +44,7 @@
     "test:e2e:ai": "bun run e2e:prepare && PLAYWRIGHT_INCLUDE_AI=1 playwright test --project chromium --grep @ai",
     "test:e2e:visual": "bun run e2e:prepare && playwright test --project visual-light --project visual-dark --project visual-mobile",
     "test:e2e:ui": "bun run e2e:prepare && playwright test --ui",
-    "test:desktop": "bun run build:desktop:stage && playwright test --project desktop",
+    "test:desktop": "bun run build:package && bun scripts/buildDesktop.ts && playwright test --project desktop",
     "verify:providers": "bun scripts/verifyProviders.ts",
     "webhooks:listen": "ngrok http 3000 --url=super-pangolin-unlikely.ngrok-free.app",
     "deploy:prod": "git switch prod && git fetch origin && git rebase origin/dev && git push --force && git switch dev"

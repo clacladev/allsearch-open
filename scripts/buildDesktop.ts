@@ -3,12 +3,15 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import { prepareStandaloneRuntimeAssets } from './buildCli';
+
 const REPO_ROOT = resolve(import.meta.dirname, '..');
 const STANDALONE_DIR = join(REPO_ROOT, '.next', 'standalone');
 const DESKTOP_DIR = join(REPO_ROOT, 'dist', 'desktop');
 
 export async function main(): Promise<void> {
   requireStandaloneBuild();
+  prepareStandaloneRuntimeAssets();
   rmSync(DESKTOP_DIR, { recursive: true, force: true });
   mkdirSync(DESKTOP_DIR, { recursive: true });
   await bundleMain();
@@ -37,12 +40,17 @@ async function bundleMain(): Promise<void> {
 }
 
 function stageRuntimeAssets(): void {
+  // The standalone tree has already been allowlisted by the shared CLI packager. Copying it as a
+  // whole is therefore intentional: it contains only Next's server entry, traced dependencies,
+  // and assets that the browser needs to hydrate.
   cpSync(STANDALONE_DIR, join(DESKTOP_DIR, 'standalone'), { recursive: true, force: true });
   cpSync(join(REPO_ROOT, 'drizzle'), join(DESKTOP_DIR, 'drizzle'), { recursive: true, force: true });
   const expected = [
     join(DESKTOP_DIR, 'main.cjs'),
     join(DESKTOP_DIR, 'serverRunner.cjs'),
     join(DESKTOP_DIR, 'standalone', 'server.js'),
+    join(DESKTOP_DIR, 'standalone', '.next', 'static'),
+    join(DESKTOP_DIR, 'standalone', 'public'),
     join(DESKTOP_DIR, 'drizzle'),
   ];
   const missing = expected.filter((path) => !existsSync(path));
