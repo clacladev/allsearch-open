@@ -1,4 +1,4 @@
-# AllSearch Local
+# AllSearch
 
 A desktop application that tracks how often a Brand is mentioned and cited by AI
 chatbots, and turns the gaps into content recommendations. It is a single-user,

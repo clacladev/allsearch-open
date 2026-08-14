@@ -19,9 +19,9 @@ type PendingAction = {
   kind: 'archive' | 'restore' | 'delete' | 'fill';
 };
 
-/** The SaaS admin panel's cross-tenant actions. There is no admin and no tenancy locally, so they
- * survive ungated (ADR 0003) — the single user is the operator. They live app-level rather than
- * under a Project because several of them (clone, delete) outlive the Project they act on. */
+/** Cross-tenant actions from before this was single-user. There is no admin and no tenancy
+ * locally, so they survive ungated — the single user is the operator. They live app-level rather
+ * than under a Project because several of them (clone, delete) outlive the Project they act on. */
 export default function DeveloperSettings({ projects }: { projects: ProjectRow[] }) {
   const router = useRouter();
   const [pendingAction, setPendingAction] = useState<PendingAction | undefined>();

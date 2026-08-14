@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AllSearch — Track AI chatbot visibility for your Brand</title>
+    <meta
+      name="description"
+      content="AllSearch tracks how often a Brand is mentioned and cited by AI chatbots, then turns the gaps into content recommendations. Single-user, local-first, and runs on your own machine with your own AI provider keys."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <span class="eyebrow">Open source · Local-first</span>
+        <h1>See how AI chatbots talk about your Brand</h1>
+        <p class="lede">
+          AllSearch tracks how often a Brand is mentioned and cited by AI chatbots, then turns
+          the gaps into content recommendations. It runs entirely on your own machine, against
+          your own AI provider keys — no account, no server, no data leaving your computer.
+        </p>
+        <div class="cta-row">
+          <a class="button button-primary" href="https://github.com/clacladev/allsearch-open">
+            View on GitHub
+          </a>
+          <a class="button button-secondary" href="#install">Install</a>
+        </div>
+        <code class="install-command">bunx allsearch</code>
+      </div>
+    </header>
+
+    <section id="screenshots">
+      <div class="wrap">
+        <h2>What it looks like</h2>
+        <div class="screenshot-grid">
+          <figure>
+            <img
+              src="screenshots/overview.webp"
+              alt="AllSearch dashboard overview, showing brand visibility score and top source contents"
+              width="1600"
+              height="1006"
+            />
+            <figcaption>Dashboard overview</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="screenshots/history-drilldown.webp"
+              alt="AllSearch prompt drill-down, showing an AI response with sentiment and cited sources"
+              width="1600"
+              height="1004"
+            />
+            <figcaption>Prompt drill-down</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="caveats">
+      <div class="wrap">
+        <h2>Before you start</h2>
+        <ul class="caveat-list">
+          <li>
+            <span>
+              <strong>Collection costs you money.</strong> Each Collection Run calls AI providers
+              using your own key, and the app does not display a cost estimate.
+            </span>
+          </li>
+          <li>
+            <span>
+              <strong>A missed week is lost permanently.</strong> There is no way to ask a
+              chatbot what it said last week, so the historical time series will have gaps by
+              design.
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="wrap">
+        <h2>Install and run</h2>
+        <code class="install-command">bunx allsearch</code>
+        <p class="key-note">
+          Starts a local server and opens your browser. A Google AI key is enough to get going —
+          OpenAI and Perplexity keys are optional and add those chatbots to your tracking. Your
+          data stays in a SQLite file on your machine.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <span>AGPL-3.0-or-later</span>
+        <a href="https://github.com/clacladev/allsearch-open">github.com/clacladev/allsearch-open</a>
+      </div>
+    </footer>
+  </body>
+</html>

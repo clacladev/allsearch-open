@@ -52,8 +52,8 @@ export const organizations = sqliteTable(
   (table) => [check('organizations_type_check', sql`${table.type} in ('agency', 'in-house')`)]
 );
 
-// Singleton settings row (see docs/agents/domain.md and .scratch/local-app-migration/issues/08 —
-// provider keys and enabled Chatbots for this single-user install). One JSON column per concern
+// Singleton settings row (provider keys and enabled Chatbots for this single-user install).
+// One JSON column per concern
 // rather than 13 enumerated columns (3 providers x key/status/validatedAt, plus per-Chatbot
 // flags): matches this file's existing JSON-column convention, and adding a fourth provider or
 // Chatbot becomes a value change here rather than a migration.

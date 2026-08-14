@@ -276,7 +276,7 @@ export const RouteHelper = {
       ROUTES.API.ORGANIZATION_WITH_ID.replace(':organizationId', organizationId),
 
     // Formerly the admin panel's cross-tenant actions. There is no admin and no tenancy, so these
-    // survive ungated (ADR 0003) as the Developer section of the app-level Settings screen.
+    // survive ungated as the Developer section of the app-level Settings screen.
     Developer: {
       getProjectFillPromptResponses: (projectId: string) =>
         ROUTES.API.PROJECT.PROJECT_FILL_PROMPT_RESPONSES.replace(':projectId', projectId),

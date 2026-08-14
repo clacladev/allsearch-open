@@ -18,18 +18,16 @@ no `npm update`. To pull in an upstream change to an already-customized
 component:
 
 1. Start from a clean git tree (`git status --porcelain` empty).
-2. Use the pinned `shadcn` CLI version (`bunx shadcn@latest --version`,
-   recorded in `.scratch/untitled-ui-to-shadcn/inventory.md`).
+2. Check the installed `shadcn` CLI version (`bunx shadcn@latest --version`).
 3. Inspect before touching anything: `bunx shadcn@latest add <component> --diff`
    and `--view` against the local file.
 4. Re-apply only the reviewed delta by hand, or re-`add` a single named
    component and re-diff — never `add --all`/`--overwrite` across
    already-customized files.
-5. Re-record the component's row in the inventory's generated-source ledger
-   with the new version/date and any local modifications that must survive
-   the update (e.g. the `.dark-mode` theme mapping in `sonner.tsx`, or the
-   `shadcn-primary`/`shadcn-secondary` token names needed because the product
-   semantic catalog claims the bare `primary`/`secondary` namespace — see
+5. Preserve local modifications that must survive the update (e.g. the
+   `.dark-mode` theme mapping in `sonner.tsx`, or the `shadcn-primary`/
+   `shadcn-secondary` token names needed because the product semantic catalog
+   claims the bare `primary`/`secondary` namespace — see
    `styles/shadcn-theme.css`).
 6. Run `bun lint` and `bun tsc` before committing.
 

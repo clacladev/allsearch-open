@@ -12,7 +12,7 @@ extraResources:
   - from: dist/desktop/drizzle
     to: drizzle
 asar: true
-publish: never
+publish: null
 mac:
   icon: resources/icon.icns
   target:
