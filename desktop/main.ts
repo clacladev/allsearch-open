@@ -13,6 +13,9 @@ const runtimeRoot = app.isPackaged ? process.resourcesPath : packageRoot;
 const serverEntry = app.isPackaged
   ? join(process.resourcesPath, 'standalone', 'server.js')
   : join(packageRoot, '.next', 'standalone', 'server.js');
+const runnerEntry = app.isPackaged
+  ? join(process.resourcesPath, 'serverRunner.cjs')
+  : join(packageRoot, 'dist', 'desktop', 'serverRunner.cjs');
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -35,7 +38,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 async function start(): Promise<void> {
-  runtime = new AllSearchRuntime({ packageRoot: runtimeRoot, serverEntry });
+  runtime = new AllSearchRuntime({ packageRoot: runtimeRoot, runnerEntry, serverEntry });
   const server = await runtime.start();
   createWindow(server.url);
 }
