@@ -1,11 +1,14 @@
 # 24 — Electron desktop shell
 
-Status: needs-triage
+Status: ready-for-agent
 Milestone: 8 — Public release gate
 Blocked by: 23
 
-**Deferred deliberately. Do not start this until adoption shows it is the
-bottleneck** (ADR 0010).
+**Was deferred deliberately, gated on adoption evidence (ADR 0010). The
+maintainer reversed that on 2026-08-14 and authorized starting this as a
+starting point** — see the Status note added to ADR 0010. The rest of this
+ticket's technical guidance (Electron, not Tauri/Nextron; budget items) still
+applies.
 
 The stated goal for this product is an app the user launches, and `bunx allsearch`
 does not deliver that for the agency marketers who are the intended audience.

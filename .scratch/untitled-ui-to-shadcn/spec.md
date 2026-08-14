@@ -5,9 +5,10 @@ Parent gate: `.scratch/local-app-migration/issues/22-replace-untitled-ui.md`
 External prerequisite: the end-to-end UI suite being completed in a separate workspace
 Research date: 2026-08-12
 
-Implementation status: complete. The remaining manual release gate is the provenance review for
-retained product assets, recorded as `BLOCK-004` in `inventory.md`; it is not a remaining
-Untitled UI code or dependency migration task.
+Implementation status: complete. The provenance review for retained product assets (`BLOCK-004` in
+`inventory.md`) is resolved: the unused SaaS-era marketing assets were deleted, and the maintainer
+gave explicit public-release signoff on 2026-08-14, removing the `private` guard from
+`package.json` (AGENTS.md).
 
 ## Objective
 

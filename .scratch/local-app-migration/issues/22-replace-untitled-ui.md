@@ -7,9 +7,10 @@ The legacy Untitled UI source and direct dependencies have been removed. Deliver
 
 `react-aria-components` remains deliberately: route integration, tables, and filters use it. Its `react-aria`, `react-stately`, and `@internationalized/*` entries remain transitive lockfile dependencies, not direct package dependencies.
 
+The unused SaaS-era marketing assets under `public/index/` (landing page, pricing, testimonials, AI-provider logos — 24 files, ~1.8 MB) were leftover from the pre-migration import and unreferenced anywhere in `app/`, `libs/`, or `components/`; they have been deleted. The only assets remaining under `public/index/` are `dashboard-desktop-light.webp` and `dashboard-desktop-dark.webp`, first-party screenshots of this product's own dashboard used in onboarding. `resources/` (favicons, logo) is the maintainer's own branding.
+
 ## Remaining maintainer gates
 
-- Review provenance and redistribution rights for local product assets under `app/`, `resources/`, and `public/`; Deliverable 10 did not replace, remove, or assert ownership of them.
-- Give explicit public-release signoff after reviewing the completed migration and audits.
-
-Until both gates are resolved, `package.json` must stay `private: true` and no agent may publish the package or repository.
+None. The maintainer reviewed the completed migration and audits and gave explicit public-release
+signoff on 2026-08-14, removing the `private` guard from `package.json` (AGENTS.md). Publishing a
+version to npm remains the maintainer's own deliberate action.

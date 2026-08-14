@@ -25,16 +25,19 @@ Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/
 - Routes: `RouteHelper` / `ROUTES` in `libs/routes.ts`.
 - After substantive edits: `bun lint`, `bun tsc`, and relevant `bun test` / e2e.
 
-## Never publish
+## Publishing
 
-This project stays private until the maintainer publishes it **manually**, by hand, at the end of
-the process. Until then:
+`"private": true` was the guard against an accidental publish while the Untitled UI replacement
+(ADR 0005) and the asset-provenance gate (issue 22) were open. The maintainer reviewed both, gave
+explicit public-release signoff, and removed the guard by hand on 2026-08-14 — this repo is no
+longer private-by-policy.
 
-- Do not run `npm publish` (or `bun publish`, or any registry push), and do not ask to.
-- `"private": true` in `package.json` is the guard that enforces this. Leave it there. It does not
-  block `bun run build:package` or `npm pack`, which are the only packaging steps agents should run.
-- `bunx allsearch` therefore does not resolve yet, and is not expected to. Build and pack locally
-  to verify the CLI; never treat "publish it and see" as a verification step.
+- Publishing a version to npm (`npm publish`) is still the maintainer's own deliberate action, not
+  something an agent runs unprompted. Only do it if explicitly asked to in the session.
+- `bun run build:package` and `npm pack` remain the packaging steps for verifying the CLI locally
+  without publishing. See the README's Packaging note for the actual publish steps.
+- Before this guard was removed, `bunx allsearch` could not resolve at all. It resolves once a
+  version has actually been published — the guard's removal alone does not publish anything.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

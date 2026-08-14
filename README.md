@@ -2,7 +2,19 @@
 
 Local-first desktop app that tracks how often a Brand is mentioned and cited by AI chatbots (ChatGPT, Google AI Mode, Perplexity), and turns gaps into content recommendations.
 
-Single-user: data stays on the machine (SQLite). AI calls use the operator’s own provider keys (entered in Settings). Domain language lives in [`CONTEXT.md`](./CONTEXT.md).
+Single-user: data stays on the machine (SQLite). AI calls use the operator’s own provider keys (entered in Settings), no account, no server we operate. Domain language lives in [`CONTEXT.md`](./CONTEXT.md).
+
+## Before you start
+
+- **A Google AI key alone is a fully working product.** OpenAI and Perplexity are optional — each
+  one just adds another Chatbot to track (ADR 0004).
+- **Collection is manual and weekly, not automatic.** There's no cron: the app tells you when data
+  is stale and you press one button (ADR 0002).
+- **Collection costs you real money** on your own provider key, and the app does not show a price
+  or running total — the amounts are small, but nothing stops you spending more than you meant to
+  (ADR 0007).
+- **A week you don't run is gone for good.** You can't ask a chatbot what it said last Tuesday, so
+  the trend charts will have honest gaps rather than invented data (ADR 0002).
 
 ## Prerequisites
 
@@ -187,9 +199,9 @@ Conventions: [`docs/development-guidelines.md`](./docs/development-guidelines.md
 under `.next/standalone/`, the CLI bundle at `dist/cli.mjs`, and the migrations under `drizzle/`.
 `npm pack` (via `prepack`) runs it for you.
 
-**The package is not published, and is marked `private` so it cannot be published by accident.**
-Publishing is a deliberate, manual step the maintainer takes at the end of the process. Until
-then `bunx allsearch` does not resolve — build and pack locally to try the CLI:
+The package is not published yet, though it is no longer marked `private`. Publishing is a
+deliberate, manual maintainer action; until a version is published, `bunx allsearch` does not
+resolve. Build and pack locally to try the CLI:
 
 ```bash
 bun run build:package && bun run start:cli
@@ -198,3 +210,20 @@ bun run build:package && bun run start:cli
 The Electron desktop build and the retained CLI share the same local server runtime and database
 lock. The desktop release is currently an unsigned Apple-Silicon DMG only; publishing remains a
 manual maintainer action.
+
+### Publish to npm
+
+```bash
+npm login
+npm publish
+```
+
+`npm publish` runs `prepack` (`bun run build:package`) automatically. Bump the version in
+`package.json` before every publish after the first, because npm rejects an existing version.
+
+## Licence
+
+[GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0-or-later). Chosen because AllSearch
+began as a hosted product (`clacladev/allsearch`) — the AGPL's network-use clause means a fork
+that's re-hosted as a service for others must also share its source, not just forks that get
+redistributed as code.
