@@ -17,7 +17,10 @@ export const viewport: Viewport = {
 // The app runs on localhost and is never crawled, so there is no SEO metadata
 // and no preconnects: every third-party origin they pointed at is gone.
 export const metadata: Metadata = {
-  title: config.appName,
+  title: {
+    template: `${config.appName} - %s`,
+    default: config.appName,
+  },
   description: config.appDescription,
 };
 

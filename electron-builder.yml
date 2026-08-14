@@ -1,0 +1,24 @@
+appId: com.allsearch.local
+productName: AllSearch
+directories:
+  output: release/desktop
+files:
+  - dist/desktop/main.cjs
+extraResources:
+  - from: dist/desktop/serverRunner.cjs
+    to: serverRunner.cjs
+  - from: dist/desktop/standalone
+    to: standalone
+  - from: dist/desktop/drizzle
+    to: drizzle
+asar: true
+publish: never
+mac:
+  icon: resources/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false

@@ -8,6 +8,7 @@ import {
   isProcessAlive,
   readInstanceLock,
   releaseInstanceLock,
+  transferInstanceLock,
   type InstanceLockRecord,
 } from '@/cli/instanceLock';
 
@@ -112,6 +113,18 @@ describe('releaseInstanceLock', () => {
 
   it('is a no-op when there is no lock file', () => {
     expect(() => releaseInstanceLock(lockPath, process.pid)).not.toThrow();
+  });
+});
+
+describe('transferInstanceLock', () => {
+  it('atomically hands the startup lock to the server child', () => {
+    const startup = record();
+    acquireInstanceLock(lockPath, startup);
+    const server = record({ pid: DEAD_PID, parentPid: process.pid });
+
+    expect(transferInstanceLock(lockPath, process.pid, server)).toBe(true);
+    expect(readInstanceLock(lockPath)).toEqual(server);
+    expect(transferInstanceLock(lockPath, process.pid, record())).toBe(false);
   });
 });
 

@@ -21,7 +21,7 @@ import {
   countCollectionRunItemRowsByStatus,
   resetFailedCollectionRunItemRows,
 } from '@/libs/database/CollectionRunItems/queries';
-import { ensureCollectionRunLoopIsRunning } from './runLoop';
+import { abortCollectionRun, ensureCollectionRunLoopIsRunning } from './runLoop';
 import { selectPromptsToCollect } from './selectPrompts';
 
 export type CreateCollectionRunInput = {
@@ -151,15 +151,18 @@ export async function retryFailedCollectionRunItems(runId: string): Promise<Coll
   return run;
 }
 
-/** Stops new Prompts being claimed by cancelling every still-`pending` item. In-flight Prompts
- * finish and are recorded normally. A `pending` Run was never claimed, so no loop will ever
- * finalise it — it is marked `cancelled` directly. A `running` Run with nothing left `running` is
- * between the loop's last group and its own finalise step, so it is finalised directly too, via the
- * same conditional write the loop itself uses — if the loop wins that race instead, this write
- * simply no-ops. Otherwise the Run is left for the loop's finaliser to land `cancelled` once it
- * drains and observes a cancelled item. */
+/** Stops new Prompts being claimed by cancelling every still-`pending` item, and aborts any
+ * in-flight AI calls for this Run (`runLoop.ts`'s `abortCollectionRun`) so a Prompt that was
+ * already `running` does not sit out its full retry/backoff/cooldown before the Run can finish. A
+ * `pending` Run was never claimed, so no loop will ever finalise it — it is marked `cancelled`
+ * directly. A `running` Run with nothing left `running` is between the loop's last group and its
+ * own finalise step, so it is finalised directly too, via the same conditional write the loop
+ * itself uses — if the loop wins that race instead, this write simply no-ops. Otherwise the Run is
+ * left for the loop's finaliser to land `cancelled` once its in-flight groups unwind (now promptly,
+ * since they are aborted too) and it observes a cancelled item. */
 export async function cancelCollectionRun(runId: string): Promise<CollectionRunRow> {
   await cancelPendingCollectionRunItemRows(runId);
+  abortCollectionRun(runId);
   await recomputeCollectionRunCounters(runId);
   const run = await getCollectionRunRowWithId(runId);
   if (!run) throw new Error(`No collection_runs row found for id ${runId}`);

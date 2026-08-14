@@ -19,7 +19,7 @@ import { logNoObjectGeneratedError } from '../utils';
 // replace google_search with urlContext + a curated URL list.
 const MODEL_ID = 'gemini-3.6-flash';
 
-export async function getPromptResponseWithGoogleAIMode(prompt: string) {
+export async function getPromptResponseWithGoogleAIMode(prompt: string, signal?: AbortSignal) {
   try {
     // Awaited, not returned as a bare promise: the grounding check below needs the resolved
     // result, and it also puts an async rejection back inside this try — a returned promise
@@ -27,6 +27,7 @@ export async function getPromptResponseWithGoogleAIMode(prompt: string) {
     const response = await generateText({
       model: await googleModel(MODEL_ID),
       prompt,
+      abortSignal: signal,
       temperature: 1.0, // Recommended by Google for optimal grounding results
       tools: {
         // Enabling this tool permits grounding, it does not guarantee it: the model
