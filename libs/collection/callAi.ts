@@ -12,6 +12,25 @@ export type AiCallOutcome<T> =
 
 const realSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Runs `sleep(ms)` but resolves early the moment `signal` aborts, so a cancelled Run does not
+ *  sit out the rest of a rate-limit backoff or provider cooldown it will discard anyway. */
+function sleepUnlessAborted(
+  sleep: (ms: number) => Promise<void>,
+  ms: number,
+  signal?: AbortSignal
+): Promise<void> {
+  if (!signal) return sleep(ms);
+  if (signal.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const onAbort = () => resolve();
+    signal.addEventListener('abort', onAbort, { once: true });
+    sleep(ms).then(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    });
+  });
+}
+
 // `executePrompt.ts`'s two `callAiWithRetry` call sites never pass `options.sleep` — their own
 // signatures are the plan's pinned public API and have no seam for it — so a suite that drives a
 // real 429 through the full executePrompt/runLoop path (rather than calling `callAiWithRetry`
@@ -43,23 +62,37 @@ function getRetryAfterMs(error: unknown): number | undefined {
   return retryAfterSeconds * 1000;
 }
 
+export class CollectionRunCancelledError extends Error {
+  constructor() {
+    super('Collection Run was cancelled');
+    this.name = 'CollectionRunCancelledError';
+  }
+}
+
 /** Every LLM call in a Collection Run goes through here: provider cooldown, then the global
  *  limiter, then classification via `toAiError()`. `RATE_LIMITED` retries with exponential
  *  backoff up to `maxAttempts` and opens a cooldown for that provider; an ungrounded Google
  *  response (issue 25) retries immediately, also up to `maxAttempts`; anything else fails on the
  *  first attempt with no retry. Returns an outcome rather than throwing so the caller can record
- *  an honest `attempts` and `error` on the item row. */
+ *  an honest `attempts` and `error` on the item row.
+ *
+ *  `options.signal`, when given, is checked before every cooldown/backoff wait and before every
+ *  attempt: an already-aborted signal short-circuits the retry loop instead of sitting out a wait
+ *  it will discard anyway. It is not forwarded into `call` itself — callers that want the
+ *  in-flight request aborted too must close over the same signal when they build `call`. */
 export async function callAiWithRetry<T>(
   provider: ProviderId,
   call: () => Promise<T>,
-  options?: { maxAttempts?: number; sleep?: (ms: number) => Promise<void> }
+  options?: { maxAttempts?: number; sleep?: (ms: number) => Promise<void>; signal?: AbortSignal }
 ): Promise<AiCallOutcome<T>> {
   const maxAttempts = options?.maxAttempts ?? MAX_ITEM_ATTEMPTS;
   const sleep = options?.sleep ?? defaultSleep;
+  const signal = options?.signal;
   let attempt = 0;
 
   while (true) {
     attempt += 1;
+    if (signal?.aborted) return { isCompleted: false, error: new CollectionRunCancelledError(), attempts: attempt };
     // Waits out any active per-provider cooldown before acquiring a limiter slot, so a
     // cooling-down provider does not occupy capacity another provider could use. Deliberately
     // uses `getRemainingCooldownMs` + the injectable `sleep` here rather than calling
@@ -69,7 +102,8 @@ export async function callAiWithRetry<T>(
     // cooldown even when a test injects a no-op `sleep`. Production behaviour is unchanged since
     // the default `sleep` is a real `setTimeout`.
     const remainingCooldownMs = getRemainingCooldownMs(provider);
-    if (remainingCooldownMs) await sleep(remainingCooldownMs);
+    if (remainingCooldownMs) await sleepUnlessAborted(sleep, remainingCooldownMs, signal);
+    if (signal?.aborted) return { isCompleted: false, error: new CollectionRunCancelledError(), attempts: attempt };
     try {
       const value = await aiCallLimiter.run(call);
       return { isCompleted: true, value, attempts: attempt };
@@ -80,7 +114,7 @@ export async function callAiWithRetry<T>(
       const isRateLimited = aiError?.code === 'RATE_LIMITED';
       if (isRateLimited && attempt < maxAttempts) {
         startProviderCooldown(provider, getRetryAfterMs(rawError));
-        await sleep(RATE_LIMIT_BACKOFF_BASE_MS * 2 ** (attempt - 1));
+        await sleepUnlessAborted(sleep, RATE_LIMIT_BACKOFF_BASE_MS * 2 ** (attempt - 1), signal);
         continue;
       }
       // An ungrounded response is a per-call coin flip by the model, not a sign the provider is

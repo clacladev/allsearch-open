@@ -12,13 +12,15 @@ const MODEL_ID = 'gpt-5.6-luna';
 
 export async function getPromptResponseWithChatGPT(
   prompt: string,
-  targetLocation?: string | null
+  targetLocation?: string | null,
+  signal?: AbortSignal
 ) {
   const userLocation = parseTargetLocation(targetLocation);
   try {
     return generateText({
       model: await openaiModel(MODEL_ID),
       prompt,
+      abortSignal: signal,
       providerOptions: {
         openai: {
           maxToolCalls: 1,

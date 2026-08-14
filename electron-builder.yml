@@ -14,6 +14,7 @@ extraResources:
 asar: true
 publish: never
 mac:
+  icon: resources/icon.icns
   target:
     - target: dmg
       arch:

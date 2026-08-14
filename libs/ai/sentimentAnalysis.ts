@@ -35,7 +35,8 @@ Rules:
 
 export async function analyzeResponseSentiment(
   responseText: string,
-  brands: Array<{ id: string; name: string }>
+  brands: Array<{ id: string; name: string }>,
+  signal?: AbortSignal
 ): Promise<BrandsSentiment> {
   const brandListLines = brands.map((b) => `- ID: ${b.id}, Name: ${b.name}`).join('\n');
   const prompt = `## Brands\n${brandListLines}\n\n## Text to analyze\n${responseText}`;
@@ -46,6 +47,7 @@ export async function analyzeResponseSentiment(
       output: Output.object({ schema: Schema }),
       system: SYSTEM_PROMPT,
       prompt,
+      abortSignal: signal,
     });
 
     const result: BrandsSentiment = {};
