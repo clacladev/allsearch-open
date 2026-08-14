@@ -2,8 +2,8 @@
 
 AllSearch Local vendors generated source from the following MIT/ISC-licensed
 projects into `components/ui/` and `libs/utils/`. This is attribution, not a
-legal license review — local product-asset provenance and explicit maintainer
-public-release signoff remain required under ADR 0005 and issue 22.
+legal license review. Local product-asset provenance was reviewed and the
+maintainer gave explicit public-release signoff on 2026-08-14 (ADR 0005, issue 22).
 
 ## shadcn/ui
 
@@ -29,3 +29,11 @@ Exact generated file inventory, versions, and generation dates are tracked in
 `.scratch/untitled-ui-to-shadcn/inventory.md` ("Generated-source ledger").
 Deliverable 10 removed the legacy Untitled UI source and direct package
 dependencies; no Untitled notice remains required for shipped source.
+
+## Product assets
+
+The unused SaaS-era marketing assets under `public/index/` (landing page,
+pricing, testimonials, AI-provider logos) have been removed. The only assets
+remaining there are `dashboard-desktop-light.webp` and
+`dashboard-desktop-dark.webp`, first-party screenshots of this product's own
+dashboard used in onboarding — not third-party content.
