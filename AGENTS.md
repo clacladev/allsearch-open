@@ -27,17 +27,11 @@ Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/
 
 ## Publishing
 
-`"private": true` was the guard against an accidental publish while the Untitled UI replacement
-(ADR 0005) and the asset-provenance gate (issue 22) were open. The maintainer reviewed both, gave
-explicit public-release signoff, and removed the guard by hand on 2026-08-14 — this repo is no
-longer private-by-policy.
-
-- Publishing a version to npm (`npm publish`) is still the maintainer's own deliberate action, not
+- Publishing a version to npm (`npm publish`) is the maintainer's own deliberate action, not
   something an agent runs unprompted. Only do it if explicitly asked to in the session.
 - `bun run build:package` and `npm pack` remain the packaging steps for verifying the CLI locally
   without publishing. See the README's Packaging note for the actual publish steps.
-- Before this guard was removed, `bunx allsearch` could not resolve at all. It resolves once a
-  version has actually been published — the guard's removal alone does not publish anything.
+- `bunx allsearch` only resolves once a version has actually been published to npm.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -3,14 +3,14 @@
 ## Status
 
 Superseded in part on 2026-08-14: the maintainer authorized starting the
-Electron shell (issue 24) as a starting point, ahead of the adoption evidence
-this ADR originally called for. The sequencing argument below (forced private
-phase, non-technical reach not yet known to be the bottleneck) no longer gates
-*starting* the work — it was a reason to wait, not a technical objection, and
-the maintainer chose to stop waiting. The technology choice — **Electron
-running the standalone Next.js server on localhost, not Tauri, not Nextron** —
-is unchanged; the rest of this document, including the rejected options below,
-still holds.
+Electron shell as a starting point, ahead of the adoption evidence this ADR
+originally called for, and the repository has since gone public. The
+sequencing argument below (forced private phase, non-technical reach not yet
+known to be the bottleneck) no longer applies — it was a reason to wait, not a
+technical objection, and the maintainer chose to stop waiting. The technology
+choice — **Electron running the standalone Next.js server on localhost, not
+Tauri, not Nextron** — is unchanged; the rest of this document, including the
+rejected options below, still holds.
 
 AllSearch needs a JS server at runtime (RSC, route handlers, streaming),
 so every packaging option reduces to "a webview or browser plus a Node process".
@@ -18,13 +18,13 @@ For the first version the browser is the user's own, started by a CLI that boots
 the Next.js server on a free port and opens the default browser at it. No desktop
 shell is built yet.
 
-The sequencing argument is decisive: the repository cannot go public until
-Untitled UI is replaced (ADR 0005), so there is a forced private phase during
-which every user is either us or a deliberate tester. The packaging decision does
-not need making until public launch, by which point we will know whether reach to
-non-technical users is actually the bottleneck rather than assuming it. ComfyUI,
-Jupyter, Open WebUI and Drizzle Studio all serve large non-developer populations
-through exactly this flow.
+The sequencing argument was decisive at the time: the repository could not go
+public until its UI library was replaced, so there was a forced private phase
+during which every user was either us or a deliberate tester. The packaging
+decision did not need making until public launch, by which point we would know
+whether reach to non-technical users was actually the bottleneck rather than
+assuming it. ComfyUI, Jupyter, Open WebUI and Drizzle Studio all serve large
+non-developer populations through exactly this flow.
 
 When a desktop shell is built, it will be **Electron running the standalone
 Next.js server on localhost**, not Tauri.
