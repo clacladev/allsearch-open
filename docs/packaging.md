@@ -36,6 +36,15 @@ bun run build:desktop       # Build unsigned Apple-Silicon DMG in release/deskto
 The desktop build and CLI share the local server runtime and database lock. The
 desktop release is an unsigned Apple-Silicon DMG.
 
+Electron's own `postinstall` (which downloads and unpacks `Electron.app` into
+`node_modules/electron`) silently hangs on Node.js 26: `extract-zip` stalls
+after the first file and the process exits 0 as if nothing were wrong, leaving
+`node_modules/electron` without a real binary and `start:desktop` failing with
+"Electron failed to install correctly". It works on Node 24. A `.node-version`
+file pins this repo to 24.18.0; run `fnm use` (or let fnm's shell hook pick it
+up automatically) before installing if `node_modules/electron` ever needs a
+fresh download.
+
 ## Publish to npm
 
 Publishing is a deliberate maintainer action. Before publishing, set a new
