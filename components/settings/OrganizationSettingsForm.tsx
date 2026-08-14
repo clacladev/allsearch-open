@@ -25,8 +25,8 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 
-/** The Organization is a single settings row describing who the operator is, not a tenant
- * (ADR 0003). It is edited from two places — the app-level Settings screen and the per-Project
+/** The Organization is a single settings row describing who the operator is, not a tenant.
+ * It is edited from two places — the app-level Settings screen and the per-Project
  * settings tab — so the form lives here rather than under either route. */
 export default function OrganizationSettingsForm() {
   const { organization, setOrganization } = usePrivateLayoutContext();
