@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -18,6 +18,6 @@ test('desktop shell loads the local app and keeps the configured database path',
     await expect(page.locator('body')).not.toBeEmpty();
   } finally {
     await app.close();
-    Bun.spawnSync(['rm', '-rf', directory]);
+    rmSync(directory, { recursive: true, force: true });
   }
 });
