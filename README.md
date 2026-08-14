@@ -199,9 +199,9 @@ Conventions: [`docs/development-guidelines.md`](./docs/development-guidelines.md
 under `.next/standalone/`, the CLI bundle at `dist/cli.mjs`, and the migrations under `drizzle/`.
 `npm pack` (via `prepack`) runs it for you.
 
-**The package is not published, and is marked `private` so it cannot be published by accident.**
-Publishing is a deliberate, manual step the maintainer takes at the end of the process. Until
-then `bunx allsearch` does not resolve — build and pack locally to try the CLI:
+The package is not published yet, though it is no longer marked `private`. Publishing is a
+deliberate, manual maintainer action; until a version is published, `bunx allsearch` does not
+resolve. Build and pack locally to try the CLI:
 
 ```bash
 bun run build:package && bun run start:cli
@@ -210,6 +210,16 @@ bun run build:package && bun run start:cli
 The Electron desktop build and the retained CLI share the same local server runtime and database
 lock. The desktop release is currently an unsigned Apple-Silicon DMG only; publishing remains a
 manual maintainer action.
+
+### Publish to npm
+
+```bash
+npm login
+npm publish
+```
+
+`npm publish` runs `prepack` (`bun run build:package`) automatically. Bump the version in
+`package.json` before every publish after the first, because npm rejects an existing version.
 
 ## Licence
 

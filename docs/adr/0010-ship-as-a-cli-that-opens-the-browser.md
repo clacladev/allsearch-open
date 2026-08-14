@@ -1,5 +1,17 @@
 # Ship as a CLI that opens the browser; defer the desktop shell
 
+## Status
+
+Superseded in part on 2026-08-14: the maintainer authorized starting the
+Electron shell (issue 24) as a starting point, ahead of the adoption evidence
+this ADR originally called for. The sequencing argument below (forced private
+phase, non-technical reach not yet known to be the bottleneck) no longer gates
+*starting* the work — it was a reason to wait, not a technical objection, and
+the maintainer chose to stop waiting. The technology choice — **Electron
+running the standalone Next.js server on localhost, not Tauri, not Nextron** —
+is unchanged; the rest of this document, including the rejected options below,
+still holds.
+
 AllSearch Local needs a JS server at runtime (RSC, route handlers, streaming),
 so every packaging option reduces to "a webview or browser plus a Node process".
 For the first version the browser is the user's own, started by a CLI that boots
