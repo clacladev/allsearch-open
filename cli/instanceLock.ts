@@ -1,8 +1,10 @@
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 
 /** What a running instance records so a second one can explain itself to the user. */
 export type InstanceLockRecord = {
   pid: number;
+  /** Launcher that owns the server process. The server exits when this process dies. */
+  parentPid?: number;
   port: number;
   url: string;
   startedAt: string;
@@ -47,12 +49,32 @@ export function readInstanceLock(lockPath: string): InstanceLockRecord | undefin
     if (typeof record.pid !== 'number' || typeof record.url !== 'string') return undefined;
     return {
       pid: record.pid,
+      parentPid: typeof record.parentPid === 'number' ? record.parentPid : undefined,
       port: typeof record.port === 'number' ? record.port : 0,
       url: record.url,
       startedAt: typeof record.startedAt === 'string' ? record.startedAt : '',
     };
   } catch {
     return undefined;
+  }
+}
+
+/** Transfers a startup lock from a launcher to its server child. The child is the durable owner:
+ * a force-killed launcher cannot leave a live SQLite writer behind a lock that looks stale. */
+export function transferInstanceLock(lockPath: string, fromPid: number, record: InstanceLockRecord): boolean {
+  const temporaryPath = `${lockPath}.${record.pid}.transfer`;
+  try {
+    const existing = readInstanceLock(lockPath);
+    if (!existing || existing.pid !== fromPid) return false;
+    writeFileSync(temporaryPath, `${JSON.stringify(record, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+    // Rename replaces the file atomically, so another launcher sees either the startup owner or
+    // the server child — never a partially-written record it could mistakenly reclaim.
+    renameSync(temporaryPath, lockPath);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(temporaryPath, { force: true });
   }
 }
 

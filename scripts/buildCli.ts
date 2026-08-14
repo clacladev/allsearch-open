@@ -36,21 +36,20 @@ const DIST_DIR = join(REPO_ROOT, 'dist');
  * pruned by default instead of silently shipping. The entries are: the compiled server and its
  * entry point, the `package.json` Next writes beside it (which fixes the module type the server
  * is loaded as), the pruned `node_modules` the trace produced, the static assets the server
- * serves from disk, and the migration SQL `migrateDatabase` reads at boot. */
+ * serves from disk. Migration SQL is deliberately kept at the package root, outside the
+ * standalone runtime tree, and the launcher passes that path to the server explicitly. */
 const STANDALONE_KEEP = new Set([
   '.next',
   'node_modules',
   'package.json',
   'public',
   'server.js',
-  'drizzle',
 ]);
 
 export async function main(): Promise<void> {
   requireNextBuild();
   await bundleCli();
-  copyStaticAssets();
-  pruneStandalone();
+  prepareStandaloneRuntimeAssets();
   console.log('build:cli: done — run `bunx allsearch` (or `node dist/cli.mjs`) to start the app.');
 }
 
@@ -97,6 +96,14 @@ async function bundleCli(): Promise<void> {
   // executable or the shell reports "permission denied" instead of running it.
   await Bun.$`chmod +x ${join(DIST_DIR, 'cli.mjs')}`;
   console.log(`build:cli: bundled cli/index.ts -> ${join(DIST_DIR, 'cli.mjs')}`);
+}
+
+/** Adds the assets Next's standalone trace intentionally omits, then removes everything that is
+ * not required to run that server. Both the CLI package and desktop resources consume this exact
+ * tree, so keeping the preparation here prevents their runtime contents from drifting. */
+export function prepareStandaloneRuntimeAssets(): void {
+  copyStaticAssets();
+  pruneStandalone();
 }
 
 function copyStaticAssets(): void {

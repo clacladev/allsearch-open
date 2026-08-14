@@ -28,11 +28,12 @@ open release/desktop/AllSearch-*.dmg
 
 The DMG is intentionally unsigned and not notarized. macOS Gatekeeper will warn the first time it
 opens; use Finder's **Open** action (or System Settings → Privacy & Security → **Open Anyway**) only
-when you built or received the DMG from a source you trust. The desktop window runs the same
+when you built or received the DMG from a source you trust. The Electron window runs the same
 loopback-only server and uses the same SQLite database path as the CLI, so do not run both at once.
 
-Either boots the app's own server on a free port and opens your browser at it. The URL is printed
-so you can reopen it later. Press Ctrl-C to quit.
+The CLI boots the app's own server on a free port, prints the URL, and opens it in your default
+browser (unless `--no-open` is used). The desktop app instead opens that URL in its Electron
+window. Press Ctrl-C to stop the CLI; close the Electron window to stop the desktop app.
 
 | Flag                  | Effect                                     |
 | --------------------- | ------------------------------------------ |
@@ -91,8 +92,10 @@ After seeding, `bun dev` loads the dashboard with sample Projects — no onboard
 | `bun build` / `bun start` | Production build and serve                          |
 | `bun run build:package`   | Production build + CLI bundle, ready to `npm pack`  |
 | `bun run start:cli`       | Run the built CLI exactly as `bunx allsearch` would |
-| `bun run build:desktop`   | Build unsigned arm64 macOS DMG (Electron)          |
-| `bun run start:desktop`   | Launch staged Electron app after `build:desktop:stage` |
+| `bun run build:desktop:stage` | Build and stage Electron resources for local launch |
+| `bun run start:desktop`   | Launch the staged Electron app                         |
+| `bun run test:desktop`    | Stage package assets and run the Electron Playwright test |
+| `bun run build:desktop`   | Build unsigned arm64 macOS DMG                           |
 | `bun run db:seed:demo`    | Migrate + demo fixture without starting Next        |
 
 Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars are documented in `.env.example`.
@@ -123,6 +126,10 @@ bun test:coverage
 bun test:e2e          # Playwright; builds the app and starts isolated servers automatically
 bun test:e2e:ai       # On-demand AI-tagged Playwright specs
 bun test:e2e:ui
+bun run build:desktop:stage # build app + stage Electron resources locally
+bun run start:desktop       # open the staged Electron window
+bun run test:desktop        # Electron runtime/asset/cleanup coverage
+bun run build:desktop       # unsigned Apple-Silicon DMG under release/desktop/
 bun run db:generate   # drizzle-kit generate from libs/database/schema.ts
 bun run db:snapshot   # snapshot live DB → demo fixture (maintainers)
 bun run verify:providers  # smoke-check configured providers
