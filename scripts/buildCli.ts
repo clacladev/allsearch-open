@@ -81,6 +81,18 @@ async function bundleCli(): Promise<void> {
     throw new Error('build:cli: bundling cli/index.ts failed.');
   }
 
+  const runner = await Bun.build({
+    entrypoints: [join(REPO_ROOT, 'cli', 'serverRunner.ts')],
+    outdir: DIST_DIR,
+    naming: 'serverRunner.cjs',
+    target: 'node',
+    format: 'cjs',
+  });
+  if (!runner.success) {
+    for (const log of runner.logs) console.error(log);
+    throw new Error('build:cli: bundling cli/serverRunner.ts failed.');
+  }
+
   // `bin` entries are symlinked, not copied, by npm/bun — the link target itself has to be
   // executable or the shell reports "permission denied" instead of running it.
   await Bun.$`chmod +x ${join(DIST_DIR, 'cli.mjs')}`;
