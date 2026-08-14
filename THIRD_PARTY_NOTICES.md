@@ -1,6 +1,6 @@
 # Third-party notices
 
-AllSearch Local vendors generated source from the following MIT/ISC-licensed
+AllSearch vendors generated source from the following MIT/ISC-licensed
 projects into `components/ui/` and `libs/utils/`. This is attribution, not a
 legal license review. Local product-asset provenance was reviewed and the
 maintainer gave explicit public-release signoff on 2026-08-14 (ADR 0005, issue 22).

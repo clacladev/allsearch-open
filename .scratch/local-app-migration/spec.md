@@ -1,4 +1,4 @@
-# Spec: AllSearch Local
+# Spec: AllSearch
 
 Port the AllSearch SaaS (`clacladev/allsearch`, Next.js 16 + Supabase + Vercel)
 into a single-user application that runs entirely on the user's own machine,
