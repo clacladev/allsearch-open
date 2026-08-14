@@ -2,7 +2,7 @@
   "name": "allsearch",
   "version": "0.1.0",
   "description": "Track how AI chatbots talk about your brand. Runs entirely on your own machine, against your own AI provider keys.",
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "main": "dist/desktop/main.cjs",
   "bin": {
