@@ -12,7 +12,7 @@ running the standalone Next.js server on localhost, not Tauri, not Nextron** —
 is unchanged; the rest of this document, including the rejected options below,
 still holds.
 
-AllSearch Local needs a JS server at runtime (RSC, route handlers, streaming),
+AllSearch needs a JS server at runtime (RSC, route handlers, streaming),
 so every packaging option reduces to "a webview or browser plus a Node process".
 For the first version the browser is the user's own, started by a CLI that boots
 the Next.js server on a free port and opens the default browser at it. No desktop

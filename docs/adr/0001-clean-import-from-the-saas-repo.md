@@ -1,6 +1,6 @@
 # Clean import from the SaaS repo, no shared history
 
-AllSearch Local is a port of the AllSearch SaaS (`clacladev/allsearch`), roughly
+AllSearch is a port of the AllSearch SaaS (`clacladev/allsearch`), roughly
 80% of whose 57k lines carry over unchanged, so starting from a fresh scaffold
 was never sensible. We import the working tree as a single commit rather than
 grafting the SaaS's 325 commits, because the SaaS is frozen and being sunset:

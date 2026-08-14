@@ -1,82 +1,73 @@
-# AllSearch Local
+# AllSearch
 
-Local-first desktop app that tracks how often a Brand is mentioned and cited by AI chatbots (ChatGPT, Google AI Mode, Perplexity), and turns gaps into content recommendations.
-
-Single-user: data stays on the machine (SQLite). AI calls use the operator’s own provider keys (entered in Settings), no account, no server we operate. Domain language lives in [`CONTEXT.md`](./CONTEXT.md).
+AllSearch tracks how often a Brand is mentioned and cited by AI chatbots,
+then turns gaps into content recommendations. It is single-user and local-first:
+your data stays in a SQLite database on your machine, and AI calls use provider
+keys you enter in **Settings**.
 
 ## Before you start
 
-- **A Google AI key alone is a fully working product.** OpenAI and Perplexity are optional — each
-  one just adds another Chatbot to track (ADR 0004).
-- **Collection is manual and weekly, not automatic.** There's no cron: the app tells you when data
-  is stale and you press one button (ADR 0002).
-- **Collection costs you real money** on your own provider key, and the app does not show a price
-  or running total — the amounts are small, but nothing stops you spending more than you meant to
-  (ADR 0007).
-- **A week you don't run is gone for good.** You can't ask a chatbot what it said last Tuesday, so
-  the trend charts will have honest gaps rather than invented data (ADR 0002).
+- A Google AI key is enough to use the app. OpenAI and Perplexity keys are optional
+  and add those chatbots to your tracking.
+- Collection Runs are manual. Starting one uses your provider keys and may incur
+  provider charges.
+- Missing a collection week leaves a gap in the historical data; the app does not
+  reconstruct past chatbot answers.
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (install + scripts + tests)
-- Node.js 22+ (runtime for the Next.js server — see ADR 0010)
-- Optional: provider API keys (OpenAI, Google, Perplexity) for live collection
+- [Bun](https://bun.sh)
+- Node.js 22.5 or later on your `PATH`
+- Optional provider API keys for live collection (OpenAI, Google, and Perplexity)
 
-## Run it
+## Run the CLI app
+
+From a source checkout, build the package and launch it:
 
 ```bash
-bun run build:package && bun run start:cli   # from a checkout, today
-bunx allsearch                               # once published — see Packaging note
+bun install
+bun run build:package
+bun run start:cli
 ```
 
-### macOS desktop app
+Once a version has been published to npm, you can instead run:
 
-For an Apple-Silicon desktop build from a checkout:
+```bash
+bunx allsearch
+```
+
+The CLI starts a server on a free local port, prints its URL, and opens your
+default browser. Press Ctrl-C to stop it.
+
+| Flag                  | Effect                                     |
+| --------------------- | ------------------------------------------ |
+| `--port <n>`          | Use exactly this port; fail if it is taken |
+| `--no-open`           | Print the URL without opening a browser    |
+| `--version`, `--help` | Show version or help                        |
+
+The server binds to `127.0.0.1` only. One app instance may use a database at a
+time; a second instance is refused to protect SQLite from concurrent writers.
+Stopping the app during a Collection Run safely returns that run to `pending`,
+so it resumes on the next launch.
+
+## Run the macOS desktop app
+
+Build an Apple-Silicon desktop app from a source checkout:
 
 ```bash
 bun run build:desktop
 open release/desktop/AllSearch-*.dmg
 ```
 
-The DMG is intentionally unsigned and not notarized. macOS Gatekeeper will warn the first time it
-opens; use Finder's **Open** action (or System Settings → Privacy & Security → **Open Anyway**) only
-when you built or received the DMG from a source you trust. The Electron window runs the same
-loopback-only server and uses the same SQLite database path as the CLI, so do not run both at once.
+The DMG is unsigned and not notarized. If macOS blocks it, use Finder’s
+**Open** action (or System Settings → Privacy & Security → **Open Anyway**) only
+when you built or received it from a source you trust. The desktop app runs the
+same loopback-only server and uses the same database as the CLI, so do not run
+both at once.
 
-The CLI boots the app's own server on a free port, prints the URL, and opens it in your default
-browser (unless `--no-open` is used). The desktop app instead opens that URL in its Electron
-window. Press Ctrl-C to stop the CLI; close the Electron window to stop the desktop app.
+## Your data
 
-| Flag                  | Effect                                     |
-| --------------------- | ------------------------------------------ |
-| `--port <n>`          | Use exactly this port; fail if it is taken |
-| `--no-open`           | Print the URL, don't open a browser        |
-| `--version`, `--help` | As expected                                |
-
-Notes:
-
-- The server listens on `127.0.0.1` only. There is no login anywhere in the app and the database
-  holds your provider keys, so it is never exposed to your network.
-- Only one instance can run against a given database — a second is refused rather than allowed to
-  race the first. Two writers on one SQLite file can corrupt it.
-- Quitting during a Collection Run is safe: the run is returned to `pending` and resumes the next
-  time you start the app.
-- Requires Node.js 22.5+ on PATH (`node:sqlite`). `bunx` and `npx` both run it under Node — see
-  ADR 0010 for why the server does not run under Bun.
-
-## Get started (development)
-
-```bash
-bun install
-bun run db:seed:demo   # migrate + load demo fixture (skip if you want empty onboarding)
-bun dev                # http://localhost:3000
-```
-
-Open the URL Next prints (default `http://localhost:3000`). Migrations run on server boot via `instrumentation.ts`.
-
-### Database location
-
-Default path:
+By default, the database is stored here:
 
 | Platform | Path                                                                               |
 | -------- | ---------------------------------------------------------------------------------- |
@@ -84,146 +75,15 @@ Default path:
 | Windows  | `%APPDATA%\AllSearch\allsearch.db`                                                 |
 | Linux    | `$XDG_DATA_HOME/AllSearch/allsearch.db` or `~/.local/share/AllSearch/allsearch.db` |
 
-Override with `ALLSEARCH_DB_PATH` (used by tests and local experiments). See `.env.example`.
+Set `ALLSEARCH_DB_PATH` to use another database location. Provider keys are
+stored in this database after you add them in **Settings**.
 
-### Demo data
+## More documentation
 
-```bash
-bun run db:seed:demo           # refuses if the DB already has user data
-bun run db:seed:demo -- --force  # wipe user rows, then re-seed
-```
-
-After seeding, `bun dev` loads the dashboard with sample Projects — no onboarding required.
-
-## Run the application
-
-| Command                   | Purpose                                             |
-| ------------------------- | --------------------------------------------------- |
-| `bun dev`                 | Dev server (HTTP, hot reload)                       |
-| `bun dev:debug`           | Dev server with Node inspector                      |
-| `bun build` / `bun start` | Production build and serve                          |
-| `bun run build:package`   | Production build + CLI bundle, ready to `npm pack`  |
-| `bun run start:cli`       | Run the built CLI exactly as `bunx allsearch` would |
-| `bun run build:desktop:stage` | Build and stage Electron resources for local launch |
-| `bun run start:desktop`   | Launch the staged Electron app                         |
-| `bun run test:desktop`    | Stage package assets and run the Electron Playwright test |
-| `bun run build:desktop`   | Build unsigned arm64 macOS DMG                           |
-| `bun run db:seed:demo`    | Migrate + demo fixture without starting Next        |
-
-Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars are documented in `.env.example`.
-
-## Develop
-
-### Stack
-
-| Layer   | Choice                                                           |
-| ------- | ---------------------------------------------------------------- |
-| App     | Next.js 16 (App Router), React 19                                |
-| UI      | Tailwind CSS v4, vendored shadcn/ui (Base UI) / React Aria Components |
-| DB      | SQLite via Drizzle (`libs/database/`, `drizzle/`)                |
-| AI      | Vercel AI SDK + direct OpenAI / Google / Perplexity keys         |
-| Tooling | Bun (`install`, `test`, scripts); Node for the long-lived server |
-
-More detail: [`docs/tech-stack.md`](./docs/tech-stack.md), ADRs under [`docs/adr/`](./docs/adr/).
-
-### Everyday commands
-
-```bash
-bun lint              # ESLint
-bun tsc               # Typecheck
-bun prettier          # Format
-bun test              # Unit tests (bun test)
-bun test:watch
-bun test:coverage
-bun test:e2e          # Playwright; builds the app and starts isolated servers automatically
-bun test:e2e:ai       # On-demand AI-tagged Playwright specs
-bun test:e2e:ui
-bun run build:desktop:stage # build app + stage Electron resources locally
-bun run start:desktop       # open the staged Electron window
-bun run test:desktop        # Electron runtime/asset/cleanup coverage
-bun run build:desktop       # unsigned Apple-Silicon DMG under release/desktop/
-bun run db:generate   # drizzle-kit generate from libs/database/schema.ts
-bun run db:snapshot   # snapshot live DB → demo fixture (maintainers)
-bun run verify:providers  # smoke-check configured providers
-```
-
-Full list: [`docs/commands.md`](./docs/commands.md).
-
-### End-to-end tests
-
-`bun test:e2e` runs the continuously-green browser suite: it builds a golden SQLite database from
-`scripts/fixtures/demo-data.json`, then each test copies that database and starts its own local
-Next.js server. No dev server, login, or provider key is needed, and tests can run in parallel.
-
-Specs tagged `@ai` are excluded from that default suite because they exercise generation flows.
-Run them on demand with `bun test:e2e:ai` and a live provider key when the spec requires one; this
-keeps provider costs and flaky network calls out of the normal test signal.
-
-### Layout
-
-```
-app/            # Routes: (private), (new-project), api/
-cli/            # `bunx allsearch`: port choice, browser, single-instance lock
-components/     # application, base, foundations, collection-run
-libs/
-  database/     # schema, client, migrate, table queries
-  collection/   # Collection Run loop and progress
-  ai/           # provider calls and generation
-drizzle/        # SQL migrations (applied on boot)
-scripts/        # db seed/snapshot, verifyProviders, buildCli, buildDesktop
-desktop/         # Electron main process for the packaged local app
-tests/          # unit + e2e
-docs/           # stack, patterns, ADRs, agent tracker docs
-CONTEXT.md      # ubiquitous language
-DESIGN.md       # UI system
-```
-
-Conventions: [`docs/development-guidelines.md`](./docs/development-guidelines.md), [`docs/patterns.md`](./docs/patterns.md), [`docs/project-structure.md`](./docs/project-structure.md).
-
-### Schema changes
-
-1. Edit `libs/database/schema.ts`
-2. `bun run db:generate`
-3. Review SQL under `drizzle/`
-4. Boot the app (or `db:seed:demo`) so `migrateDatabase` applies forward-only migrations (with backup — ADR 0006)
-
-### Agent / product context
-
-- [`CONTEXT.md`](./CONTEXT.md) — domain terms (Project, Collection Run, Visibility, …)
-- [`AGENTS.md`](./AGENTS.md) — issue tracker under `.scratch/`, triage labels, domain docs
-- [`docs/adr/`](./docs/adr/) — architectural decisions (SQLite, no gateway keys, CLI-first ship, …)
-
-## Packaging note
-
-`bun run build:package` produces everything the npm package ships: the Next.js standalone server
-under `.next/standalone/`, the CLI bundle at `dist/cli.mjs`, and the migrations under `drizzle/`.
-`npm pack` (via `prepack`) runs it for you.
-
-The package is not published yet, though it is no longer marked `private`. Publishing is a
-deliberate, manual maintainer action; until a version is published, `bunx allsearch` does not
-resolve. Build and pack locally to try the CLI:
-
-```bash
-bun run build:package && bun run start:cli
-```
-
-The Electron desktop build and the retained CLI share the same local server runtime and database
-lock. The desktop release is currently an unsigned Apple-Silicon DMG only; publishing remains a
-manual maintainer action.
-
-### Publish to npm
-
-```bash
-npm login
-npm publish
-```
-
-`npm publish` runs `prepack` (`bun run build:package`) automatically. Bump the version in
-`package.json` before every publish after the first, because npm rejects an existing version.
+- [Development guide](./docs/development.md) — local development, tests, database work, and code conventions.
+- [Packaging and release guide](./docs/packaging.md) — package contents, local package checks, desktop staging, and npm publishing.
+- Architecture and domain: [tech stack](./docs/tech-stack.md), [project structure](./docs/project-structure.md), [domain language](./CONTEXT.md), and [architecture decisions](./docs/adr/).
 
 ## Licence
 
-[GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0-or-later). Chosen because AllSearch
-began as a hosted product (`clacladev/allsearch`) — the AGPL's network-use clause means a fork
-that's re-hosted as a service for others must also share its source, not just forks that get
-redistributed as code.
+[GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0-or-later).

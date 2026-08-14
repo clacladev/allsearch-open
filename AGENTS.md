@@ -2,7 +2,7 @@
 
 ## Product snapshot
 
-AllSearch **Local**: single-user, local-first port of AllSearch. SQLite + Drizzle, Next.js 16, Bun toolchain, operator-owned AI keys. Domain language: `CONTEXT.md`. Human README (setup / run / develop): `README.md`.
+AllSearch: single-user, local-first product. SQLite + Drizzle, Next.js 16, Bun toolchain, operator-owned AI keys. Domain language: `CONTEXT.md`. Human README (setup / run / develop): `README.md`.
 
 ## Agent skills
 
