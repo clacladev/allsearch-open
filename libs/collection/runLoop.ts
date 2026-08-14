@@ -31,6 +31,19 @@ import { executePrompt } from './executePrompt';
 // this guard just avoids the redundant work of running two loops when they share a module.
 let activeLoopPromise: Promise<void> | undefined;
 
+// One `AbortController` per Run currently executing in this process, keyed by Run id. Lets
+// `abortCollectionRun` reach into in-flight AI calls for a Run that is being cancelled — the
+// in-process guard above is the same kind of singleton, for the same reason (a single Node
+// process drives the whole loop; there is nothing distributed to coordinate).
+const runAbortControllers = new Map<string, AbortController>();
+
+/** Aborts in-flight AI calls for this Run, if it is currently executing in this process. A no-op
+ * for a Run that is `pending` (never claimed) or already finished — `cancelCollectionRun` handles
+ * those cases itself by other means. */
+export function abortCollectionRun(runId: string): void {
+  runAbortControllers.get(runId)?.abort();
+}
+
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -93,6 +106,8 @@ async function drainCollectionRuns(): Promise<void> {
 }
 
 async function executeCollectionRun(run: CollectionRunRow): Promise<void> {
+  const controller = new AbortController();
+  runAbortControllers.set(run.id, controller);
   try {
     const inFlightGroups = new Set<Promise<void>>();
     // Every Project this loop instance actually claims a group for, so `prompts_updated_at` can
@@ -117,7 +132,7 @@ async function executeCollectionRun(run: CollectionRunRow): Promise<void> {
         // the finish writes, even though its own try/catch contains a persistence failure) would
         // surface as an unhandled rejection rather than something `Promise.race`/`Promise.all`
         // below can observe safely.
-        const groupPromise: Promise<void> = executeGroup(run, group, items)
+        const groupPromise: Promise<void> = executeGroup(run, group, items, controller.signal)
           .catch((error) => console.error('Collection Run group failed', error))
           .finally(() => inFlightGroups.delete(groupPromise));
         inFlightGroups.add(groupPromise);
@@ -165,13 +180,16 @@ async function executeCollectionRun(run: CollectionRunRow): Promise<void> {
     // `running` — a Run already reopened by a retry, or already finalised by this same run loop on
     // a previous pass, must not be clobbered.
     await finishRunningCollectionRunRow(run.id, 'failed', getErrorMessage(error));
+  } finally {
+    runAbortControllers.delete(run.id);
   }
 }
 
 async function executeGroup(
   run: CollectionRunRow,
   group: PendingCollectionRunPromptGroup,
-  items: CollectionRunItemRow[]
+  items: CollectionRunItemRow[],
+  signal: AbortSignal
 ): Promise<void> {
   try {
     // The chatbot ids come from the CLAIMED rows, not the ones asked for — closing the window
@@ -187,15 +205,20 @@ async function executeGroup(
       projectId: group.projectId,
       chatbotIds,
       runId: run.id,
+      signal,
     });
 
     // `executePrompt` returns one outcome per requested chatbot id, in that same order, so
-    // `items[i]` and `outcomes[i]` line up positionally.
+    // `items[i]` and `outcomes[i]` line up positionally. A non-completed outcome while `signal` is
+    // aborted means the Run was cancelled out from under this group, not a genuine failure — that
+    // lands as `cancelled` so it reads the same as a pending item the cancel caught in time, and so
+    // it is not picked up by a later "retry failed items" pass.
     await Promise.all(
       items.map((item, index) => {
         const outcome = outcomes[index];
+        const status = outcome.isCompleted ? 'completed' : signal.aborted ? 'cancelled' : 'failed';
         return finishCollectionRunItemRow(item.id, {
-          status: outcome.isCompleted ? 'completed' : 'failed',
+          status,
           error: outcome.error,
           attemptsUsed: outcome.attempts,
         });

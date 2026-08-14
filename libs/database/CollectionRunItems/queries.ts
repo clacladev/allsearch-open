@@ -126,7 +126,9 @@ export async function resetFailedCollectionRunItemRows(
 }
 
 /** Stops new Prompts being claimed for this Run: every still-`pending` item is cancelled in one
- * statement. In-flight (`running`) items are left alone so they finish and are recorded normally. */
+ * statement. In-flight (`running`) items are left alone here — `cancelCollectionRun` (the only
+ * caller) separately aborts their AI calls, and `runLoop.ts`'s `executeGroup` is what records each
+ * one `cancelled` once its outcome comes back. */
 export async function cancelPendingCollectionRunItemRows(
   runId: string
 ): Promise<CollectionRunItemRow[]> {

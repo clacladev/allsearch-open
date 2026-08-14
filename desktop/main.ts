@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, nativeImage, shell } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { AllSearchRuntime } from '../cli/runtime';
+
+app.setName('AllSearch');
 
 let mainWindow: BrowserWindow | undefined;
 let runtime: AllSearchRuntime | undefined;
@@ -38,6 +40,9 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 async function start(): Promise<void> {
+  if (!app.isPackaged && process.platform === 'darwin') {
+    app.dock?.setIcon(nativeImage.createFromPath(join(packageRoot, 'resources', 'logo-1024.png')));
+  }
   runtime = new AllSearchRuntime({ packageRoot: runtimeRoot, runnerEntry, serverEntry });
   const server = await runtime.start();
   createWindow(server.url);
