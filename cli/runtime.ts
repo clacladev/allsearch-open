@@ -57,6 +57,7 @@ export class AllSearchRuntime {
         HOSTNAME: LOCALHOST,
         NEXT_MANUAL_SIG_HANDLE: '1',
         ALLSEARCH_DB_PATH: databasePath,
+        ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
         // The server starts from the standalone directory, while migrations intentionally remain
         // beside the packaged application root in the CLI and desktop bundles.
         ALLSEARCH_MIGRATIONS_DIR: process.env.ALLSEARCH_MIGRATIONS_DIR ?? join(this.packageRoot, 'drizzle'),

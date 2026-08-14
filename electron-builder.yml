@@ -5,6 +5,8 @@ directories:
 files:
   - dist/desktop/main.cjs
 extraResources:
+  - from: dist/desktop/serverRunner.cjs
+    to: serverRunner.cjs
   - from: dist/desktop/standalone
     to: standalone
   - from: dist/desktop/drizzle
