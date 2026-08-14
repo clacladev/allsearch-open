@@ -8,12 +8,38 @@ import { mockModuleForSuite } from '../moduleMocks';
 // after a short, real delay so calls genuinely overlap (case 3) or so a cancel can land mid-run
 // (case 5); it defaults to 0 (resolve on the next microtask) everywhere else.
 let aiDelayMs = 0;
-async function maybeDelay() {
-  if (aiDelayMs) await new Promise((resolve) => setTimeout(resolve, aiDelayMs));
+// Mirrors what a real `generateText({ abortSignal })` call does: resolves after `aiDelayMs`, or
+// rejects early the moment `signal` aborts — so the "cancel lands mid-run" case (case 5 below) can
+// exercise the real abort wiring instead of a fake that runs to completion regardless of cancel.
+async function maybeDelay(signal?: AbortSignal) {
+  if (!aiDelayMs) return;
+  if (!signal) {
+    await new Promise((resolve) => setTimeout(resolve, aiDelayMs));
+    return;
+  }
+  await new Promise<void>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'));
+      return;
+    }
+    const timer = setTimeout(resolve, aiDelayMs);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(new DOMException('Aborted', 'AbortError'));
+      },
+      { once: true }
+    );
+  });
 }
 
-const defaultChatGPTImpl = async (promptName: string) => {
-  await maybeDelay();
+const defaultChatGPTImpl = async (
+  promptName: string,
+  _targetLocation?: string | null,
+  signal?: AbortSignal
+) => {
+  await maybeDelay(signal);
   return {
     response: { modelId: 'chatgpt-model' },
     text: `chatgpt response for ${promptName}`,
@@ -21,8 +47,8 @@ const defaultChatGPTImpl = async (promptName: string) => {
     toolResults: [],
   };
 };
-const defaultGoogleAIModeImpl = async (promptName: string) => {
-  await maybeDelay();
+const defaultGoogleAIModeImpl = async (promptName: string, signal?: AbortSignal) => {
+  await maybeDelay(signal);
   return {
     response: { modelId: 'google-model' },
     text: `google response for ${promptName}`,
@@ -30,8 +56,8 @@ const defaultGoogleAIModeImpl = async (promptName: string) => {
     toolResults: [],
   };
 };
-const defaultPerplexityImpl = async (promptName: string) => {
-  await maybeDelay();
+const defaultPerplexityImpl = async (promptName: string, signal?: AbortSignal) => {
+  await maybeDelay(signal);
   return {
     response: { modelId: 'perplexity-model' },
     text: `perplexity response for ${promptName}`,
@@ -39,8 +65,12 @@ const defaultPerplexityImpl = async (promptName: string) => {
     toolResults: [],
   };
 };
-const defaultSentimentImpl = async () => {
-  await maybeDelay();
+const defaultSentimentImpl = async (
+  _text?: string,
+  _brands?: unknown,
+  signal?: AbortSignal
+) => {
+  await maybeDelay(signal);
   return {};
 };
 const defaultSourcesImpl = async () => [];
@@ -462,7 +492,7 @@ describe('issue 10 Done-when 4 — a provider 429 fails only the affected items 
 });
 
 describe('issue 10 — cancellation (non-Done-when case from the plan)', () => {
-  it('cancels pending items, still records the in-flight groups outcome, and ends the run cancelled', async () => {
+  it('cancels pending items and aborts in-flight groups too, ending the run cancelled with nothing completed', async () => {
     await setAllProviderKeys();
     const project = await createProject('Case5');
     const promptCount = MAX_CONCURRENT_PROMPT_GROUPS + 3;
@@ -474,7 +504,8 @@ describe('issue 10 — cancellation (non-Done-when case from the plan)', () => {
 
     ensureCollectionRunLoopIsRunning();
     // Long enough for the loop to claim its first batch of groups (fast, all-local SQLite writes)
-    // but well short of aiDelayMs, so some groups are provably still unclaimed when we cancel.
+    // but well short of aiDelayMs, so those groups are provably still `running` — not just the rest
+    // still `pending` — when we cancel.
     await new Promise((resolve) => setTimeout(resolve, 40));
 
     const cancelledRun = await cancelCollectionRun(run.id);
@@ -482,16 +513,16 @@ describe('issue 10 — cancellation (non-Done-when case from the plan)', () => {
 
     await waitForCollectionRunLoop();
 
+    // `cancelCollectionRun` aborts in-flight groups too (`abortCollectionRun`), not just the
+    // still-pending items — `maybeDelay`'s abort race means every claimed chatbot call rejects
+    // near-instantly instead of resolving at the full `aiDelayMs`, so nothing gets the chance to
+    // complete once cancel has landed.
     const items = await getItemsForRun(run.id);
-    const cancelledItems = items.filter((item) => item.status === 'cancelled');
-    const completedItems = items.filter((item) => item.status === 'completed');
-    expect(cancelledItems.length).toBeGreaterThan(0);
-    expect(completedItems.length).toBeGreaterThan(0);
-    expect(cancelledItems.length + completedItems.length).toBe(items.length);
+    expect(items.every((item) => item.status === 'cancelled')).toBe(true);
 
     const finishedRun = await getRun(run.id);
     expect(finishedRun?.status).toBe('cancelled');
-    expect(finishedRun?.items_completed).toBe(completedItems.length);
+    expect(finishedRun?.items_completed).toBe(0);
   });
 
   it('lands a never-started run cancelled itself, since no loop will ever claim it to finalise it', async () => {

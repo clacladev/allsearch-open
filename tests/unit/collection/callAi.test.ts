@@ -204,4 +204,50 @@ describe('callAiWithRetry', () => {
     );
     expect(Date.now() - start).toBeLessThan(200);
   });
+
+  it('fails immediately with no call at all when the signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    let callCount = 0;
+
+    const outcome = await callAiWithRetry(
+      'openai',
+      async () => {
+        callCount += 1;
+        return 'should never run';
+      },
+      { sleep: noopSleep, signal: controller.signal }
+    );
+
+    expect(outcome.isCompleted).toBe(false);
+    if (outcome.isCompleted) throw new Error('unreachable');
+    expect(callCount).toBe(0);
+    expect(outcome.error.name).toBe('CollectionRunCancelledError');
+  });
+
+  it('stops retrying once the signal aborts mid-backoff, without waiting out the real cooldown', async () => {
+    // No `sleep` override: this only stays fast if the abort genuinely short-circuits the wait
+    // rather than the retry loop happening to be quick on its own.
+    const controller = new AbortController();
+    let callCount = 0;
+    const start = Date.now();
+
+    const outcome = await callAiWithRetry(
+      'openai',
+      async () => {
+        callCount += 1;
+        if (callCount === 1) controller.abort();
+        throw rateLimitedError();
+      },
+      { signal: controller.signal }
+    );
+
+    expect(Date.now() - start).toBeLessThan(500);
+    expect(outcome.isCompleted).toBe(false);
+    if (outcome.isCompleted) throw new Error('unreachable');
+    // One real attempt (the abort fires inside it), then the retry loop bails on the aborted
+    // signal instead of sitting out RATE_LIMIT_BACKOFF_BASE_MS and trying again.
+    expect(callCount).toBe(1);
+    expect(outcome.error.name).toBe('CollectionRunCancelledError');
+  });
 });

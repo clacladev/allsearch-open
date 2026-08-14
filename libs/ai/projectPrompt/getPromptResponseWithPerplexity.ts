@@ -15,11 +15,12 @@ const MODEL_ID = 'sonar';
 // createPerplexity and perplexity, with zero occurrences of "location". So,
 // unlike the ChatGPT adapter, no targetLocation parameter is threaded through
 // here.
-export async function getPromptResponseWithPerplexity(prompt: string) {
+export async function getPromptResponseWithPerplexity(prompt: string, signal?: AbortSignal) {
   try {
     return generateText({
       model: await perplexityModel(MODEL_ID),
       prompt,
+      abortSignal: signal,
     });
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error)) logNoObjectGeneratedError(error);

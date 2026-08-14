@@ -34,26 +34,30 @@ export type ExecutePromptInput = {
    *  are not duplicated. */
   chatbotIds: ChatbotId[];
   runId: string;
+  /** Aborted when the Collection Run this Prompt belongs to is cancelled mid-flight — threaded all
+   *  the way to each provider's `generateText` call so a cancel actually stops an in-flight HTTP
+   *  request instead of only blocking new work from starting (`runLoop.ts`'s `abortCollectionRun`). */
+  signal: AbortSignal;
 };
 
 /** Executes one Prompt against the given Chatbots and persists the resulting Prompt Responses and
  *  Sources in a single batched insert. Returns one outcome per requested Chatbot. Never throws for
  *  a per-Chatbot failure; throws only if persistence itself fails. */
 export async function executePrompt(input: ExecutePromptInput): Promise<PromptChatbotOutcome[]> {
-  const { promptId, promptName, projectId, chatbotIds, runId } = input;
+  const { promptId, promptName, projectId, chatbotIds, runId, signal } = input;
   const { project, competitors } = await getProjectInfo(projectId);
   if (!project) throw new Error(`Project ${projectId} not found`);
 
   // Get responses from every requested chatbot (issue 09: a disabled chatbot must not be called)
   const chatbotCallers: Record<ChatbotId, () => Promise<ProcessPromptResponse>> = {
-    [ChatbotId.ChatGPT]: () => processPromptForChatGPT(promptName, project.target_location),
-    [ChatbotId.GoogleAIOverview]: () => processPromptForGoogleAIMode(promptName),
-    [ChatbotId.Perplexity]: () => processPromptForPerplexity(promptName),
+    [ChatbotId.ChatGPT]: () => processPromptForChatGPT(promptName, project.target_location, signal),
+    [ChatbotId.GoogleAIOverview]: () => processPromptForGoogleAIMode(promptName, signal),
+    [ChatbotId.Perplexity]: () => processPromptForPerplexity(promptName, signal),
   };
 
   const callResults = await Promise.all(
     chatbotIds.map((chatbotId) =>
-      callAiWithRetry(CHATBOT_PROVIDER[chatbotId], chatbotCallers[chatbotId])
+      callAiWithRetry(CHATBOT_PROVIDER[chatbotId], chatbotCallers[chatbotId], { signal })
     )
   );
 
@@ -76,7 +80,7 @@ export async function executePrompt(input: ExecutePromptInput): Promise<PromptCh
   const [brandIdsRankingResult, sourcesResult, sentimentsResult] = await Promise.allSettled([
     analysePromptResponsesForBrandRankings(responses, project, competitors),
     analysePromptResponsesSources(responses, project, competitors),
-    analysePromptResponsesSentiment(responses, project, competitors),
+    analysePromptResponsesSentiment(responses, project, competitors, signal),
   ]);
 
   const brandIdsRanking =
@@ -106,10 +110,11 @@ async function getProjectInfo(projectId: string) {
 
 async function processPromptForChatGPT(
   promptName: string,
-  targetLocation: string | null
+  targetLocation: string | null,
+  signal: AbortSignal
 ): Promise<ProcessPromptResponse> {
   try {
-    const response = await getPromptResponseWithChatGPT(promptName, targetLocation);
+    const response = await getPromptResponseWithChatGPT(promptName, targetLocation, signal);
     return {
       chatbotId: ChatbotId.ChatGPT,
       modelId: response.response.modelId,
@@ -123,9 +128,12 @@ async function processPromptForChatGPT(
   }
 }
 
-async function processPromptForGoogleAIMode(promptName: string): Promise<ProcessPromptResponse> {
+async function processPromptForGoogleAIMode(
+  promptName: string,
+  signal: AbortSignal
+): Promise<ProcessPromptResponse> {
   try {
-    const response = await getPromptResponseWithGoogleAIMode(promptName);
+    const response = await getPromptResponseWithGoogleAIMode(promptName, signal);
     return {
       chatbotId: ChatbotId.GoogleAIOverview,
       modelId: response.response.modelId,
@@ -139,9 +147,12 @@ async function processPromptForGoogleAIMode(promptName: string): Promise<Process
   }
 }
 
-async function processPromptForPerplexity(promptName: string): Promise<ProcessPromptResponse> {
+async function processPromptForPerplexity(
+  promptName: string,
+  signal: AbortSignal
+): Promise<ProcessPromptResponse> {
   try {
-    const response = await getPromptResponseWithPerplexity(promptName);
+    const response = await getPromptResponseWithPerplexity(promptName, signal);
     return {
       chatbotId: ChatbotId.Perplexity,
       modelId: response.response.modelId,
@@ -168,7 +179,8 @@ async function analysePromptResponsesForBrandRankings(
 async function analysePromptResponsesSentiment(
   responses: ProcessPromptResponse[],
   project: ProjectRow,
-  competitors: CompetitorRow[]
+  competitors: CompetitorRow[],
+  signal: AbortSignal
 ): Promise<(BrandsSentiment | undefined)[]> {
   const brands = [
     { id: project.id, name: project.name },
@@ -179,7 +191,11 @@ async function analysePromptResponsesSentiment(
 
   const results = await Promise.all(
     responses.map((response) =>
-      callAiWithRetry('google', () => analyzeResponseSentiment(response.text, brands))
+      callAiWithRetry(
+        'google',
+        () => analyzeResponseSentiment(response.text, brands, signal),
+        { signal }
+      )
     )
   );
 

@@ -135,6 +135,10 @@ beforeEach(() => {
   mockPerplexity.mockClear();
 });
 
+// Never aborted — these tests exercise ordinary completion/failure paths, not cancellation
+// (that is `tests/unit/collection/callAi.test.ts` and the `runLoop.ts` cancellation suite).
+const signal = new AbortController().signal;
+
 describe('executePrompt', () => {
   it('keeps stored brand_ids_ranking and sentiment positionally aligned when the middle Chatbot fails', async () => {
     // Google (the middle chatbot in canonical order) rejects, so `responses` inside the module
@@ -146,6 +150,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
       runId: 'run-1',
+      signal,
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -178,6 +183,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
       runId: 'run-1',
+      signal,
     });
 
     expect(mockChatGPT).toHaveBeenCalledTimes(1);
@@ -194,6 +200,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview, ChatbotId.Perplexity],
       runId: 'run-1',
+      signal,
     });
 
     const googleOutcome = outcomes.find(
@@ -229,6 +236,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT, ChatbotId.GoogleAIOverview],
       runId: 'run-1',
+      signal,
     });
 
     const googleOutcome = outcomes.find(
@@ -264,6 +272,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.GoogleAIOverview],
       runId: 'run-1',
+      signal,
     });
 
     expect(outcomes[0].isCompleted).toBe(true);
@@ -279,6 +288,7 @@ describe('executePrompt', () => {
       projectId: PROJECT.id,
       chatbotIds: [ChatbotId.ChatGPT],
       runId: 'run-1',
+      signal,
     });
 
     expect(insertedRows).toHaveLength(1);

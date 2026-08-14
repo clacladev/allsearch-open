@@ -1,6 +1,6 @@
 # AllSearch Local
 
-Local-first desktop-style app that tracks how often a Brand is mentioned and cited by AI chatbots (ChatGPT, Google AI Mode, Perplexity), and turns gaps into content recommendations.
+Local-first desktop app that tracks how often a Brand is mentioned and cited by AI chatbots (ChatGPT, Google AI Mode, Perplexity), and turns gaps into content recommendations.
 
 Single-user: data stays on the machine (SQLite). AI calls use the operator’s own provider keys (entered in Settings). Domain language lives in [`CONTEXT.md`](./CONTEXT.md).
 
@@ -17,8 +17,23 @@ bun run build:package && bun run start:cli   # from a checkout, today
 bunx allsearch                               # once published — see Packaging note
 ```
 
-Either boots the app's own server on a free port and opens your browser at it. The URL is printed
-so you can reopen it later. Press Ctrl-C to quit.
+### macOS desktop app
+
+For an Apple-Silicon desktop build from a checkout:
+
+```bash
+bun run build:desktop
+open release/desktop/AllSearch-*.dmg
+```
+
+The DMG is intentionally unsigned and not notarized. macOS Gatekeeper will warn the first time it
+opens; use Finder's **Open** action (or System Settings → Privacy & Security → **Open Anyway**) only
+when you built or received the DMG from a source you trust. The Electron window runs the same
+loopback-only server and uses the same SQLite database path as the CLI, so do not run both at once.
+
+The CLI boots the app's own server on a free port, prints the URL, and opens it in your default
+browser (unless `--no-open` is used). The desktop app instead opens that URL in its Electron
+window. Press Ctrl-C to stop the CLI; close the Electron window to stop the desktop app.
 
 | Flag                  | Effect                                     |
 | --------------------- | ------------------------------------------ |
@@ -77,6 +92,10 @@ After seeding, `bun dev` loads the dashboard with sample Projects — no onboard
 | `bun build` / `bun start` | Production build and serve                          |
 | `bun run build:package`   | Production build + CLI bundle, ready to `npm pack`  |
 | `bun run start:cli`       | Run the built CLI exactly as `bunx allsearch` would |
+| `bun run build:desktop:stage` | Build and stage Electron resources for local launch |
+| `bun run start:desktop`   | Launch the staged Electron app                         |
+| `bun run test:desktop`    | Stage package assets and run the Electron Playwright test |
+| `bun run build:desktop`   | Build unsigned arm64 macOS DMG                           |
 | `bun run db:seed:demo`    | Migrate + demo fixture without starting Next        |
 
 Provider keys: **Settings in the app**, not `.env` (ADR 0004). Optional env vars are documented in `.env.example`.
@@ -107,6 +126,10 @@ bun test:coverage
 bun test:e2e          # Playwright; builds the app and starts isolated servers automatically
 bun test:e2e:ai       # On-demand AI-tagged Playwright specs
 bun test:e2e:ui
+bun run build:desktop:stage # build app + stage Electron resources locally
+bun run start:desktop       # open the staged Electron window
+bun run test:desktop        # Electron runtime/asset/cleanup coverage
+bun run build:desktop       # unsigned Apple-Silicon DMG under release/desktop/
 bun run db:generate   # drizzle-kit generate from libs/database/schema.ts
 bun run db:snapshot   # snapshot live DB → demo fixture (maintainers)
 bun run verify:providers  # smoke-check configured providers
@@ -135,7 +158,8 @@ libs/
   collection/   # Collection Run loop and progress
   ai/           # provider calls and generation
 drizzle/        # SQL migrations (applied on boot)
-scripts/        # db seed/snapshot, verifyProviders, buildCli
+scripts/        # db seed/snapshot, verifyProviders, buildCli, buildDesktop
+desktop/         # Electron main process for the packaged local app
 tests/          # unit + e2e
 docs/           # stack, patterns, ADRs, agent tracker docs
 CONTEXT.md      # ubiquitous language
@@ -171,4 +195,6 @@ then `bunx allsearch` does not resolve — build and pack locally to try the CLI
 bun run build:package && bun run start:cli
 ```
 
-A desktop shell (Electron, not Tauri) is deferred to public launch — see ADR 0010.
+The Electron desktop build and the retained CLI share the same local server runtime and database
+lock. The desktop release is currently an unsigned Apple-Silicon DMG only; publishing remains a
+manual maintainer action.

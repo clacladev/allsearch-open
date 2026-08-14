@@ -57,3 +57,4 @@ tests/e2e/fixtures/golden.db*
 
 # CLI bundle (bun run build:cli)
 /dist
+/release
