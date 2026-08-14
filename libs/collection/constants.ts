@@ -1,6 +1,6 @@
 /** The single global cap on simultaneous LLM calls, across every Prompt in flight. This is the
- *  throttle the whole run is built around (ADR 0009): the SaaS fanned out ~75 at once, which
- *  fails immediately against a personal API key. */
+ *  throttle the whole run is built around: fanning out ~75 at once, as the old multi-tenant
+ *  setup did, fails immediately against a personal API key. */
 export const MAX_CONCURRENT_AI_CALLS = 5;
 /** Total attempts per (Prompt x Chatbot) item, including the first. */
 export const MAX_ITEM_ATTEMPTS = 3;
