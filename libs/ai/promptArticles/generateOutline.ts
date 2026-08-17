@@ -6,7 +6,7 @@ import { PromptArticleError } from './errors';
 import type { SourceItem } from '@/libs/database/Sources/types';
 import type { PageHeading } from '@/libs/utils/urlAnalysis';
 
-export const OUTLINE_MODEL_ID = 'gemini-3-flash';
+export const OUTLINE_MODEL_ID = 'gemini-flash-latest';
 const SYSTEM_PROMPT_PATH = 'libs/ai/promptArticles/outlineSystemPrompt.md';
 
 export type OutlineGenerationMode = 'create-new' | 'improve-existing';
