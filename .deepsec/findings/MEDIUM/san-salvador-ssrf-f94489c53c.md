@@ -3,6 +3,7 @@
 **File:** [`libs/aiCrawlChecker.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/libs/aiCrawlChecker.ts#L224-L329) (lines 224, 238, 240, 289, 329)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** high  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,10 @@ Verified directly in libs/aiCrawlChecker.ts. assertSafeHost (L224-248) resolves 
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-29)
+
+## Resolution
+
+Duplicate root cause of `HIGH/san-salvador-ssrf-3227a70cff.md` (same file, same
+`assertSafeHost`/`fetchRobots`/`fetchPage` code path). Fixed together — see that finding's
+Resolution section for the fix (IP-literal URL rewrite + `Host`/`tls.serverName`) and the
+verification steps.

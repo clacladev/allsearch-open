@@ -328,7 +328,9 @@ export function isBlockedHost(host: string): boolean {
   return BLOCKED_HOSTS.has(host.toLowerCase());
 }
 
-async function assertSafeHost(hostname: string): Promise<void> {
+type ResolvedAddress = { address: string; family: number };
+
+async function assertSafeHost(hostname: string): Promise<ResolvedAddress[]> {
   const lower = hostname.toLowerCase();
   if (isBlockedHost(lower)) {
     throw new InvalidUrlError('Internal hostnames are not allowed', 'ssrf_blocked');
@@ -341,11 +343,12 @@ async function assertSafeHost(hostname: string): Promise<void> {
     if (isBlockedIPv4(lower) || isBlockedIPv6(lower)) {
       throw new InvalidUrlError('That IP range is not allowed', 'ssrf_blocked');
     }
-    return;
+    return [{ address: lower, family: isIPv4(lower) ? 4 : 6 }];
   }
-  // Otherwise resolve and check every address. DNS rebinding mitigation: we resolve
-  // here and then pass the resolved IP to fetch; the connector uses it directly.
-  let addrs: { address: string; family: number }[];
+  // Otherwise resolve and check every address. The caller pins the actual fetch to one
+  // of these validated addresses (see pinRequestUrl) instead of letting fetch() re-resolve
+  // the hostname itself, which closes the DNS-rebinding TOCTOU window.
+  let addrs: ResolvedAddress[];
   try {
     addrs = await dns.lookup(hostname, { all: true });
   } catch {
@@ -357,6 +360,20 @@ async function assertSafeHost(hostname: string): Promise<void> {
       throw new InvalidUrlError('That address resolves to a blocked range', 'ssrf_blocked');
     }
   }
+  return addrs;
+}
+
+/**
+ * Rewrites `url` to point at a validated IP literal instead of its hostname, so the
+ * TCP connection can't be re-resolved to a different (unvalidated) address between the
+ * assertSafeHost check and the actual fetch. The original hostname must still be sent as
+ * the Host header / TLS SNI (via the `tls.serverName` fetch option) for virtual hosting
+ * and certificate validation to work.
+ */
+export function pinRequestUrl(url: URL, address: ResolvedAddress): string {
+  const host = address.family === 6 ? `[${address.address}]` : address.address;
+  const port = url.port ? `:${url.port}` : '';
+  return `${url.protocol}//${host}${port}${url.pathname}${url.search}`;
 }
 
 // ----- Cache -----
@@ -411,15 +428,17 @@ async function fetchRobots(
   let currentUrl = `${origin}/robots.txt`;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const parsed = new URL(currentUrl);
-    await assertSafeHost(parsed.hostname);
+    const addrs = await assertSafeHost(parsed.hostname);
 
-    const res = await fetch(currentUrl, {
+    const res = await fetch(pinRequestUrl(parsed, addrs[0]), {
       redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/plain,text/*;q=0.9,*/*;q=0.5',
+        Host: parsed.host,
       },
+      tls: isIP(parsed.hostname) ? undefined : { serverName: parsed.hostname },
     });
 
     // Manual redirect handling.
@@ -483,15 +502,17 @@ async function fetchPage(url: URL): Promise<FetchPageResult> {
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     chain.push(currentUrl);
     const parsed = new URL(currentUrl);
-    await assertSafeHost(parsed.hostname);
+    const addrs = await assertSafeHost(parsed.hostname);
 
-    const res = await fetch(currentUrl, {
+    const res = await fetch(pinRequestUrl(parsed, addrs[0]), {
       redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
+        Host: parsed.host,
       },
+      tls: isIP(parsed.hostname) ? undefined : { serverName: parsed.hostname },
     });
 
     if (res.status >= 300 && res.status < 400) {
