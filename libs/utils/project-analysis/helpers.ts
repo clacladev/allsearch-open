@@ -104,10 +104,16 @@ export function getPromptResponsesWorkRows(
         sources: sourceRowsToSourceItems(responseSources),
       };
     })
-    // For each prompt and chatbot keep only the latest one of the day (assuming responses are sorted by created_at)
+    // For each prompt and chatbot keep only the latest one of the day.
+    // Rows may arrive in DESC order (newest first), so replace only when
+    // strictly newer; created_at is UTC ISO-8601, so lexicographic compare
+    // is chronological (same invariant as getLatestCollectionGroup above).
     .forEach((response) => {
-      uniquesResponsesMap.delete(response.key);
-      uniquesResponsesMap.set(response.key, response); // Move to the end of insertion order
+      const existing = uniquesResponsesMap.get(response.key);
+      if (!existing || response.created_at > existing.created_at) {
+        uniquesResponsesMap.delete(response.key);
+        uniquesResponsesMap.set(response.key, response); // Move to the end of insertion order
+      }
     });
 
   return uniquesResponsesMap.values().toArray();
