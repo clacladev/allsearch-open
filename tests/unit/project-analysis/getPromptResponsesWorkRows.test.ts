@@ -101,6 +101,25 @@ describe('getPromptResponsesWorkRows', () => {
     expect(result[0].brand_ids_ranking).toEqual(['new']);
   });
 
+  it('deduplicates same prompt+chatbot+day fed in DESC order, keeping the newest (16:00) response', () => {
+    const rows = [
+      makeSummaryRow({
+        id: 'r-later',
+        created_at: '2026-01-01T16:00:00.000Z',
+        brand_ids_ranking: ['new'],
+      }),
+      makeSummaryRow({
+        id: 'r-earlier',
+        created_at: '2026-01-01T08:00:00.000Z',
+        brand_ids_ranking: ['old'],
+      }),
+    ];
+    const result = getPromptResponsesWorkRows(rows, []);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('r-later');
+    expect(result[0].brand_ids_ranking).toEqual(['new']);
+  });
+
   it('populates sources from source rows', () => {
     const rows = [makeSummaryRow({ id: 'r1' })];
     const sourceRows = [
