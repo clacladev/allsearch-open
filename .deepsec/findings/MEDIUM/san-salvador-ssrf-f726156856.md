@@ -3,6 +3,7 @@
 **File:** [`app/api/new-project/competitors/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/new-project/competitors/route.ts#L25-L28) (lines 25, 28)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,10 @@ In app/api/new-project/competitors/route.ts, competitor.url comes from getCompet
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-30)
+
+## Resolution
+
+Confirmed true-positive. This route calls `getDomainMetadata` → `getUrlHtml`, which is the
+same code path fixed for `ssrf-9e40c1ac5f.md` and `ssrf-d7f0aa75bf.md` — no route-specific
+change was needed here. See `ssrf-9e40c1ac5f.md`'s Resolution section for the fix (IP
+pinning via `libs/utils/ssrfGuard.ts`).

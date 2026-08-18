@@ -3,6 +3,7 @@
 **File:** [`app/api/new-project/domain-metadata/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/new-project/domain-metadata/route.ts#L8-L16) (lines 8, 9, 10, 11, 12, 13, 14, 15, 16)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** high  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,20 @@ GET /api/new-project/domain-metadata?url=... takes a directly user-supplied URL 
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-29)
+
+## Resolution
+
+Confirmed true-positive. Same root-cause fix as `ssrf-9e40c1ac5f.md` — `getUrlHtml()` now
+pins the fetch to the validated IP via the shared `libs/utils/ssrfGuard.ts` (see that
+finding's Resolution for details). Also addressed this finding's own additional
+recommendation: `app/api/new-project/domain-metadata/route.ts`'s error branch no longer
+echoes raw `error.message` to the client — it now returns a generic
+`'Could not fetch metadata for that URL'` message (the real error is still `console.error`'d
+server-side).
+
+Redirect-target scheme validation was not added on top of this: `getSafeNewUrl` already
+restricts the *initial* URL to http/https, but redirect hops in `getUrlHtml` don't currently
+re-check scheme — noting this as a smaller residual gap, not re-filing it since it's outside
+what any deepsec finding flagged as the primary issue here.
+
+Verified: `bun tsc`, `bun lint`, plus a live `getDomainMetadata()` smoke test.

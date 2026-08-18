@@ -3,6 +3,7 @@
 **File:** [`libs/utils/urlAnalysis.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/libs/utils/urlAnalysis.ts#L109-L127) (lines 109, 116, 121, 122, 123, 124, 125, 126, 127)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,17 @@ Verified by direct comparison of libs/utils/urlAnalysis.ts:isPrivateIP (L109-127
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-11)
+
+## Resolution
+
+Confirmed true-positive; the recommended fix was implemented as written. Extracted
+`libs/aiCrawlChecker.ts`'s `isBlockedIPv4`/`isBlockedIPv6`/`isBlockedHost` (correct coverage
+including `::ffff:` extraction, CGNAT, `192.0.0.0/24`, `198.18.0.0/15`, multicast, reserved,
+and metadata hostnames) into a new shared module, `libs/utils/ssrfGuard.ts`, and switched
+`libs/utils/urlAnalysis.ts`'s `assertPublicHostname`/`isPrivateIP` to use it. Both outbound-
+fetch paths in the codebase now share one blocklist implementation, closing the drift this
+finding flagged.
+
+Verified: `bun test tests/unit/aiCrawlChecker.test.ts tests/unit/urlAnalysis`, `bun tsc`,
+`bun lint`, plus live `getDomainMetadata()` calls confirming a real domain still resolves
+and `127.0.0.1`/`169.254.169.254`/`10.0.0.1`/`localhost` are all rejected.
