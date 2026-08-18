@@ -1,11 +1,11 @@
-import { isIP } from 'node:net';
+import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 import {
   assertSafeHost as sharedAssertSafeHost,
-  pinRequestUrl,
+  safeLookup,
   SsrfBlockedError,
   type ResolvedAddress,
 } from '@/libs/utils/ssrfGuard';
-export { isBlockedHost, isBlockedIPv4, isBlockedIPv6, pinRequestUrl } from '@/libs/utils/ssrfGuard';
+export { isBlockedHost, isBlockedIPv4, isBlockedIPv6 } from '@/libs/utils/ssrfGuard';
 
 // Server-only module. Do not import from client code.
 
@@ -281,7 +281,12 @@ export function normalizeInput(input: string): NormalizedUrl {
 //
 // The actual range-checking logic lives in libs/utils/ssrfGuard.ts and is shared with
 // libs/utils/urlAnalysis.ts, so both outbound-fetch paths in this codebase get the same
-// coverage instead of silently drifting apart (see deepsec finding ssrf-50ce0fd93e).
+// coverage instead of silently drifting apart (see deepsec finding ssrf-50ce0fd93e). We run
+// these fetches through `crawlerDispatcher`, whose connect.lookup resolves via `safeLookup`,
+// so every connection uses only validated addresses while the URL keeps its real hostname
+// (SNI / virtual hosting stay intact under Node's TLS stack).
+
+const crawlerDispatcher = new Agent({ connect: { lookup: safeLookup } });
 
 async function assertSafeHost(hostname: string): Promise<ResolvedAddress[]> {
   try {
@@ -345,9 +350,9 @@ async function fetchRobots(
   let currentUrl = `${origin}/robots.txt`;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const parsed = new URL(currentUrl);
-    const addrs = await assertSafeHost(parsed.hostname);
+    await assertSafeHost(parsed.hostname);
 
-    const res = await fetch(pinRequestUrl(parsed, addrs[0]), {
+    const res = await fetch(currentUrl, {
       redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
@@ -355,7 +360,6 @@ async function fetchRobots(
         Accept: 'text/plain,text/*;q=0.9,*/*;q=0.5',
         Host: parsed.host,
       },
-      tls: isIP(parsed.hostname) ? undefined : { serverName: parsed.hostname },
     });
 
     // Manual redirect handling.
@@ -419,9 +423,9 @@ async function fetchPage(url: URL): Promise<FetchPageResult> {
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     chain.push(currentUrl);
     const parsed = new URL(currentUrl);
-    const addrs = await assertSafeHost(parsed.hostname);
+    await assertSafeHost(parsed.hostname);
 
-    const res = await fetch(pinRequestUrl(parsed, addrs[0]), {
+    const res = await fetch(currentUrl, {
       redirect: 'manual',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
@@ -429,7 +433,6 @@ async function fetchPage(url: URL): Promise<FetchPageResult> {
         Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
         Host: parsed.host,
       },
-      tls: isIP(parsed.hostname) ? undefined : { serverName: parsed.hostname },
     });
 
     if (res.status >= 300 && res.status < 400) {
@@ -713,18 +716,24 @@ export async function checkAICrawlability(input: string): Promise<CheckResult> {
     };
   }
 
-  const [robotsResult, pageBundle] = await Promise.all([
-    analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
-    analyzePage(normalized.url),
-  ]);
+  const previousDispatcher = getGlobalDispatcher();
+  setGlobalDispatcher(crawlerDispatcher);
+  try {
+    const [robotsResult, pageBundle] = await Promise.all([
+      analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
+      analyzePage(normalized.url),
+    ]);
 
-  return {
-    url: normalized.url.toString(),
-    errorCategory: null,
-    errorMessage: null,
-    robotsTxt: robotsResult,
-    pageResponse: pageBundle.pageResponse,
-    rendering: pageBundle.rendering,
-    structuredData: pageBundle.structuredData,
-  };
+    return {
+      url: normalized.url.toString(),
+      errorCategory: null,
+      errorMessage: null,
+      robotsTxt: robotsResult,
+      pageResponse: pageBundle.pageResponse,
+      rendering: pageBundle.rendering,
+      structuredData: pageBundle.structuredData,
+    };
+  } finally {
+    setGlobalDispatcher(previousDispatcher);
+  }
 }

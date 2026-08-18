@@ -1,10 +1,9 @@
 import * as Cheerio from 'cheerio';
-import { isIP } from 'node:net';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
 import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
-import { assertSafeHost, pinRequestUrl } from '@/libs/utils/ssrfGuard';
+import { assertSafeHost, safeLookup } from '@/libs/utils/ssrfGuard';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
 const DEFAULT_USER_AGENT_HEADER = {
@@ -16,12 +15,15 @@ export const _setFetchTimeoutMs = (ms: number) => {
   _fetchTimeoutMs = ms;
 };
 
-// Increase header size limit to 64KB to avoid UND_ERR_HEADERS_OVERFLOW
+// Increase header size limit to 64KB to avoid UND_ERR_HEADERS_OVERFLOW. connect.lookup goes
+// through ssrfGuard.safeLookup so connections only ever bind to validated addresses while the
+// URL keeps its real hostname (SNI / virtual hosting work under Node's TLS stack).
 const customDispatcher = new Agent({
   connectTimeout: DEFAULT_FETCH_TIMEOUT,
   headersTimeout: DEFAULT_FETCH_TIMEOUT,
   bodyTimeout: DEFAULT_FETCH_TIMEOUT,
   maxHeaderSize: 64 * 1024,
+  connect: { lookup: safeLookup },
 });
 
 // Node's fetch() silently drops response headers (and therefore redirect handling) when a
@@ -117,16 +119,14 @@ async function getUrlHtml(inputUrl: string) {
     let response: Response;
     let hop = 0;
     while (true) {
-      // Resolve + validate here, then pin the actual fetch to the validated IP literal
-      // (Host header / tls.serverName carry the real hostname for vhosting + TLS). Fetching
-      // by hostname instead would let the runtime re-resolve DNS a second time, reopening a
-      // DNS-rebinding TOCTOU window between this check and the connection.
-      const addrs = await assertSafeHost(currentUrl.hostname);
+      // Resolve + validate here to surface DNS / SSRF failures with a clear message before
+      // connecting; the dispatcher's connect.lookup (safeLookup) re-validates at connect time,
+      // so no unvalidated address is ever used for the connection.
+      await assertSafeHost(currentUrl.hostname);
       response = await withTimeout(
-        fetch(pinRequestUrl(currentUrl, addrs[0]), {
+        fetch(currentUrl, {
           headers: { ...DEFAULT_USER_AGENT_HEADER, Host: currentUrl.host },
           redirect: 'manual',
-          tls: isIP(currentUrl.hostname) ? undefined : { serverName: currentUrl.hostname },
         }),
         _fetchTimeoutMs,
         inputUrl
