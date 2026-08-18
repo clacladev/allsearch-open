@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import type { OrganizationType } from './Organizations/types';
 import type { ArticleOutline, ArticleSourcesUsed } from './PromptArticles/types';
@@ -113,6 +113,12 @@ export const competitors = sqliteTable(
       table.is_archived,
       table.updated_at
     ),
+    uniqueIndex('competitors_project_id_url_is_active_uidx')
+      .on(table.project_id, table.url)
+      .where(sql`${table.is_archived} = 0`),
+    uniqueIndex('competitors_project_id_name_is_active_uidx')
+      .on(table.project_id, table.name)
+      .where(sql`${table.is_archived} = 0 and ${table.name} is not null`),
   ]
 );
 
