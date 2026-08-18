@@ -3,6 +3,7 @@
 **File:** [`libs/ai/promptArticles/generateOutline.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/libs/ai/promptArticles/generateOutline.ts#L19-L103) (lines 19, 31, 56, 57, 60, 61, 97, 103)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `other-prompt-injection`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,25 @@ generateOutline.ts renderSourceBlock (L19-31) and buildUserPrompt (L56-103) inte
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-17)
+
+## Resolution
+
+Confirmed true-positive. Worth noting: the sibling file `articleSystemPrompt.md` (used by
+`streamArticle.ts`, deepsec finding `other-prompt-injection-1a93bc834c`) already had an
+explicit "## Trust boundary" section instructing the model to ignore embedded directives in
+scraped content — `outlineSystemPrompt.md` simply never got the same section when it was
+written. Ported it over: added a "## Trust boundary" section to
+`libs/ai/promptArticles/outlineSystemPrompt.md` instructing the model to treat competing-
+source text as data, never as instructions, regardless of phrasing.
+
+Also applied the structural half of the recommendation: `renderSourceBlock()` in
+`generateOutline.ts` now wraps each source's title/description/heading text in
+`<source_data>...</source_data>` tags, so the untrusted text is visually and structurally
+separated from the surrounding prompt scaffolding, not just called out in the system prompt.
+
+Did not implement post-generation output validation (rejecting headings/links referencing
+off-allowlist domains) — that's a meaningfully larger, more speculative feature than what
+this finding's core risk calls for, and isn't how the sibling `articleSystemPrompt.md`
+mitigation was scoped either.
+
+Verified: `bun test tests/unit/ai/generateOutline.test.ts`, `bun tsc`, `bun lint`.

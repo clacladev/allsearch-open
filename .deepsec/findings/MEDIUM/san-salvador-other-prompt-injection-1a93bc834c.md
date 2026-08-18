@@ -3,6 +3,7 @@
 **File:** [`libs/ai/promptArticles/streamArticle.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/libs/ai/promptArticles/streamArticle.ts#L37-L135) (lines 37, 39, 41, 45, 51, 112, 128, 135)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `other-prompt-injection`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,23 @@ streamArticle.ts renderSourceForPrompt (L41-45) and renderOutlineForPrompt (L37-
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-17)
+
+## Resolution
+
+Partial false-positive on one claim, otherwise confirmed and addressed. The finding states
+"no delimiter escaping, role fencing, or content sanitization is applied" — that's not quite
+right: `libs/ai/promptArticles/articleSystemPrompt.md` already had a "## Trust boundary"
+section (system-prompt-level role fencing) instructing the model to treat outline and source
+fields as data, not instructions, before this fix. What was genuinely missing was
+*structural* delimiter fencing in the user prompt itself.
+
+Added that: `renderSourceForPrompt()` in `streamArticle.ts` now wraps each source's
+title/description in `<source_data>...</source_data>` tags (matching the same fix applied to
+`generateOutline.ts` for finding `other-prompt-injection-a97e2d0e67`), and
+`articleSystemPrompt.md`'s Trust boundary section now explicitly references those tags.
+
+Did not add post-generation output validation (rejecting markdown links to off-allowlist
+domains) — see the sibling finding's Resolution section for why that's out of scope here.
+
+Verified: `bun tsc`, `bun lint`. No dedicated unit test exists for `streamArticle.ts`
+(confirmed via search); `bun test tests/unit` passes with no new failures.
