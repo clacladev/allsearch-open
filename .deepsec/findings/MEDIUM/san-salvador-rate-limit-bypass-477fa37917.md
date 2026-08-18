@@ -3,6 +3,7 @@
 **File:** [`app/api/tools/ai-crawl-checker/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/tools/ai-crawl-checker/route.ts#L12-L16) (lines 12, 13, 16)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `rate-limit-bypass`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,23 @@ Confirmed in app/api/tools/ai-crawl-checker/route.ts: the POST handler calls che
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-11)
+
+## Resolution
+
+Confirmed true-positive on the amplification path: with no auth layer, the only thing
+stopping a malicious web page from repeatedly POSTing arbitrary URLs to this endpoint was
+the absence of any Origin/CSRF check. Added `proxy.ts` (project root) — Next.js 16's
+renamed `middleware.ts` — matching `/api/:path*`, which rejects any request whose `Origin`
+(or `Referer`, when `Origin` is absent) header names a different host than the one the
+request actually arrived on, returning 403. This removes the actual attack vector described
+(any web page in the operator's browser) without requiring per-route changes.
+
+Deliberately did *not* add per-host rate limiting / a concurrency cap on outbound fetches:
+once cross-origin requests are rejected, the only remaining caller is the app's own
+same-origin frontend, and throttling that would just make the tool itself slower for no
+security benefit in this single-user local app. This is the same fix as the four
+`expensive-api-abuse` findings (same root cause) — see those files' Resolution sections.
+
+Verified: `bun test tests/unit/proxy.test.ts`, `bun tsc`, `bun lint`, plus a live `next dev`
+smoke test — same-origin/no-Origin POST to `/api/tools/ai-crawl-checker` returns 200,
+cross-origin `Origin: http://evil.example` returns 403.
