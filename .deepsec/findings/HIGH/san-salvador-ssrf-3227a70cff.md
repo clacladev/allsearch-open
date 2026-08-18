@@ -3,6 +3,7 @@
 **File:** [`app/api/tools/ai-crawl-checker/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/tools/ai-crawl-checker/route.ts#L13-L16) (lines 13, 16)
 **Project:** san-salvador
 **Severity:** HIGH  •  **Confidence:** medium  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,26 @@ Verified in app/api/tools/ai-crawl-checker/route.ts and libs/aiCrawlChecker.ts. 
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-11)
+
+## Resolution
+
+Confirmed true-positive. Fixed in `libs/aiCrawlChecker.ts`: `assertSafeHost()` now returns
+the validated addresses, and `fetchRobots`/`fetchPage` rewrite the actual fetch URL to the
+validated IP literal (`pinRequestUrl`) instead of the hostname, sending the original
+hostname via the `Host` header and (for HTTPS) `tls.serverName` for SNI/cert validation.
+This closes the rebinding window by construction — there is no second DNS lookup at
+connect time — re-validated on every redirect hop.
+
+Note: an initial attempt used an `undici` `Agent` with a custom `connect.lookup`, following
+the pattern used elsewhere in this codebase (`libs/utils/urlAnalysis.ts`). That approach is
+silently ignored by Bun's `fetch()` (verified empirically — a deliberately-failing custom
+lookup was never invoked, and `Agent.destroy()` doesn't even exist on Bun's `undici` shim)
+which runs this app's production server per `cli/runtime.ts`. The IP-literal-rewrite
+approach was used instead and confirmed to work against real HTTP/HTTPS traffic including
+multi-hop redirects. **This means the identical `connect.lookup` pattern already in
+`libs/utils/urlAnalysis.ts` (tracked separately) is not just a design choice but is
+non-functional as SSRF protection under Bun — flagged for that finding's fix too.**
+
+Verified: `bun test tests/unit/aiCrawlChecker.test.ts`, `bun tsc`, `bun lint`, plus live
+`checkAICrawlability('https://example.com')` and `checkAICrawlability('http://github.com')`
+(redirect chain) both succeeding end-to-end.

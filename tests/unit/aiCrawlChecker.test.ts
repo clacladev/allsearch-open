@@ -10,6 +10,7 @@ import {
   InvalidUrlError,
   analyzeRendering,
   analyzeStructuredData,
+  pinRequestUrl,
 } from '@/libs/aiCrawlChecker';
 
 describe('parseRobotsTxt', () => {
@@ -279,6 +280,26 @@ describe('analyzeRendering', () => {
     const r = analyzeRendering(html);
     expect(r.hasMeaningfulContent).toBe(true);
     expect(r.likelyClientSide).toBe(false);
+  });
+});
+
+describe('pinRequestUrl', () => {
+  it('rewrites the hostname to the validated IPv4 address, keeping path and query', () => {
+    const url = new URL('https://example.com/robots.txt?x=1');
+    const pinned = pinRequestUrl(url, { address: '93.184.216.34', family: 4 });
+    expect(pinned).toBe('https://93.184.216.34/robots.txt?x=1');
+  });
+
+  it('brackets IPv6 addresses', () => {
+    const url = new URL('https://example.com/');
+    const pinned = pinRequestUrl(url, { address: '2606:4700::1111', family: 6 });
+    expect(pinned).toBe('https://[2606:4700::1111]/');
+  });
+
+  it('preserves a non-default port', () => {
+    const url = new URL('https://example.com:8443/a');
+    const pinned = pinRequestUrl(url, { address: '1.2.3.4', family: 4 });
+    expect(pinned).toBe('https://1.2.3.4:8443/a');
   });
 });
 
