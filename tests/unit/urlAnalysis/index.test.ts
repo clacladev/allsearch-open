@@ -40,10 +40,9 @@ describe('urlAnalysis - getDomainMetadata', () => {
   beforeAll(() => {
     originalFetch = global.fetch;
 
-    // Mock global fetch to return local files instead of hitting the network. The SSRF
-    // guard now pins the fetch to the resolved IP literal (see libs/utils/ssrfGuard.ts), so
-    // the fixture lookup has to key off the Host header (the real hostname) rather than the
-    // request URL (which is now an IP literal).
+    // Mock global fetch to return local files instead of hitting the network. The fetch keeps
+    // the real hostname URL (SSRF protection happens via the dispatcher's validated
+    // connect.lookup), so the fixture lookup can key off the hostname from the request URL.
     global.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const targetUrl = new URL(input.toString());
       const headers = new Headers(init?.headers);

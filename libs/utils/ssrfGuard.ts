@@ -1,5 +1,5 @@
 import { promises as dns } from 'node:dns';
-import { isIP, isIPv4 } from 'node:net';
+import { isIP, isIPv4, type LookupFunction } from 'node:net';
 
 // Server-only module. Do not import from client code.
 
@@ -70,9 +70,8 @@ export function isBlockedHost(host: string): boolean {
 
 /**
  * Resolves `hostname` and rejects it if it (or any address it resolves to) falls in a
- * private/loopback/link-local/metadata range. Returns the validated addresses so the
- * caller can pin the actual network connection to one of them via pinRequestUrl — fetch()
- * re-resolving the hostname itself would reopen a DNS-rebinding TOCTOU window.
+ * private/loopback/link-local/metadata range. Returns the validated addresses so callers can
+ * enforce the same gate on the actual connection via `safeLookup`.
  */
 export async function assertSafeHost(hostname: string): Promise<ResolvedAddress[]> {
   const lower = hostname.toLowerCase();
@@ -104,14 +103,25 @@ export async function assertSafeHost(hostname: string): Promise<ResolvedAddress[
 }
 
 /**
- * Rewrites `url` to point at a validated IP literal instead of its hostname, so the TCP
- * connection can't be re-resolved to a different (unvalidated) address between the
- * assertSafeHost check and the actual fetch. The original hostname must still be sent as
- * the Host header / TLS SNI (via the `tls.serverName` fetch option) for virtual hosting
- * and certificate validation to work.
+ * A `node:net` lookup function that resolves a hostname through the same SSRF validation as
+ * `assertSafeHost` and returns only the addresses that pass. Wire it into an undici Agent's
+ * `connect.lookup` so the socket resolves via this validated gate; because the lookup result is
+ * exactly what the connection binds to, there is no second, unvalidated DNS resolution to
+ * exploit (DNS rebinding). The request URL keeps its real hostname, so SNI, the Host header,
+ * and virtual hosting are all handled normally by the TLS stack.
  */
-export function pinRequestUrl(url: URL, address: ResolvedAddress): string {
-  const host = address.family === 6 ? `[${address.address}]` : address.address;
-  const port = url.port ? `:${url.port}` : '';
-  return `${url.protocol}//${host}${port}${url.pathname}${url.search}`;
-}
+export const safeLookup: LookupFunction = (hostname, options, callback) => {
+  assertSafeHost(hostname)
+    .then((addrs) => {
+      if (options?.all) {
+        callback(null, addrs.map((a) => ({ address: a.address, family: a.family })));
+      } else {
+        const first = addrs[0];
+        callback(null, first.address, first.family);
+      }
+    })
+    .catch((err: unknown) => {
+      const lookupErr = err as NodeJS.ErrnoException;
+      (callback as (err: NodeJS.ErrnoException) => void)(lookupErr);
+    });
+};

@@ -18,9 +18,8 @@ describe('urlAnalysis - redirect handling', () => {
 
   it('follows a redirect chain and resolves metadata from the final destination', async () => {
     let calls = 0;
-    // The SSRF guard pins the fetch to the resolved IP literal (see libs/utils/ssrfGuard.ts),
-    // so the mock has to key off the Host header (the real hostname) rather than the request
-    // URL, which is now an IP literal.
+    // The fetch keeps the real hostname URL (SSRF protection happens via the dispatcher's
+    // validated connect.lookup), so the mock can key off the hostname from the request URL.
     global.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       calls++;
       const url = new URL(input.toString());
