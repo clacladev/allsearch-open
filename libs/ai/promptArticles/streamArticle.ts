@@ -63,8 +63,12 @@ function renderOutlineForPrompt(outline: ArticleOutline): string {
 }
 
 function renderSourceForPrompt(s: ArticleSourceForPrompt, index: number): string {
-  const lines = [`### Source ${index + 1}: ${s.title}`, `- URL: ${s.cleanUrl}`];
-  if (s.description) lines.push(`- Description: ${s.description}`);
+  // Title/description are scraped from a third-party page and therefore untrusted — wrap
+  // them in a data tag so the model can structurally distinguish them from the surrounding
+  // instructions (see the system prompt's Trust boundary section).
+  const lines = [`### Source ${index + 1}`, `- URL: ${s.cleanUrl}`, '<source_data>', `Title: ${s.title}`];
+  if (s.description) lines.push(`Description: ${s.description}`);
+  lines.push('</source_data>');
   return lines.join('\n');
 }
 
