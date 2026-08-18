@@ -4,6 +4,8 @@
 **Project:** san-salvador
 **Severity:** BUG  •  **Confidence:** low  •  **Slug:** `other-info-disclosure`
 
+**Status:** resolved
+
 ## Owners
 
 **Suggested assignee:** `claudio@tugulab.org` _(via last-committer)_
