@@ -3,6 +3,7 @@
 **File:** [`app/api/process-prompts/[projectId]/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/process-prompts/[projectId]/route.ts#L4-L22) (lines 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `expensive-api-abuse`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,16 @@ POST /api/process-prompts/[projectId] reads only projectId from the path and sho
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-03)
+
+## Resolution
+
+Same root cause and fix as `expensive-api-abuse-3c618e2c94.md` — see that finding's
+Resolution section. `proxy.ts` (root, matcher `/api/:path*`) rejects any request whose
+Origin/Referer names a foreign host with 403 before it reaches the route handler, including
+the CORS-safelisted form-POST vector described here.
+
+The raw `error.message` echo on the fallback branch (line 20), mentioned in this finding's
+body, does not have its own deepsec finding file for this route (the two
+`other-info-disclosure` BUG findings cover `prompt-ideas` and `competitors`, not
+`process-prompts`) — left unaddressed here to keep this fix scoped to the
+`expensive-api-abuse` slug's stated concern (CSRF-driven cost abuse).

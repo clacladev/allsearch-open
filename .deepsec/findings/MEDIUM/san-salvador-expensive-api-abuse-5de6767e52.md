@@ -3,6 +3,7 @@
 **File:** [`app/api/new-project/prompt-ideas/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/new-project/prompt-ideas/route.ts#L6-L19) (lines 6, 16, 19)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `expensive-api-abuse`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,9 @@ GET /api/new-project/prompt-ideas has no auth, Origin/CSRF check, or rate limiti
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-30)
+
+## Resolution
+
+Same root cause and fix as `expensive-api-abuse-3c618e2c94.md` — see that finding's
+Resolution section. `proxy.ts` (root, matcher `/api/:path*`) now rejects any cross-origin
+request to this route with 403.

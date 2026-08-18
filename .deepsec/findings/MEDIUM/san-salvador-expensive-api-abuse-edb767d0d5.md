@@ -3,6 +3,7 @@
 **File:** [`app/api/new-project/topics-ideas/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/new-project/topics-ideas/route.ts#L6-L27) (lines 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `expensive-api-abuse`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,13 @@ GET /api/new-project/topics-ideas?url=&name= calls getTopicsIdeas (verified in l
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-30)
+
+## Resolution
+
+Same root cause and fix as `expensive-api-abuse-3c618e2c94.md` — see that finding's
+Resolution section. `proxy.ts` (root, matcher `/api/:path*`) now rejects cross-origin GETs
+to this route with 403, closing the CSRF vector for both the cost-abuse and (as a side
+effect) the prompt-injection-surface concerns mentioned in this finding.
+
+The raw `error.message` echo (line 25) does not have its own deepsec finding file for this
+route and is left unaddressed here, same reasoning as `expensive-api-abuse-e57139c507.md`.

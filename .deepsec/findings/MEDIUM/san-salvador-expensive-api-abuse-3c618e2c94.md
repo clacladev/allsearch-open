@@ -3,6 +3,7 @@
 **File:** [`app/api/new-project/competitors/route.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/api/new-project/competitors/route.ts#L8-L24) (lines 8, 21, 24)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** medium  •  **Slug:** `expensive-api-abuse`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,16 @@ GET /api/new-project/competitors has no auth, Origin/CSRF check, or rate limitin
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-30)
+
+## Resolution
+
+Confirmed true-positive. Fixed with the other three `expensive-api-abuse` findings and
+`rate-limit-bypass-477fa37917` (same root cause: no same-origin enforcement) by adding
+`proxy.ts` at the project root — Next.js 16's renamed `middleware.ts` — matching
+`/api/:path*`. It rejects any request whose `Origin` (or `Referer`, when `Origin` is absent)
+names a host other than the one the request arrived on, with 403, applying uniformly to
+GET and POST routes so this GET endpoint is covered without a route-specific change.
+
+Verified: `bun test tests/unit/proxy.test.ts`, `bun tsc`, `bun lint`, plus a live `next dev`
+smoke test confirming a cross-origin `Origin` header on a GET to
+`/api/new-project/topics-ideas` (same code path) returns 403.
