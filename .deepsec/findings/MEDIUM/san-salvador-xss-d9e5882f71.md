@@ -4,6 +4,8 @@
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** low  •  **Slug:** `xss`
 
+**Status:** resolved
+
 ## Owners
 
 **Suggested assignee:** `claudio@tugulab.org` _(via last-committer)_
