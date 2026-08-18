@@ -1,6 +1,7 @@
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import { RouteHelper } from '@/libs/routes';
+import { sanitizeCsvRow } from '@/libs/utils/csvSanitize';
 
 export function exportBrandSourcesToCsv(
   sources: SourceContent[],
@@ -27,6 +28,6 @@ export function exportBrandSourcesToCsv(
     };
   });
 
-  const csv = generateCsv(csvConfig)(rows);
+  const csv = generateCsv(csvConfig)(rows.map(sanitizeCsvRow));
   download(csvConfig)(csv);
 }

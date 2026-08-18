@@ -1,5 +1,6 @@
 import { mkConfig, generateCsv, asString } from 'export-to-csv';
 import { zipSync, strToU8 } from 'fflate';
+import { sanitizeCsvRow } from '@/libs/utils/csvSanitize';
 import { VisibilityScoresBarChartItem } from '@/app/(private)/project/[projectId]/overview/components/VisibilityScoresBarChart';
 import { SourceContent } from '@/libs/utils/project-analysis/getSourceContentSummary';
 import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSummary';
@@ -21,7 +22,7 @@ type CsvRow = Record<string, string | number | boolean | null | undefined>;
 
 function toCsvString(rows: CsvRow[], filename: string): string {
   const config = mkConfig({ useKeysAsHeaders: true, filename });
-  return asString(generateCsv(config)(rows));
+  return asString(generateCsv(config)(rows.map(sanitizeCsvRow)));
 }
 
 // ─── Individual CSV builders ─────────────────────────────────────────────────

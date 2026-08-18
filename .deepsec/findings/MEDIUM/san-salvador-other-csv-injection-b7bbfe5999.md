@@ -3,6 +3,7 @@
 **File:** [`app/(private)/project/[projectId]/sources/utils/exportSourcesCsv.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/(private)/project/[projectId]/sources/utils/exportSourcesCsv.ts#L33-L47) (lines 33, 45, 47)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** low  •  **Slug:** `other-csv-injection`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,10 @@ Verified in app/(private)/project/[projectId]/sources/utils/exportSourcesCsv.ts.
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-29)
+
+## Resolution
+
+Same root cause and fix as `other-csv-injection-6d17b425d5.md` — see that finding's
+Resolution section. `exportSourcesCsv.ts`'s two exporters (`exportSourceDomainsToCsv`,
+`exportSourceContentsToCsv`) now sanitize every row via `sanitizeCsvRow` from the new
+`libs/utils/csvSanitize.ts` before calling `generateCsv`.
