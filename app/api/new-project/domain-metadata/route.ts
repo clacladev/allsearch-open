@@ -12,9 +12,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(metadata);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Could not fetch metadata for that URL' }, { status: 500 });
   }
 }

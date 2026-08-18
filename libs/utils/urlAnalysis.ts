@@ -1,9 +1,10 @@
 import * as Cheerio from 'cheerio';
+import { isIP } from 'node:net';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
 import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
-import { resolve4, resolve6 } from 'node:dns/promises';
+import { assertSafeHost, pinRequestUrl } from '@/libs/utils/ssrfGuard';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
 const DEFAULT_USER_AGENT_HEADER = {
@@ -106,49 +107,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-function isPrivateIP(ip: string): boolean {
-  // IPv4 private/reserved ranges
-  if (/^127\./.test(ip)) return true; // loopback
-  if (/^10\./.test(ip)) return true; // 10.0.0.0/8
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true; // 172.16.0.0/12
-  if (/^192\.168\./.test(ip)) return true; // 192.168.0.0/16
-  if (/^169\.254\./.test(ip)) return true; // link-local
-  if (/^0\./.test(ip)) return true; // 0.0.0.0/8
-  if (ip === '255.255.255.255') return true; // broadcast
-  // IPv6 private/reserved
-  if (ip === '::1' || ip === '::') return true; // loopback / unspecified
-  if (/^f[cd]/i.test(ip)) return true; // unique local (fc00::/7)
-  if (/^fe80/i.test(ip)) return true; // link-local
-  return false;
-}
-
-async function assertPublicHostname(hostname: string): Promise<void> {
-  // Block obvious private hostnames
-  if (hostname === 'localhost' || hostname === '[::1]') {
-    throw new Error('Requests to private/internal addresses are not allowed');
-  }
-
-  // Resolve hostname and check all returned IPs
-  try {
-    const addresses = await resolve4(hostname).catch(() => [] as string[]);
-    const addresses6 = await resolve6(hostname).catch(() => [] as string[]);
-    const allAddresses = [...addresses, ...addresses6];
-
-    if (allAddresses.length === 0) {
-      throw new Error(`Could not resolve hostname: ${hostname}`);
-    }
-
-    for (const ip of allAddresses) {
-      if (isPrivateIP(ip)) {
-        throw new Error('Requests to private/internal addresses are not allowed');
-      }
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message.includes('not allowed')) throw e;
-    throw new Error(`Could not resolve hostname: ${hostname}`);
-  }
-}
-
 async function getUrlHtml(inputUrl: string) {
   const urlObj = getSafeNewUrl(inputUrl);
 
@@ -159,11 +117,16 @@ async function getUrlHtml(inputUrl: string) {
     let response: Response;
     let hop = 0;
     while (true) {
-      await assertPublicHostname(currentUrl.hostname);
+      // Resolve + validate here, then pin the actual fetch to the validated IP literal
+      // (Host header / tls.serverName carry the real hostname for vhosting + TLS). Fetching
+      // by hostname instead would let the runtime re-resolve DNS a second time, reopening a
+      // DNS-rebinding TOCTOU window between this check and the connection.
+      const addrs = await assertSafeHost(currentUrl.hostname);
       response = await withTimeout(
-        fetch(currentUrl.href, {
-          headers: { ...DEFAULT_USER_AGENT_HEADER },
+        fetch(pinRequestUrl(currentUrl, addrs[0]), {
+          headers: { ...DEFAULT_USER_AGENT_HEADER, Host: currentUrl.host },
           redirect: 'manual',
+          tls: isIP(currentUrl.hostname) ? undefined : { serverName: currentUrl.hostname },
         }),
         _fetchTimeoutMs,
         inputUrl

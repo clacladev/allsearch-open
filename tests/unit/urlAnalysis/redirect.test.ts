@@ -18,16 +18,20 @@ describe('urlAnalysis - redirect handling', () => {
 
   it('follows a redirect chain and resolves metadata from the final destination', async () => {
     let calls = 0;
-    global.fetch = mock(async (input: RequestInfo | URL) => {
+    // The SSRF guard pins the fetch to the resolved IP literal (see libs/utils/ssrfGuard.ts),
+    // so the mock has to key off the Host header (the real hostname) rather than the request
+    // URL, which is now an IP literal.
+    global.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       calls++;
       const url = new URL(input.toString());
-      if (url.hostname === 'puma.com') {
+      const hostname = new Headers(init?.headers).get('host') ?? url.hostname;
+      if (hostname === 'puma.com') {
         return new Response(null, {
           status: 301,
           headers: new Headers({ Location: 'https://nike.com/' }),
         });
       }
-      const html = fs.readFileSync(path.join(FIXTURES_DIR, `${url.hostname}.html`), 'utf8');
+      const html = fs.readFileSync(path.join(FIXTURES_DIR, `${hostname}.html`), 'utf8');
       return new Response(html, {
         status: 200,
         headers: new Headers({ 'Content-Type': 'text/html' }),

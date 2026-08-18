@@ -3,6 +3,7 @@
 **File:** [`libs/utils/urlAnalysis.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/libs/utils/urlAnalysis.ts#L109-L161) (lines 109, 116, 142, 155, 161)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** high  •  **Slug:** `ssrf`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,22 @@ Verified in libs/utils/urlAnalysis.ts. getUrlHtml calls assertPublicHostname(cur
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-08-11)
+
+## Resolution
+
+Confirmed true-positive. `getUrlHtml()` in `libs/utils/urlAnalysis.ts` now uses the shared
+`assertSafeHost()`/`pinRequestUrl()` from `libs/utils/ssrfGuard.ts` (same fix as deepsec
+`ssrf-3227a70cff`/`ssrf-f94489c53c` in `libs/aiCrawlChecker.ts`): it resolves and validates
+the hostname, then rewrites the actual fetch URL to the validated IP literal, sending the
+original hostname via the `Host` header and (for HTTPS) `tls.serverName` for SNI/cert
+validation — re-validated and re-pinned on every redirect hop.
+
+Note: an `undici` `Agent`/`connect.lookup`-based pinning approach (which is what this
+module's neighboring `customDispatcher` uses for an unrelated header-size bump) was
+considered and rejected — it's silently ignored by Bun's `fetch()` (verified while fixing
+the sibling `aiCrawlChecker.ts` finding), which runs this app's production server. The
+IP-literal-rewrite approach was used instead and confirmed working end-to-end.
+
+Verified: `bun test tests/unit/urlAnalysis`, `bun tsc`, `bun lint`, plus a live
+`getDomainMetadata('https://github.com')` call succeeding end-to-end and
+`getDomainMetadata('http://127.0.0.1:9999')` being rejected.
