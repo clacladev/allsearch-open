@@ -18,6 +18,14 @@ export function getUrlCleanComponents(inputUrl: string): { url: string; hostname
   };
 }
 
+export function isHttpUrl(url: string) {
+  try {
+    return new URL(url).protocol === 'http:' || new URL(url).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function isValidUrl(url: string) {
   const trimmedUrl = url.trim();
   if (!trimmedUrl) return false;
