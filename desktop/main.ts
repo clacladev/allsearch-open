@@ -68,7 +68,14 @@ function createWindow(url: string): void {
     if (new URL(navigationUrl).origin !== allowedOrigin) event.preventDefault();
   });
   mainWindow.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
-    if (new URL(targetUrl).origin !== allowedOrigin) void shell.openExternal(targetUrl);
+    if (new URL(targetUrl).origin !== allowedOrigin) {
+      try {
+        const parsed = new URL(targetUrl);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') void shell.openExternal(targetUrl);
+      } catch {
+        // ignore unparseable URLs
+      }
+    }
     return { action: 'deny' };
   });
   void mainWindow.loadURL(url);
