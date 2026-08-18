@@ -3,7 +3,7 @@ import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
 import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
-import { resolve4, resolve6 } from 'node:dns/promises';
+import { assertSafeHost, safeLookup } from '@/libs/utils/ssrfGuard';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
 const DEFAULT_USER_AGENT_HEADER = {
@@ -15,12 +15,15 @@ export const _setFetchTimeoutMs = (ms: number) => {
   _fetchTimeoutMs = ms;
 };
 
-// Increase header size limit to 64KB to avoid UND_ERR_HEADERS_OVERFLOW
+// Increase header size limit to 64KB to avoid UND_ERR_HEADERS_OVERFLOW. connect.lookup goes
+// through ssrfGuard.safeLookup so connections only ever bind to validated addresses while the
+// URL keeps its real hostname (SNI / virtual hosting work under Node's TLS stack).
 const customDispatcher = new Agent({
   connectTimeout: DEFAULT_FETCH_TIMEOUT,
   headersTimeout: DEFAULT_FETCH_TIMEOUT,
   bodyTimeout: DEFAULT_FETCH_TIMEOUT,
   maxHeaderSize: 64 * 1024,
+  connect: { lookup: safeLookup },
 });
 
 // Node's fetch() silently drops response headers (and therefore redirect handling) when a
@@ -106,49 +109,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-function isPrivateIP(ip: string): boolean {
-  // IPv4 private/reserved ranges
-  if (/^127\./.test(ip)) return true; // loopback
-  if (/^10\./.test(ip)) return true; // 10.0.0.0/8
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true; // 172.16.0.0/12
-  if (/^192\.168\./.test(ip)) return true; // 192.168.0.0/16
-  if (/^169\.254\./.test(ip)) return true; // link-local
-  if (/^0\./.test(ip)) return true; // 0.0.0.0/8
-  if (ip === '255.255.255.255') return true; // broadcast
-  // IPv6 private/reserved
-  if (ip === '::1' || ip === '::') return true; // loopback / unspecified
-  if (/^f[cd]/i.test(ip)) return true; // unique local (fc00::/7)
-  if (/^fe80/i.test(ip)) return true; // link-local
-  return false;
-}
-
-async function assertPublicHostname(hostname: string): Promise<void> {
-  // Block obvious private hostnames
-  if (hostname === 'localhost' || hostname === '[::1]') {
-    throw new Error('Requests to private/internal addresses are not allowed');
-  }
-
-  // Resolve hostname and check all returned IPs
-  try {
-    const addresses = await resolve4(hostname).catch(() => [] as string[]);
-    const addresses6 = await resolve6(hostname).catch(() => [] as string[]);
-    const allAddresses = [...addresses, ...addresses6];
-
-    if (allAddresses.length === 0) {
-      throw new Error(`Could not resolve hostname: ${hostname}`);
-    }
-
-    for (const ip of allAddresses) {
-      if (isPrivateIP(ip)) {
-        throw new Error('Requests to private/internal addresses are not allowed');
-      }
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message.includes('not allowed')) throw e;
-    throw new Error(`Could not resolve hostname: ${hostname}`);
-  }
-}
-
 async function getUrlHtml(inputUrl: string) {
   const urlObj = getSafeNewUrl(inputUrl);
 
@@ -159,10 +119,13 @@ async function getUrlHtml(inputUrl: string) {
     let response: Response;
     let hop = 0;
     while (true) {
-      await assertPublicHostname(currentUrl.hostname);
+      // Resolve + validate here to surface DNS / SSRF failures with a clear message before
+      // connecting; the dispatcher's connect.lookup (safeLookup) re-validates at connect time,
+      // so no unvalidated address is ever used for the connection.
+      await assertSafeHost(currentUrl.hostname);
       response = await withTimeout(
-        fetch(currentUrl.href, {
-          headers: { ...DEFAULT_USER_AGENT_HEADER },
+        fetch(currentUrl, {
+          headers: { ...DEFAULT_USER_AGENT_HEADER, Host: currentUrl.host },
           redirect: 'manual',
         }),
         _fetchTimeoutMs,

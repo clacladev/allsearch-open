@@ -208,8 +208,10 @@ function highlightChildren(children: React.ReactNode, keywords?: string[]): Reac
     if (typeof child === 'string') {
       const parts = child.split(regex);
       if (parts.length === 1) return child;
+      // With a capturing group, split yields matches at odd indices (even are
+      // plain text) — no stateful regex.test needed.
       return parts.map((part, i) =>
-        regex.test(part) ? (
+        i % 2 === 1 ? (
           <mark key={i} className="dark:bg-brand-600 bg-brand-300 rounded px-0.5">
             {part}
           </mark>

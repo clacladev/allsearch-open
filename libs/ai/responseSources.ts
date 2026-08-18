@@ -1,5 +1,5 @@
 import { GenerateTextResult, ToolSet } from 'ai';
-import { getUrlCleanComponents } from '@/libs/utils/urls';
+import { getUrlCleanComponents, isHttpUrl } from '@/libs/utils/urls';
 import { SourceItem } from '@/libs/database/Sources/types';
 
 export function getSourcesFromResponse<TTools extends ToolSet>(
@@ -9,6 +9,7 @@ export function getSourcesFromResponse<TTools extends ToolSet>(
 
   response.sources
     .filter((source) => source.sourceType === 'url')
+    .filter((source) => isHttpUrl(source.url))
     .forEach((source) => {
       const cleanUrl = getUrlCleanComponents(source.url);
       if (filteredSources.some((s) => s.cleanUrl === cleanUrl.url)) return;
@@ -26,7 +27,7 @@ export function getSourcesFromResponse<TTools extends ToolSet>(
   const sources = output?.sources ?? [];
 
   sources
-    .filter((source) => source.type === 'url')
+    .filter((source) => source.type === 'url' && isHttpUrl(source.url))
     .forEach((source) => {
       const cleanUrl = getUrlCleanComponents(source.url);
       if (filteredSources.some((s) => s.cleanUrl === cleanUrl.url)) return;

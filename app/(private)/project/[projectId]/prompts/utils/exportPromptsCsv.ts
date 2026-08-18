@@ -6,6 +6,7 @@ import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { RouteHelper } from '@/libs/routes';
 import { resolveBrandName } from '@/app/(private)/project/[projectId]/sources/utils/exportSourcesCsv';
 import { getSentimentLabel } from '@/app/(private)/project/[projectId]/components/SentimentIcon';
+import { sanitizeCsvRow } from '@/libs/utils/csvSanitize';
 
 export function exportPromptsToCsv(
   prompts: PromptAndTopicJoinRow[],
@@ -47,6 +48,6 @@ export function exportPromptsToCsv(
     };
   });
 
-  const csv = generateCsv(csvConfig)(rows);
+  const csv = generateCsv(csvConfig)(rows.map(sanitizeCsvRow));
   download(csvConfig)(csv);
 }

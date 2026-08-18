@@ -1,5 +1,11 @@
-import { promises as dns } from 'node:dns';
-import { isIP, isIPv4 } from 'node:net';
+import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import {
+  assertSafeHost as sharedAssertSafeHost,
+  safeLookup,
+  SsrfBlockedError,
+  type ResolvedAddress,
+} from '@/libs/utils/ssrfGuard';
+export { isBlockedHost, isBlockedIPv4, isBlockedIPv6 } from '@/libs/utils/ssrfGuard';
 
 // Server-only module. Do not import from client code.
 
@@ -272,90 +278,23 @@ export function normalizeInput(input: string): NormalizedUrl {
 }
 
 // ----- SSRF guard -----
+//
+// The actual range-checking logic lives in libs/utils/ssrfGuard.ts and is shared with
+// libs/utils/urlAnalysis.ts, so both outbound-fetch paths in this codebase get the same
+// coverage instead of silently drifting apart (see deepsec finding ssrf-50ce0fd93e). We run
+// these fetches through `crawlerDispatcher`, whose connect.lookup resolves via `safeLookup`,
+// so every connection uses only validated addresses while the URL keeps its real hostname
+// (SNI / virtual hosting stay intact under Node's TLS stack).
 
-const BLOCKED_HOSTS = new Set([
-  'metadata.google.internal',
-  'metadata',
-]);
+const crawlerDispatcher = new Agent({ connect: { lookup: safeLookup } });
 
-function ipv4ToInt(ip: string): number {
-  const parts = ip.split('.').map(Number);
-  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
-}
-
-function inRange(ip: number, start: string, prefix: number): boolean {
-  const startInt = ipv4ToInt(start);
-  const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
-  return (ip & mask) === (startInt & mask);
-}
-
-export function isBlockedIPv4(ip: string): boolean {
-  if (!isIPv4(ip)) return false;
-  const n = ipv4ToInt(ip);
-  // Private + special-use IPv4 ranges that must not be reachable from a public tool.
-  return (
-    inRange(n, '0.0.0.0', 8) ||           // current network
-    inRange(n, '10.0.0.0', 8) ||          // RFC1918
-    inRange(n, '100.64.0.0', 10) ||       // CGNAT
-    inRange(n, '127.0.0.0', 8) ||         // loopback
-    inRange(n, '169.254.0.0', 16) ||      // link-local / cloud metadata
-    inRange(n, '172.16.0.0', 12) ||       // RFC1918
-    inRange(n, '192.0.0.0', 24) ||        // IETF protocol assignments
-    inRange(n, '192.168.0.0', 16) ||      // RFC1918
-    inRange(n, '198.18.0.0', 15) ||       // benchmarking
-    inRange(n, '224.0.0.0', 4) ||         // multicast
-    inRange(n, '240.0.0.0', 4)            // reserved
-  );
-}
-
-export function isBlockedIPv6(ip: string): boolean {
-  if (isIPv4(ip)) return false;
-  const lower = ip.toLowerCase();
-  if (lower === '::' || lower === '::1') return true;
-  // IPv4-mapped IPv6 (::ffff:a.b.c.d) — extract the v4 portion and check.
-  const v4Mapped = lower.match(/^::ffff:([0-9a-f.:]+)$/);
-  if (v4Mapped) {
-    const inner = v4Mapped[1];
-    if (isIPv4(inner)) return isBlockedIPv4(inner);
-  }
-  // fc00::/7 (ULA) and fe80::/10 (link-local).
-  if (/^f[cd]/.test(lower)) return true;
-  if (/^fe[89ab]/.test(lower)) return true;
-  return false;
-}
-
-export function isBlockedHost(host: string): boolean {
-  return BLOCKED_HOSTS.has(host.toLowerCase());
-}
-
-async function assertSafeHost(hostname: string): Promise<void> {
-  const lower = hostname.toLowerCase();
-  if (isBlockedHost(lower)) {
-    throw new InvalidUrlError('Internal hostnames are not allowed', 'ssrf_blocked');
-  }
-  if (lower === 'localhost') {
-    throw new InvalidUrlError('Localhost is not allowed', 'ssrf_blocked');
-  }
-  // If the hostname is already a literal IP, validate directly.
-  if (isIP(lower)) {
-    if (isBlockedIPv4(lower) || isBlockedIPv6(lower)) {
-      throw new InvalidUrlError('That IP range is not allowed', 'ssrf_blocked');
-    }
-    return;
-  }
-  // Otherwise resolve and check every address. DNS rebinding mitigation: we resolve
-  // here and then pass the resolved IP to fetch; the connector uses it directly.
-  let addrs: { address: string; family: number }[];
+async function assertSafeHost(hostname: string): Promise<ResolvedAddress[]> {
   try {
-    addrs = await dns.lookup(hostname, { all: true });
-  } catch {
-    throw new InvalidUrlError('Could not resolve that hostname', 'dns');
-  }
-  if (!addrs.length) throw new InvalidUrlError('Could not resolve that hostname', 'dns');
-  for (const { address } of addrs) {
-    if (isBlockedIPv4(address) || isBlockedIPv6(address)) {
-      throw new InvalidUrlError('That address resolves to a blocked range', 'ssrf_blocked');
-    }
+    return await sharedAssertSafeHost(hostname);
+  } catch (err) {
+    if (!(err instanceof SsrfBlockedError)) throw err;
+    const category: CheckErrorCategory = err.reason === 'dns' ? 'dns' : 'ssrf_blocked';
+    throw new InvalidUrlError(err.message, category);
   }
 }
 
@@ -419,6 +358,7 @@ async function fetchRobots(
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/plain,text/*;q=0.9,*/*;q=0.5',
+        Host: parsed.host,
       },
     });
 
@@ -491,6 +431,7 @@ async function fetchPage(url: URL): Promise<FetchPageResult> {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
+        Host: parsed.host,
       },
     });
 
@@ -775,18 +716,24 @@ export async function checkAICrawlability(input: string): Promise<CheckResult> {
     };
   }
 
-  const [robotsResult, pageBundle] = await Promise.all([
-    analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
-    analyzePage(normalized.url),
-  ]);
+  const previousDispatcher = getGlobalDispatcher();
+  setGlobalDispatcher(crawlerDispatcher);
+  try {
+    const [robotsResult, pageBundle] = await Promise.all([
+      analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
+      analyzePage(normalized.url),
+    ]);
 
-  return {
-    url: normalized.url.toString(),
-    errorCategory: null,
-    errorMessage: null,
-    robotsTxt: robotsResult,
-    pageResponse: pageBundle.pageResponse,
-    rendering: pageBundle.rendering,
-    structuredData: pageBundle.structuredData,
-  };
+    return {
+      url: normalized.url.toString(),
+      errorCategory: null,
+      errorMessage: null,
+      robotsTxt: robotsResult,
+      pageResponse: pageBundle.pageResponse,
+      rendering: pageBundle.rendering,
+      structuredData: pageBundle.structuredData,
+    };
+  } finally {
+    setGlobalDispatcher(previousDispatcher);
+  }
 }

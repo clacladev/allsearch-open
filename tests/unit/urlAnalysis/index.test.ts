@@ -40,10 +40,13 @@ describe('urlAnalysis - getDomainMetadata', () => {
   beforeAll(() => {
     originalFetch = global.fetch;
 
-    // Mock global fetch to return local files instead of hitting the network
-    global.fetch = mock(async (input: RequestInfo | URL, _init?: RequestInit) => {
+    // Mock global fetch to return local files instead of hitting the network. The fetch keeps
+    // the real hostname URL (SSRF protection happens via the dispatcher's validated
+    // connect.lookup), so the fixture lookup can key off the hostname from the request URL.
+    global.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const targetUrl = new URL(input.toString());
-      const hostname = targetUrl.hostname;
+      const headers = new Headers(init?.headers);
+      const hostname = headers.get('host') ?? targetUrl.hostname;
 
       const fixturePath = path.join(FIXTURES_DIR, `${hostname}.html`);
 

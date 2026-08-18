@@ -10,15 +10,21 @@ import type { ProviderId } from '@/libs/database/shared/ProviderId';
 // import at all.
 import type { MissingProviderKeyError } from '@/libs/ai/models';
 
-export type AiErrorCode = 'NO_KEY' | 'INVALID_KEY' | 'RATE_LIMITED';
+export type AiErrorCode = 'NO_KEY' | 'INVALID_KEY' | 'RATE_LIMITED' | 'UPSTREAM_ERROR';
 
-const AI_ERROR_CODES: readonly AiErrorCode[] = ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'];
+/** The credential-shaped subset of {@link AiErrorCode} that client surfaces render the shared
+ * credential-failure UI (`AiFailureState`) for. `UPSTREAM_ERROR` is deliberately excluded: it is
+ * not something the user can fix by changing their key, so those responses carry a generic
+ * message and clients fall back to their own error handling. */
+export type CredentialAiErrorCode = Exclude<AiErrorCode, 'UPSTREAM_ERROR'>;
+
+const AI_ERROR_CODES: readonly CredentialAiErrorCode[] = ['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'];
 
 /** Narrows an arbitrary string (e.g. `AppFetchError.code`, which is typed loosely since it comes
- * off a parsed JSON response body) down to `AiErrorCode` — the seam every client surface uses to
- * decide whether to render the shared credential-failure UI or fall back to its own generic
- * error handling. */
-export function isAiErrorCode(code: string | undefined): code is AiErrorCode {
+ * off a parsed JSON response body) down to a credential-shaped `AiErrorCode` — the seam every
+ * client surface uses to decide whether to render the shared credential-failure UI or fall back to
+ * its own generic error handling. */
+export function isAiErrorCode(code: string | undefined): code is CredentialAiErrorCode {
   return !!code && (AI_ERROR_CODES as readonly string[]).includes(code);
 }
 
@@ -42,6 +48,8 @@ export function aiErrorCodeToStatus(code: AiErrorCode): number {
       return 401;
     case 'RATE_LIMITED':
       return 429;
+    case 'UPSTREAM_ERROR':
+      return 502;
   }
 }
 
@@ -94,6 +102,16 @@ export function toAiError(error: unknown, provider: ProviderId): AiError | undef
         error
       );
     }
+    // Any other APICallError still came from the provider SDK, and its `message` embeds the
+    // upstream response body — which must never reach the caller (routes would otherwise echo it
+    // from their generic fallthrough). Classify it with a generic message and keep the original
+    // attached as the cause; callers already `console.error` it server-side.
+    return new AiError(
+      'UPSTREAM_ERROR',
+      provider,
+      `The ${provider} request failed. Try again later.`,
+      error
+    );
   }
 
   return undefined;

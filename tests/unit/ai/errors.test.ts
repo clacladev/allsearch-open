@@ -58,9 +58,17 @@ describe('toAiError', () => {
     expect(error?.code).toBe('RATE_LIMITED');
   });
 
-  it('returns undefined for an APICallError whose status/message is not credential-shaped', () => {
-    const error = toAiError(apiCallError(500, 'Internal server error'), 'google');
-    expect(error).toBeUndefined();
+  it('classifies any other APICallError as UPSTREAM_ERROR without leaking the upstream body', () => {
+    const upstreamBody = '{"error":{"message":"secret provider diagnostics 12345"}}';
+    const raw = apiCallError(400, `Provider fetch failed: ${upstreamBody}`);
+    const error = toAiError(raw, 'google');
+
+    expect(error).toBeInstanceOf(AiError);
+    expect(error?.code).toBe('UPSTREAM_ERROR');
+    expect(error?.message).not.toContain('secret provider diagnostics');
+    expect(error?.message).not.toContain(upstreamBody);
+    // The original error stays attached as the cause for server-side logging.
+    expect(error?.cause ?? (error as AiError & { originalError?: unknown }).originalError).toBe(raw);
   });
 
   it('returns undefined for an unrelated plain error, letting it propagate as-is', () => {
@@ -85,6 +93,10 @@ describe('aiErrorCodeToStatus', () => {
 
   it('maps RATE_LIMITED to 429', () => {
     expect(aiErrorCodeToStatus('RATE_LIMITED')).toBe(429);
+  });
+
+  it('maps UPSTREAM_ERROR to 502', () => {
+    expect(aiErrorCodeToStatus('UPSTREAM_ERROR')).toBe(502);
   });
 });
 

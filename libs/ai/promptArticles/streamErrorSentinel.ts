@@ -10,7 +10,9 @@ import type { AiErrorCode } from '@/libs/ai/errors';
 //
 // A NUL character can't occur in valid markdown/LLM text output, so a match here is unambiguous.
 const NUL = String.fromCharCode(0);
-const SENTINEL_PATTERN = new RegExp(`${NUL}AI_STREAM_ERROR:(NO_KEY|INVALID_KEY|RATE_LIMITED)${NUL}`);
+const SENTINEL_PATTERN = new RegExp(
+  `${NUL}AI_STREAM_ERROR:(NO_KEY|INVALID_KEY|RATE_LIMITED|UPSTREAM_ERROR)${NUL}`
+);
 
 export function encodeStreamError(code: AiErrorCode): string {
   return `${NUL}AI_STREAM_ERROR:${code}${NUL}`;

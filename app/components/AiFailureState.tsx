@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { EmptyState, type EmptyStateVariant } from '@/app/(private)/components/EmptyState';
 import { ROUTES, RouteHelper } from '@/libs/routes';
-import type { AiErrorCode } from '@/libs/ai/errors';
+import type { CredentialAiErrorCode } from '@/libs/ai/errors';
 import type { ProviderId } from '@/libs/database/shared/ProviderId';
 
 // Lives at app/components/ rather than app/(private)/components/ because it's used from both the
@@ -34,7 +34,7 @@ type FailureCopy = {
  * onboarding variant points at `/keys` instead. Still not reworded per call site — only per
  * destination. */
 export function getAiFailureStateCopy(
-  code: AiErrorCode,
+  code: CredentialAiErrorCode,
   provider: ProviderId,
   destination: AiFailureFixDestination = 'settings'
 ): FailureCopy {
@@ -105,7 +105,7 @@ export function AiFailureState({
   className,
   fixDestination = 'settings',
 }: {
-  code: AiErrorCode;
+  code: CredentialAiErrorCode;
   provider: ProviderId;
   variant?: EmptyStateVariant;
   className?: string;

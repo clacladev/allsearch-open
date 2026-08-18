@@ -4,6 +4,7 @@ import { SourceDomain } from '@/libs/utils/project-analysis/getSourceDomainsSumm
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { RouteHelper } from '@/libs/routes';
+import { sanitizeCsvRow } from '@/libs/utils/csvSanitize';
 
 export function resolveBrandName(
   brandId: string,
@@ -31,7 +32,7 @@ export function exportSourceDomainsToCsv(
     URL: `https://${domain.hostname}`,
   }));
 
-  const csv = generateCsv(csvConfig)(rows);
+  const csv = generateCsv(csvConfig)(rows.map(sanitizeCsvRow));
   download(csvConfig)(csv);
 }
 
@@ -68,6 +69,6 @@ export function exportSourceContentsToCsv(
     };
   });
 
-  const csv = generateCsv(csvConfig)(rows);
+  const csv = generateCsv(csvConfig)(rows.map(sanitizeCsvRow));
   download(csvConfig)(csv);
 }

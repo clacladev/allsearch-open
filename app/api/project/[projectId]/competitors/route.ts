@@ -11,6 +11,9 @@ import z from 'zod';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 import { getProjectRowWithId } from '@/libs/database/Projects/queries';
 
+const isUniqueConstraintError = (error: unknown) =>
+  error instanceof Error && error.message.includes('UNIQUE constraint failed');
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
@@ -70,14 +73,25 @@ export async function POST(
     const isUnique = isCompetitorUnique(activeCompetitors, competitor.name, competitor.url);
     if (!isUnique) throw new Error('A competitor with the same name or URL already exists');
 
-    const competitorRow = await insertCompetitorRow({
-      url: competitor.url,
-      hostname: getSafeNewUrl(competitor.url).hostname,
-      name: competitor.name || null,
-      aliases: [],
-      icon_url: competitor.iconUrl || null,
-      project_id: projectId,
-    });
+    let competitorRow;
+    try {
+      competitorRow = await insertCompetitorRow({
+        url: competitor.url,
+        hostname: getSafeNewUrl(competitor.url).hostname,
+        name: competitor.name || null,
+        aliases: [],
+        icon_url: competitor.iconUrl || null,
+        project_id: projectId,
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        return NextResponse.json(
+          { error: 'A competitor with the same name or URL already exists' },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
     if (!competitorRow) throw new Error('Failed to save competitor');
 
     return NextResponse.json(competitorRow);
@@ -122,7 +136,18 @@ export async function PATCH(
       updates.is_archived = false;
     }
 
-    const updatedRow = await updateCompetitorRowWithId(competitorId, updates);
+    let updatedRow;
+    try {
+      updatedRow = await updateCompetitorRowWithId(competitorId, updates);
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        return NextResponse.json(
+          { error: 'A competitor with the same name already exists' },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
     if (!updatedRow) throw new Error('Failed to update competitor');
 
     return NextResponse.json(updatedRow);

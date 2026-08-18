@@ -35,17 +35,19 @@ export type OutlineGenerationInput = {
  * have headings; filter beforehand.
  */
 function renderSourceBlock(source: SourceItem, index: number): string {
-  const lines = [
-    `### Source ${index + 1}: ${source.title ?? source.cleanUrl}`,
-    `- URL: ${source.cleanUrl}`,
-  ];
-  if (source.description) lines.push(`- Description: ${source.description}`);
+  // Title/description/headings are scraped from a third-party page and therefore
+  // untrusted — wrap them in a data tag so the model can structurally distinguish them
+  // from the surrounding instructions (see the system prompt's Trust boundary section).
+  const lines = [`### Source ${index + 1}`, `- URL: ${source.cleanUrl}`, '<source_data>'];
+  lines.push(`Title: ${source.title ?? source.cleanUrl}`);
+  if (source.description) lines.push(`Description: ${source.description}`);
   if (source.headings?.length) {
-    lines.push(`- Headings:`);
+    lines.push(`Headings:`);
     source.headings.forEach((h) => {
-      lines.push(`  - ${h.tag.toUpperCase()}: ${h.text}`);
+      lines.push(`  ${h.tag.toUpperCase()}: ${h.text}`);
     });
   }
+  lines.push('</source_data>');
   return lines.join('\n');
 }
 
