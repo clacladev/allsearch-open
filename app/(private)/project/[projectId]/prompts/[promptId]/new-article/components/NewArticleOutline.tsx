@@ -21,7 +21,7 @@ import { ConfirmModal } from '@/app/(private)/components/ConfirmModal';
 import { appFetch, AppFetchError } from '@/hooks/appFetch';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { RouteHelper, ROUTES } from '@/libs/routes';
-import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
+import { isAiErrorCode, type CredentialAiErrorCode } from '@/libs/ai/errors';
 import { AiFailureState, getAiFailureStateCopy } from '@/app/components/AiFailureState';
 import { cn } from '@/libs/utils/cn';
 import type { ArticleSettings } from '@/libs/ai/promptArticles/schema';
@@ -76,7 +76,7 @@ type GeneratePromptArticleResponse = {
 /** Narrows to one of the three AI-credential codes (issue 09) when the outline POST's `toAiError`
  * layer classified the failure that way; `undefined` for every other `OutlineErrorKind`, which
  * keeps its existing copy below. */
-function classifyAiErrorCode(error: unknown): AiErrorCode | undefined {
+function classifyAiErrorCode(error: unknown): CredentialAiErrorCode | undefined {
   return error instanceof AppFetchError && isAiErrorCode(error.code) ? error.code : undefined;
 }
 
@@ -174,7 +174,7 @@ export function NewArticleOutline({
   const router = useRouter();
   const [outline, setOutline] = useState<PromptArticleRow | null>(initialOutline);
   const [errorKind, setErrorKind] = useState<OutlineErrorKind | null>(null);
-  const [aiErrorCode, setAiErrorCode] = useState<AiErrorCode | undefined>(undefined);
+  const [aiErrorCode, setAiErrorCode] = useState<CredentialAiErrorCode | undefined>(undefined);
   // Settings the user picked for the next regenerate. Initialized to the
   // current row's persisted settings so Regenerate uses the latest panel state.
   const [pendingRegenerateSettings, setPendingRegenerateSettings] =
@@ -338,7 +338,7 @@ type EditorProps = {
   inspirationSources: ArticleSourcesUsed | null;
   isMutatingOutline: boolean;
   errorKind: OutlineErrorKind | null;
-  aiErrorCode: AiErrorCode | undefined;
+  aiErrorCode: CredentialAiErrorCode | undefined;
   onCopy: (text: string) => void;
   copied: string | boolean;
   /** Settings buffered for the *next* outline regenerate. Stored at the parent

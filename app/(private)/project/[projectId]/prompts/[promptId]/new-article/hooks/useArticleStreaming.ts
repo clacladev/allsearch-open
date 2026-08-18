@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { RouteHelper } from '@/libs/routes';
 import type { PromptArticleRow } from '@/libs/database/PromptArticles/types';
-import { isAiErrorCode, type AiErrorCode } from '@/libs/ai/errors';
+import { isAiErrorCode, type CredentialAiErrorCode } from '@/libs/ai/errors';
 import { extractStreamError } from '@/libs/ai/promptArticles/streamErrorSentinel';
 
 export type ArticleStreamStatus = 'idle' | 'streaming' | 'complete' | 'error';
@@ -50,7 +50,7 @@ export type UseArticleStreamingResult = {
    * `undefined` for every other failure (network drop, aborted, etc.), which keeps its generic
    * `error` message. Narrowed from the pre-stream JSON error body's `code`, or from the in-stream
    * sentinel `libs/ai/promptArticles/streamErrorSentinel.ts` encodes for a mid-stream failure. */
-  errorCode: AiErrorCode | undefined;
+  errorCode: CredentialAiErrorCode | undefined;
   /** Begin the stream. Returns a JSON payload if the cache-on-read path fires. */
   start: (args?: StartArgs) => Promise<{ cached: ArticleCacheHit | null }>;
   /** Abort the in-flight stream. AbortSignal cancels the server's LLM call. */
@@ -104,7 +104,7 @@ export function useArticleStreaming({
   const [displayedMarkdown, setDisplayedMarkdown] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<AiErrorCode | undefined>(undefined);
+  const [errorCode, setErrorCode] = useState<CredentialAiErrorCode | undefined>(undefined);
 
   // Accumulator buffer holds the live string; we flush its current value to
   // displayedMarkdown on a single rAF per chunk batch. Stops react-markdown
@@ -246,7 +246,8 @@ export function useArticleStreaming({
           setWordCount(0);
           setStatus('error');
           setError('Could not generate the article.');
-          setErrorCode(streamErrorCode);
+          // UPSTREAM_ERROR is not credential-shaped, so it keeps the generic error handling above.
+          setErrorCode(isAiErrorCode(streamErrorCode) ? streamErrorCode : undefined);
           return { cached: null };
         }
         accumulatorRef.current = articleText;
