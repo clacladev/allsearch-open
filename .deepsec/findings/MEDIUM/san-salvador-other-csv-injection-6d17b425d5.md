@@ -3,6 +3,7 @@
 **File:** [`app/(private)/project/[projectId]/overview/utils/exportOverviewZip.ts`](https://github.com/clacladev/allsearch-open/blob/clacladev/san-salvador/blob/clacladev/app/(private)/project/[projectId]/overview/utils/exportOverviewZip.ts#L46-L81) (lines 46, 47, 53, 56, 57, 75, 81)
 **Project:** san-salvador
 **Severity:** MEDIUM  •  **Confidence:** low  •  **Slug:** `other-csv-injection`
+**Status:** resolved
 
 ## Owners
 
@@ -25,3 +26,20 @@ Verified in app/(private)/project/[projectId]/overview/utils/exportOverviewZip.t
 ## Recent committers (`git log`)
 
 - clacladev <claudio@tugulab.org> (2026-07-29)
+
+## Resolution
+
+Confirmed true-positive; implemented the recommended fix as centralized helpers. Added
+`libs/utils/csvSanitize.ts` (`sanitizeCsvCell`/`sanitizeCsvRow`), which prefixes any string
+cell starting with `=`, `+`, `-`, `@`, tab, or CR with a leading apostrophe so spreadsheet
+apps render it as literal text instead of evaluating it as a formula. Wired into
+`exportOverviewZip.ts`'s shared `toCsvString` helper, so every builder in that file
+(`buildTopSourceContentsCsv` and the others) is covered by one change.
+
+While in there, applied the same sanitizer to the other CSV exporters in the app
+(`exportSourcesCsv.ts`, `exportPromptsCsv.ts`, `exportBrandSourcesCsv.ts`,
+`exportOpportunitiesCsv.ts`) since `exportBrandSourcesCsv.ts` has the identical
+`source.title` (scraped content) exposure and wasn't separately flagged — cheap to close
+uniformly rather than leave one sibling file vulnerable to the same bug.
+
+Verified: `bun test tests/unit/csvSanitize.test.ts`, `bun tsc`, `bun lint`.

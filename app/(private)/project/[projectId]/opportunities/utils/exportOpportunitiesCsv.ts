@@ -7,6 +7,7 @@ import {
 } from '@/libs/utils/opportunities';
 import { RouteHelper } from '@/libs/routes';
 import { DIFFICULTY_MAP, getPriorityLabel } from '../components/Badges';
+import { sanitizeCsvRow } from '@/libs/utils/csvSanitize';
 
 export function getOpportunityDescription(opportunity: Opportunity, prompts: PromptRow[]): string {
   const shortDesc = OPPORTUNITY_TYPE_SHORT_DESCRIPTION[opportunity.type];
@@ -50,6 +51,6 @@ export function exportOpportunitiesToCsv(
       RouteHelper.Project.getOpportunityDetails(projectId, opportunity.id, startDate, endDate),
   }));
 
-  const csv = generateCsv(csvConfig)(rows);
+  const csv = generateCsv(csvConfig)(rows.map(sanitizeCsvRow));
   download(csvConfig)(csv);
 }
