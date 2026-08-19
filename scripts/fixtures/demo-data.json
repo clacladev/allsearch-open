@@ -31,7 +31,7 @@
     "name": "Sportiva",
     "aliases": [],
     "hostname": "sportiva.com",
-    "icon_url": "https://www.lasportivausa.com/cdn/shop/files/LaSportiva_Favicon.png?crop=center&height=32&v=1762189352&width=32",
+    "icon_url": null,
     "prompts_updated_at": "2026-08-14T12:07:52.084Z",
     "is_paused": false,
     "is_archived": false,
@@ -46,7 +46,7 @@
       "name": "Scarpa",
       "aliases": [],
       "hostname": "scarpa.com",
-      "icon_url": "https://scarpa.com/cdn/shop/files/favpng.png?v=1757431541&width=180",
+      "icon_url": null,
       "project_id": "218b68b1-4403-47e8-aa35-0203bb631a2c",
       "is_archived": false
     },
@@ -58,7 +58,7 @@
       "name": "Evolv",
       "aliases": [],
       "hostname": "evolvsports.com",
-      "icon_url": "https://evolvsports.com/apple-touch-icon.png",
+      "icon_url": null,
       "project_id": "218b68b1-4403-47e8-aa35-0203bb631a2c",
       "is_archived": false
     },
@@ -70,7 +70,7 @@
       "name": "Black Diamond",
       "aliases": [],
       "hostname": "blackdiamondequipment.com",
-      "icon_url": "https://blackdiamondequipment.com/cdn/shop/files/download_e34cf65f-e1f4-4d11-9d93-717607c9d1c5.png?crop=center&height=32&v=1736889408&width=32",
+      "icon_url": null,
       "project_id": "218b68b1-4403-47e8-aa35-0203bb631a2c",
       "is_archived": false
     },
@@ -82,7 +82,7 @@
       "name": "Mad Rock",
       "aliases": [],
       "hostname": "madrock.com",
-      "icon_url": "https://madrock.com/cdn/shop/files/MAD-ROCK_M_BLACK_1.png?crop=center&height=180&v=1690479348&width=180",
+      "icon_url": null,
       "project_id": "218b68b1-4403-47e8-aa35-0203bb631a2c",
       "is_archived": false
     },

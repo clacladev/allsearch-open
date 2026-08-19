@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Filter, X } from 'lucide-react';
 import { cn } from '@/libs/utils/cn';
+import { Button } from '@/components/ui/button';
 
 interface FilterToggleProps {
   isExpanded: boolean;
@@ -14,19 +15,10 @@ interface FilterToggleProps {
 export function FilterToggle({ isExpanded, onToggle, hasActiveFilters }: FilterToggleProps) {
   return (
     <div className="relative">
-      <AriaButton
-        onPress={onToggle}
-        className={({ isFocusVisible }) =>
-          cn(
-            'bg-primary ring-primary flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold shadow-xs ring-1 outline-hidden transition duration-100 ring-inset',
-            isFocusVisible && 'ring-brand ring-2',
-            isExpanded ? 'text-primary' : 'text-secondary'
-          )
-        }
-      >
+      <Button variant="outline" size="sm" aria-expanded={isExpanded} onClick={onToggle}>
         <Filter className="size-4" />
         Filters
-      </AriaButton>
+      </Button>
       {hasActiveFilters && (
         <span aria-hidden="true" className="absolute -top-1 -right-1 size-2 rounded-full bg-amber-500" />
       )}

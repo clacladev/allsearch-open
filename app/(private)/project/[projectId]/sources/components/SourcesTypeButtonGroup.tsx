@@ -11,11 +11,9 @@ const TABLE_VARIANT: { sourceType: SourcesType; label: string }[] = [
 ];
 
 export default function SourcesTypeButtonGroup({
-  size = 'sm',
   sourceType,
   onSourceTypeChangeAction,
 }: {
-  size?: 'xs' | 'sm';
   sourceType: SourcesType;
   onSourceTypeChangeAction: (sourceType: SourcesType) => void;
 }) {
@@ -27,7 +25,7 @@ export default function SourcesTypeButtonGroup({
         if (nextSourceType) onSourceTypeChangeAction(nextSourceType);
       }}
       variant="outline"
-      size={size === 'xs' ? 'sm' : 'default'}
+      size="sm"
       spacing={0}
       aria-label="Source type"
     >

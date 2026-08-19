@@ -33,6 +33,23 @@ export type PdfDocDefinition = {
 
 const HEADING_STYLES = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 
+// Mirrors the allowlist used by the .html and .docx export routes'
+// sanitize-html config (allowedSchemes: ['http', 'https', 'mailto']). pdfmake
+// has no sanitizer of its own, so a `javascript:` href here would become a
+// live link action in the downloaded PDF.
+const ALLOWED_LINK_SCHEMES = new Set(['http:', 'https:', 'mailto:']);
+
+function safeLinkHref(href: string): string | undefined {
+  try {
+    const url = new URL(href);
+    return ALLOWED_LINK_SCHEMES.has(url.protocol) ? href : undefined;
+  } catch {
+    // Relative URLs (e.g. `#section`, `/path`) throw without a base and are
+    // not meaningful in a standalone PDF; treat them as plain text.
+    return undefined;
+  }
+}
+
 function inlineFromTokens(tokens: Token[] | undefined, fallback: string): PdfInline[] {
   if (!tokens || tokens.length === 0) return [fallback];
   const out: PdfInline[] = [];
@@ -70,9 +87,11 @@ function renderInline(token: Token): PdfInline[] {
     case 'link': {
       const t = token as Tokens.Link;
       const inner = inlineFromTokens(t.tokens, t.text);
+      const safeHref = safeLinkHref(t.href);
+      if (!safeHref) return inner;
       return inner.map((node) => {
         const base = typeof node === 'string' ? { text: node } : node;
-        return { ...base, link: t.href, color: '#1d4ed8' };
+        return { ...base, link: safeHref, color: '#1d4ed8' };
       });
     }
     case 'br':

@@ -81,6 +81,21 @@ describe('markdownToPdfmakeDoc', () => {
     expect(link?.text).toBe('click');
   });
 
+  it('drops dangerous link schemes and renders plain text instead', () => {
+    const doc = markdownToPdfmakeDoc('[click here](javascript:alert(1))\n', 'T');
+    const para = doc.content[0] as { text: Array<Record<string, unknown> | string> };
+    const hasLink = para.text.some((t) => typeof t === 'object' && 'link' in t);
+    expect(hasLink).toBe(false);
+    expect(flattenText(para.text)).toBe('click here');
+  });
+
+  it('keeps http/https/mailto links intact', () => {
+    const doc = markdownToPdfmakeDoc('[mail](mailto:hi@example.com)\n', 'T');
+    const para = doc.content[0] as { text: Array<Record<string, unknown>> };
+    const link = para.text.find((t) => t.link);
+    expect(link?.link).toBe('mailto:hi@example.com');
+  });
+
   it('renders fenced code blocks with codeBlock style', () => {
     const doc = markdownToPdfmakeDoc('```\nlet x = 1;\n```\n', 'T');
     const code = findStyles(doc.content, 'codeBlock');

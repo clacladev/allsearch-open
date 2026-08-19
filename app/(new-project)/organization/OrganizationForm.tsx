@@ -70,7 +70,9 @@ export default function OrganizationForm() {
   );
 
   const { data: metadata, isLoading: isLoadingDomainMetadata } = useDomainMetadata(
-    shouldFetchDomainMetadata && !isDebouncePending() ? urlDebounced : undefined
+    shouldFetchDomainMetadata && !isDebouncePending() && isValidUrl(urlDebounced)
+      ? urlDebounced
+      : undefined
   );
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export default function OrganizationForm() {
                   onChange={(event) => onUrlChange(event.target.value)}
                   aria-invalid={isUrlInvalid || undefined}
                   required
-                  type="url"
+                  type="text"
                   name="agencyUrl"
                   placeholder="https://agency.com"
                   className="h-11 rounded-r-none text-md"
