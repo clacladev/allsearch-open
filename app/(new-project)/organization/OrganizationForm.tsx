@@ -70,7 +70,9 @@ export default function OrganizationForm() {
   );
 
   const { data: metadata, isLoading: isLoadingDomainMetadata } = useDomainMetadata(
-    shouldFetchDomainMetadata && !isDebouncePending() ? urlDebounced : undefined
+    shouldFetchDomainMetadata && !isDebouncePending() && isValidUrl(urlDebounced)
+      ? urlDebounced
+      : undefined
   );
 
   useEffect(() => {
