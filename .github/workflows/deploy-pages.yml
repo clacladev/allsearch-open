@@ -1,8 +1,10 @@
 name: Deploy site to GitHub Pages
 
-# Manual only: this must never fire on push. Publishing the site is a
-# deliberate maintainer action (issue 23), triggered from the Actions tab.
+# Fires when a version tag is pushed (i.e. a new npm release) or manually.
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
