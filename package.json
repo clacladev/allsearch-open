@@ -1,12 +1,12 @@
 {
-  "name": "allsearch",
+  "name": "allsearch-open",
   "version": "0.1.0",
   "description": "Track how AI chatbots talk about your brand. Runs entirely on your own machine, against your own AI provider keys.",
   "license": "AGPL-3.0-or-later",
   "private": false,
   "main": "dist/desktop/main.cjs",
   "bin": {
-    "allsearch": "./dist/cli.mjs"
+    "allsearch-open": "./dist/cli.mjs"
   },
   "files": [
     ".next/standalone",
@@ -121,5 +121,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4"
   },
-  "trustedDependencies": ["electron"]
+  "trustedDependencies": [
+    "electron"
+  ]
 }
