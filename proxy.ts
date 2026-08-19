@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const LOOPBACK_HOSTNAMES = ['127.0.0.1', 'localhost', '::1'];
+
+/**
+ * `request.nextUrl.host` is derived from the client-controlled Host header, so a DNS-rebinding
+ * attacker (attacker.example re-resolved to 127.0.0.1 after page load) can make Origin and Host
+ * agree while neither is actually loopback. Require the Host itself to name loopback before
+ * trusting any Origin/Referer comparison against it.
+ */
+function isLoopbackHost(request: NextRequest): boolean {
+  return LOOPBACK_HOSTNAMES.includes(request.nextUrl.hostname);
+}
+
 /**
  * The server has no auth/session layer (see cli/runtime.ts) — it trusts whoever can reach
  * 127.0.0.1. Without this check, any web page open in the operator's browser could POST/GET
@@ -41,9 +53,13 @@ const EXPENSIVE_GET_ROUTES = [
   '/api/new-project/prompt-ideas',
   '/api/new-project/topics-ideas',
   '/api/new-project/competitors',
+  '/api/new-project/domain-metadata',
 ];
 
 export function proxy(request: NextRequest) {
+  if (!isLoopbackHost(request)) {
+    return NextResponse.json({ error: 'Cross-origin requests are not allowed' }, { status: 403 });
+  }
   if (requestClaimsForeignOrigin(request)) {
     return NextResponse.json({ error: 'Cross-origin requests are not allowed' }, { status: 403 });
   }

@@ -60,11 +60,40 @@ describe('proxy', () => {
     expect(res?.status).toBe(403);
   });
 
+  describe('loopback host requirement', () => {
+    it('allows requests whose Host is 127.0.0.1', async () => {
+      const res = await proxy(requestTo('http://127.0.0.1:4000/api/tools/ai-crawl-checker'));
+      expect(res).toBeUndefined();
+    });
+
+    it('allows requests whose Host is localhost', async () => {
+      const res = await proxy(requestTo('http://localhost:4000/api/tools/ai-crawl-checker'));
+      expect(res).toBeUndefined();
+    });
+
+    it('rejects requests whose Host is a non-loopback name even when Origin agrees with it (DNS rebinding)', async () => {
+      const res = await proxy(
+        requestTo('http://attacker.example:4000/api/tools/ai-crawl-checker', {
+          origin: 'http://attacker.example:4000',
+        })
+      );
+      expect(res).toBeDefined();
+      expect(res?.status).toBe(403);
+    });
+
+    it('rejects requests whose Host is a non-loopback name with no Origin/Referer at all', async () => {
+      const res = await proxy(requestTo('http://attacker.example:4000/api/tools/ai-crawl-checker'));
+      expect(res).toBeDefined();
+      expect(res?.status).toBe(403);
+    });
+  });
+
   describe('expensive GET routes', () => {
     const expensiveRoutes = [
       '/api/new-project/prompt-ideas',
       '/api/new-project/topics-ideas',
       '/api/new-project/competitors',
+      '/api/new-project/domain-metadata',
     ];
 
     for (const route of expensiveRoutes) {

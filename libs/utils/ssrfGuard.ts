@@ -1,11 +1,17 @@
 import { promises as dns } from 'node:dns';
-import { isIP, isIPv4, type LookupFunction } from 'node:net';
+import { BlockList, isIP, isIPv4, type LookupFunction } from 'node:net';
 
 // Server-only module. Do not import from client code.
 
 export type ResolvedAddress = { address: string; family: number };
 
 export type SsrfBlockReason = 'blocked_host' | 'blocked_ip' | 'dns';
+
+// Shared allowlist for outbound-fetch callers (urlAnalysis.ts, aiCrawlChecker.ts): only plain
+// http(s) on standard/common web ports. Applied to the initial URL and re-checked on every
+// redirect hop so a redirect can't smuggle a scheme/port change past the guard.
+export const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+export const ALLOWED_PORTS = new Set(['', '80', '443', '8080', '8443']);
 
 export class SsrfBlockedError extends Error {
   reason: SsrfBlockReason;
@@ -48,20 +54,27 @@ export function isBlockedIPv4(ip: string): boolean {
   );
 }
 
+// Structural IPv6 blocklist (net.BlockList) rather than ad-hoc string/regex matching, so the
+// guard is correct on its own — it doesn't depend on a caller having already normalized the
+// address (e.g. via the WHATWG URL serializer's dotted-form rewrite of IPv4-mapped addresses).
+const blockedIPv6Ranges = new BlockList();
+blockedIPv6Ranges.addAddress('::', 'ipv6');
+blockedIPv6Ranges.addAddress('::1', 'ipv6');
+blockedIPv6Ranges.addSubnet('fc00::', 7, 'ipv6'); // ULA
+blockedIPv6Ranges.addSubnet('fe80::', 10, 'ipv6'); // link-local
+// IPv4-mapped (::ffff:0:0/96, covers both dotted `::ffff:a.b.c.d` and hex `::ffff:7f00:1` forms),
+// NAT64 (64:ff9b::/96), 6to4 (2002::/16), and Teredo (2001::/32) all tunnel/translate an
+// embedded IPv4 address; block the whole range rather than trying to decode the embedded
+// address, since legitimate hostnames never resolve to these forms.
+blockedIPv6Ranges.addSubnet('::ffff:0:0', 96, 'ipv6');
+blockedIPv6Ranges.addSubnet('64:ff9b::', 96, 'ipv6');
+blockedIPv6Ranges.addSubnet('2002::', 16, 'ipv6');
+blockedIPv6Ranges.addSubnet('2001::', 32, 'ipv6');
+
 export function isBlockedIPv6(ip: string): boolean {
   if (isIPv4(ip)) return false;
-  const lower = ip.toLowerCase();
-  if (lower === '::' || lower === '::1') return true;
-  // IPv4-mapped IPv6 (::ffff:a.b.c.d) — extract the v4 portion and check.
-  const v4Mapped = lower.match(/^::ffff:([0-9a-f.:]+)$/);
-  if (v4Mapped) {
-    const inner = v4Mapped[1];
-    if (isIPv4(inner)) return isBlockedIPv4(inner);
-  }
-  // fc00::/7 (ULA) and fe80::/10 (link-local).
-  if (/^f[cd]/.test(lower)) return true;
-  if (/^fe[89ab]/.test(lower)) return true;
-  return false;
+  if (isIP(ip) !== 6) return false;
+  return blockedIPv6Ranges.check(ip, 'ipv6');
 }
 
 export function isBlockedHost(host: string): boolean {

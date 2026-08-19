@@ -1,5 +1,7 @@
-import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import { Agent } from 'undici';
 import {
+  ALLOWED_PORTS,
+  ALLOWED_PROTOCOLS,
   assertSafeHost as sharedAssertSafeHost,
   safeLookup,
   SsrfBlockedError,
@@ -239,9 +241,6 @@ export class InvalidUrlError extends Error {
   }
 }
 
-const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
-const ALLOWED_PORTS = new Set(['', '80', '443', '8080', '8443']);
-
 export function normalizeInput(input: string): NormalizedUrl {
   const trimmed = input.trim();
   if (!trimmed) throw new InvalidUrlError('URL is required');
@@ -285,6 +284,13 @@ export function normalizeInput(input: string): NormalizedUrl {
 // these fetches through `crawlerDispatcher`, whose connect.lookup resolves via `safeLookup`,
 // so every connection uses only validated addresses while the URL keeps its real hostname
 // (SNI / virtual hosting stay intact under Node's TLS stack).
+//
+// `crawlerDispatcher` is passed per-call via fetch's `dispatcher` option (fetchRobots/fetchPage)
+// rather than installed as the process-wide dispatcher: two checks running concurrently (two
+// tabs, or this racing urlAnalysis.ts's getUrlHtml) would otherwise race the global save/restore
+// — one check's `finally` could restore the default dispatcher while the other is still mid
+// redirect-loop, or leave this dispatcher permanently installed for unrelated fetches (e.g. AI
+// provider calls).
 
 const crawlerDispatcher = new Agent({ connect: { lookup: safeLookup } });
 
@@ -360,7 +366,8 @@ async function fetchRobots(
         Accept: 'text/plain,text/*;q=0.9,*/*;q=0.5',
         Host: parsed.host,
       },
-    });
+      dispatcher: crawlerDispatcher,
+    } as RequestInit);
 
     // Manual redirect handling.
     if (res.status >= 300 && res.status < 400) {
@@ -433,7 +440,8 @@ async function fetchPage(url: URL): Promise<FetchPageResult> {
         Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
         Host: parsed.host,
       },
-    });
+      dispatcher: crawlerDispatcher,
+    } as RequestInit);
 
     if (res.status >= 300 && res.status < 400) {
       const location = res.headers.get('location');
@@ -716,24 +724,18 @@ export async function checkAICrawlability(input: string): Promise<CheckResult> {
     };
   }
 
-  const previousDispatcher = getGlobalDispatcher();
-  setGlobalDispatcher(crawlerDispatcher);
-  try {
-    const [robotsResult, pageBundle] = await Promise.all([
-      analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
-      analyzePage(normalized.url),
-    ]);
+  const [robotsResult, pageBundle] = await Promise.all([
+    analyzeRobotsForOrigin(normalized.url.origin, normalized.url.host),
+    analyzePage(normalized.url),
+  ]);
 
-    return {
-      url: normalized.url.toString(),
-      errorCategory: null,
-      errorMessage: null,
-      robotsTxt: robotsResult,
-      pageResponse: pageBundle.pageResponse,
-      rendering: pageBundle.rendering,
-      structuredData: pageBundle.structuredData,
-    };
-  } finally {
-    setGlobalDispatcher(previousDispatcher);
-  }
+  return {
+    url: normalized.url.toString(),
+    errorCategory: null,
+    errorMessage: null,
+    robotsTxt: robotsResult,
+    pageResponse: pageBundle.pageResponse,
+    rendering: pageBundle.rendering,
+    structuredData: pageBundle.structuredData,
+  };
 }

@@ -224,8 +224,27 @@ describe('isBlockedIPv6', () => {
     expect(isBlockedIPv6('fe80::1')).toBe(true);
   });
 
-  it('blocks IPv4-mapped IPv6 to loopback', () => {
+  it('blocks IPv4-mapped IPv6 to loopback (dotted form)', () => {
     expect(isBlockedIPv6('::ffff:127.0.0.1')).toBe(true);
+  });
+
+  // Regression coverage for deepsec finding ssrf-f11ea26462: the old regex-based check only
+  // matched the dotted `::ffff:a.b.c.d` form. `::ffff:7f00:1` is the same loopback-mapped
+  // address in hex form (7f00:1 == 0x7f000001 == 127.0.0.1) and used to pass validation.
+  it('blocks IPv4-mapped IPv6 to loopback (hex form)', () => {
+    expect(isBlockedIPv6('::ffff:7f00:1')).toBe(true);
+  });
+
+  it('blocks NAT64 (64:ff9b::/96)', () => {
+    expect(isBlockedIPv6('64:ff9b::127.0.0.1')).toBe(true);
+  });
+
+  it('blocks 6to4 (2002::/16)', () => {
+    expect(isBlockedIPv6('2002:7f00:1::')).toBe(true);
+  });
+
+  it('blocks Teredo (2001::/32)', () => {
+    expect(isBlockedIPv6('2001:0:4136:e378::1')).toBe(true);
   });
 
   it('allows public IPv6', () => {

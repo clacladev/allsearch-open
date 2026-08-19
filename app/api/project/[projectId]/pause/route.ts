@@ -21,9 +21,6 @@ export async function POST(
     return NextResponse.json(updatedProject);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update project pause state' }, { status: 500 });
   }
 }

@@ -20,9 +20,6 @@ export async function POST() {
     return Response.json({ message: 'Collection Run started', runId: run.id });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process prompts' }, { status: 500 });
   }
 }
