@@ -18,7 +18,7 @@
  * Run: bun run build:cli   (after `bun run build`)
  */
 
-import { cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, readdirSync, readlinkSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const REPO_ROOT = resolve(import.meta.dirname, '..');
@@ -104,6 +104,8 @@ async function bundleCli(): Promise<void> {
 export function prepareStandaloneRuntimeAssets(): void {
   copyStaticAssets();
   pruneStandalone();
+  dereferenceStandaloneSymlinks();
+  assertServerDependencies();
 }
 
 function copyStaticAssets(): void {
@@ -135,6 +137,50 @@ function pruneStandalone(): void {
   }
   console.log(`build:cli: pruned ${pruned.length} untraced entries from .next/standalone/:`);
   console.log(`  ${pruned.sort().join(', ')}`);
+}
+
+/** Replaces every symlink in the standalone tree with a real copy of its target.
+ *
+ * Next's file tracer preserves `node_modules` entries as symlinks when it copies the trace, and
+ * under some installs (bun, pnpm) those symlinks carry absolute targets rooted at the build
+ * machine. `cpSync` copies symlinks verbatim, so a bundle that ships them then moves to another
+ * machine (a DMG download, an npm tarball) ends up with dead links — `server.js` cannot resolve
+ * `require('next')` and the server never starts. Dereferencing makes the bundle self-contained.
+ */
+function dereferenceStandaloneSymlinks(): void {
+  const stack = [STANDALONE_DIR];
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    for (const child of readdirSync(dir, { withFileTypes: true })) {
+      const childPath = join(dir, child.name);
+      if (child.isSymbolicLink()) {
+        const target = resolve(dir, readlinkSync(childPath));
+        if (!existsSync(target)) {
+          console.warn(`build:cli: broken symlink left as-is (missing target): ${childPath} -> ${target}`);
+        } else {
+          rmSync(childPath, { force: true });
+          cpSync(target, childPath, { recursive: true, force: true, dereference: true });
+        }
+      } else if (child.isDirectory()) {
+        stack.push(childPath);
+      }
+    }
+  }
+}
+
+/** The standalone server boots by `require('next')`, so a bundle without `node_modules/next` can
+ * never start. Next's tracer normally copies it; failing loudly here beats shipping a DMG that
+ * times out with "Cannot find module 'next'" on the user's machine. */
+function assertServerDependencies(): void {
+  const missing = ['next']
+    .map((pkg) => join(STANDALONE_DIR, 'node_modules', pkg, 'package.json'))
+    .filter((path) => !existsSync(path));
+  if (missing.length > 0) {
+    throw new Error(
+      `build:cli: standalone server is missing required packages: ${missing.join(', ')}. ` +
+        'Re-run `bun install` and `bun run build` so the trace picks up node_modules/next.'
+    );
+  }
 }
 
 if (import.meta.main) {
