@@ -246,7 +246,7 @@ export default function CompetitorsForm() {
                     required
                     name="competitorUrl"
                     aria-label="Competitor URL"
-                    type="url"
+                    type="text"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
                     className="text-md h-full"

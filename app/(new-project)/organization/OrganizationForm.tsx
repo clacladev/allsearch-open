@@ -150,7 +150,7 @@ export default function OrganizationForm() {
                   onChange={(event) => onUrlChange(event.target.value)}
                   aria-invalid={isUrlInvalid || undefined}
                   required
-                  type="url"
+                  type="text"
                   name="agencyUrl"
                   placeholder="https://agency.com"
                   className="h-11 rounded-r-none text-md"

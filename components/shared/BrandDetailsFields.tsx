@@ -48,7 +48,7 @@ export function BrandDetailsFields({
             onChange={(event) => onUrlChange(event.target.value)}
             aria-invalid={isUrlInvalid || undefined}
             required
-            type="url"
+            type="text"
             name="brandUrl"
             placeholder="https://brand.com"
             className="text-md h-11 rounded-r-none"
