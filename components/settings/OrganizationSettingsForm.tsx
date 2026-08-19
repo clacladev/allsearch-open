@@ -153,7 +153,7 @@ export default function OrganizationSettingsForm() {
                   aria-describedby={error ? 'agency-url-error' : undefined}
                   aria-invalid={isUrlInvalid || undefined}
                   required
-                  type="url"
+                  type="text"
                   name="agencyUrl"
                   placeholder="https://agency.com"
                   className="h-11 rounded-r-none text-md"

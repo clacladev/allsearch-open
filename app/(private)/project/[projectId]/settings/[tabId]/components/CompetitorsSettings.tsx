@@ -277,7 +277,7 @@ export default function CompetitorsSettings() {
                     required
                     name="competitorUrl"
                     aria-label="Competitor URL"
-                    type="url"
+                    type="text"
                     placeholder="https://competitor.com"
                     onKeyDown={handleKeyDown}
                     className="h-full text-md"
