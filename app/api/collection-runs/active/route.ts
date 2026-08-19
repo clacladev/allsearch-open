@@ -13,7 +13,7 @@ export async function GET() {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
+      { error: 'Failed to get active collection run' },
       { status: 500 }
     );
   }

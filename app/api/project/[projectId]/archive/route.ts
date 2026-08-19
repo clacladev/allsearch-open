@@ -32,10 +32,9 @@ export async function POST(
 
     return NextResponse.json(updatedProject);
   } catch (error) {
+    // Never echo `error.message` here: it may reflect back the caller-supplied projectId, or
+    // (for a DrizzleQueryError) bound SQL parameters. A generic message is safe by construction.
     console.error(error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to archive project' }, { status: 500 });
   }
 }

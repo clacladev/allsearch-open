@@ -20,7 +20,7 @@ export async function POST(
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : error },
+      { error: 'Failed to cancel collection run' },
       { status: 500 }
     );
   }

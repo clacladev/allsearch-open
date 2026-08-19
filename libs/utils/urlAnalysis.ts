@@ -2,8 +2,8 @@ import * as Cheerio from 'cheerio';
 import { CompetitorRow } from '@/libs/database/Competitors/types';
 import { ProjectRow } from '@/libs/database/Projects/types';
 import { getBrandIdsRankingsInText } from '@/libs/utils/brandIdsRanking';
-import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
-import { assertSafeHost, safeLookup } from '@/libs/utils/ssrfGuard';
+import { Agent } from 'undici';
+import { ALLOWED_PORTS, ALLOWED_PROTOCOLS, assertSafeHost, safeLookup } from '@/libs/utils/ssrfGuard';
 import { getSafeNewUrl } from '@/libs/utils/urls';
 
 const DEFAULT_USER_AGENT_HEADER = {
@@ -26,12 +26,17 @@ const customDispatcher = new Agent({
   connect: { lookup: safeLookup },
 });
 
-// Node's fetch() silently drops response headers (and therefore redirect handling) when a
-// `dispatcher` is passed as a per-call fetch option — see undici/nodejs fetch interaction.
-// Swapping the process-wide dispatcher for the duration of the request is the only way to get
-// the header-size bump without that breakage; we restore the previous dispatcher immediately
-// after so unrelated fetches elsewhere in the app aren't affected by these timeouts.
+// Pass `customDispatcher` per call via fetch's `dispatcher` option rather than mutating the
+// process-wide undici dispatcher: concurrent getUrlHtml calls (e.g. Promise.all over competitor
+// URLs, or analyseSources.ts's Promise.allSettled over source URLs) would otherwise race the
+// global save/restore, either leaking this Agent's 10s timeouts onto unrelated fetches (AI
+// provider calls) or letting a redirect hop fall through to the default dispatcher mid-request.
 const MAX_REDIRECTS = 5;
+// Page HTML cap (same order of magnitude as libs/aiCrawlChecker.ts's MAX_PAGE_BYTES) — undici
+// auto-decompresses gzip/deflate, so an unbounded response.text() read is a decompression-bomb /
+// memory-exhaustion vector on AI-sourced URLs. We truncate rather than fail since only the head +
+// early body is needed for metadata/heading extraction.
+const MAX_BODY_BYTES = 3_000_000;
 
 export type DomainMetadata = {
   url: string;
@@ -109,50 +114,88 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
+function assertAllowedUrl(url: URL, inputUrl: string): void {
+  if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
+    throw new Error(`Refusing to fetch ${inputUrl}: only http and https URLs are supported`);
+  }
+  if (!ALLOWED_PORTS.has(url.port)) {
+    throw new Error(`Refusing to fetch ${inputUrl}: only standard web ports are supported`);
+  }
+}
+
+// Stream the body and cap it at MAX_BODY_BYTES rather than buffering the whole thing with
+// response.text() — undici auto-decompresses gzip/deflate, so an unbounded read is a
+// decompression-bomb / memory-exhaustion vector. Mirrors libs/aiCrawlChecker.ts's fetchPage.
+async function readCappedBody(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return (await response.text()).slice(0, MAX_BODY_BYTES);
+  }
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (total + value.byteLength > MAX_BODY_BYTES) {
+      const remaining = MAX_BODY_BYTES - total;
+      if (remaining > 0) chunks.push(value.subarray(0, remaining));
+      total = MAX_BODY_BYTES;
+      await reader.cancel();
+      break;
+    }
+    total += value.byteLength;
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buf.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder('utf-8', { fatal: false }).decode(buf);
+}
+
 async function getUrlHtml(inputUrl: string) {
   const urlObj = getSafeNewUrl(inputUrl);
+  assertAllowedUrl(urlObj, inputUrl);
 
-  const previousDispatcher = getGlobalDispatcher();
-  setGlobalDispatcher(customDispatcher);
-  try {
-    let currentUrl = urlObj;
-    let response: Response;
-    let hop = 0;
-    while (true) {
-      // Resolve + validate here to surface DNS / SSRF failures with a clear message before
-      // connecting; the dispatcher's connect.lookup (safeLookup) re-validates at connect time,
-      // so no unvalidated address is ever used for the connection.
-      await assertSafeHost(currentUrl.hostname);
-      response = await withTimeout(
-        fetch(currentUrl, {
-          headers: { ...DEFAULT_USER_AGENT_HEADER, Host: currentUrl.host },
-          redirect: 'manual',
-        }),
-        _fetchTimeoutMs,
-        inputUrl
-      );
+  let currentUrl = urlObj;
+  let response: Response;
+  let hop = 0;
+  while (true) {
+    // Resolve + validate here to surface DNS / SSRF failures with a clear message before
+    // connecting; the dispatcher's connect.lookup (safeLookup) re-validates at connect time,
+    // so no unvalidated address is ever used for the connection.
+    await assertSafeHost(currentUrl.hostname);
+    response = await withTimeout(
+      fetch(currentUrl, {
+        headers: { ...DEFAULT_USER_AGENT_HEADER, Host: currentUrl.host },
+        redirect: 'manual',
+        dispatcher: customDispatcher,
+      } as RequestInit),
+      _fetchTimeoutMs,
+      inputUrl
+    );
 
-      if (response.status < 300 || response.status >= 400) break;
+    if (response.status < 300 || response.status >= 400) break;
 
-      if (hop >= MAX_REDIRECTS) {
-        throw new Error(`Too many redirects fetching ${inputUrl}`);
-      }
-      const location = response.headers.get('location');
-      if (!location) {
-        throw new Error(`Redirect from ${currentUrl.href} is missing a Location header`);
-      }
-      currentUrl = new URL(location, currentUrl);
-      hop++;
+    if (hop >= MAX_REDIRECTS) {
+      throw new Error(`Too many redirects fetching ${inputUrl}`);
     }
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${inputUrl}. Status: ${response.status}`);
+    const location = response.headers.get('location');
+    if (!location) {
+      throw new Error(`Redirect from ${currentUrl.href} is missing a Location header`);
     }
-    const html = await withTimeout(response.text(), _fetchTimeoutMs, `body:${inputUrl}`);
-    return { url: urlObj, resolvedUrl: currentUrl, html };
-  } finally {
-    setGlobalDispatcher(previousDispatcher);
+    currentUrl = new URL(location, currentUrl);
+    assertAllowedUrl(currentUrl, inputUrl);
+    hop++;
   }
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${inputUrl}. Status: ${response.status}`);
+  }
+  const html = await withTimeout(readCappedBody(response), _fetchTimeoutMs, `body:${inputUrl}`);
+  return { url: urlObj, resolvedUrl: currentUrl, html };
 }
 
 function extractPageMetadata(html: string, currentUrl: string, loadedCheerio?: Cheerio.CheerioAPI) {
