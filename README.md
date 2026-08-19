@@ -33,8 +33,11 @@ bun run start:cli
 Once a version has been published to npm, you can instead run:
 
 ```bash
+npx allsearch
 bunx allsearch
 ```
+
+New to Node? Install it from [nodejs.org](https://nodejs.org) — npx ships with it.
 
 The CLI starts a server on a free local port, prints its URL, and opens your
 default browser. Press Ctrl-C to stop it.
