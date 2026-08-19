@@ -26,7 +26,6 @@ export const TopSourceTableHeaderTrailingContent = ({
     )}
 
     <SourcesTypeButtonGroup
-      size="xs"
       sourceType={sourceType}
       onSourceTypeChangeAction={onSourceTypeChange}
     />
