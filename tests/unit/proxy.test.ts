@@ -59,4 +59,40 @@ describe('proxy', () => {
     expect(res).toBeDefined();
     expect(res?.status).toBe(403);
   });
+
+  describe('expensive GET routes', () => {
+    const expensiveRoutes = [
+      '/api/new-project/prompt-ideas',
+      '/api/new-project/topics-ideas',
+      '/api/new-project/competitors',
+    ];
+
+    for (const route of expensiveRoutes) {
+      it(`rejects ${route} requests with no headers at all`, async () => {
+        const res = await proxy(requestTo(`http://127.0.0.1:4000${route}`));
+        expect(res).toBeDefined();
+        expect(res?.status).toBe(403);
+      });
+
+      it(`allows ${route} requests carrying the X-Requested-With app header`, async () => {
+        const res = await proxy(
+          requestTo(`http://127.0.0.1:4000${route}`, { 'x-requested-with': 'AllSearch' })
+        );
+        expect(res).toBeUndefined();
+      });
+
+      it(`rejects ${route} requests with the wrong X-Requested-With value`, async () => {
+        const res = await proxy(
+          requestTo(`http://127.0.0.1:4000${route}`, { 'x-requested-with': 'not-allsearch' })
+        );
+        expect(res).toBeDefined();
+        expect(res?.status).toBe(403);
+      });
+    }
+
+    it('still allows other API routes with no headers at all', async () => {
+      const res = await proxy(requestTo('http://127.0.0.1:4000/api/tools/ai-crawl-checker'));
+      expect(res).toBeUndefined();
+    });
+  });
 });

@@ -116,7 +116,9 @@ export function buildDemoFixture(live: LiveRows, options: BuildDemoFixtureOption
     type: DEMO_ORGANIZATION.type,
     url: DEMO_ORGANIZATION.url,
     name: DEMO_ORGANIZATION.name,
-    icon_url: live.organization.icon_url,
+    // icon_url is frequently derived from the real brand domain — drop it rather
+    // than risk re-leaking the true brand alongside the fictional name/url above.
+    icon_url: null,
   };
 
   // Replace the live settings' provider_keys (which may carry real keys in
@@ -137,9 +139,13 @@ export function buildDemoFixture(live: LiveRows, options: BuildDemoFixtureOption
     updated_at: projectRow.updated_at,
     url: DEMO_PROJECT.url,
     name: DEMO_PROJECT.name,
-    aliases: normalizeStringArray(projectRow.aliases),
+    // Aliases are typically the real brand name/misspellings the operator
+    // entered — blank rather than pass through verbatim.
+    aliases: [],
     hostname: DEMO_PROJECT.hostname,
-    icon_url: projectRow.icon_url,
+    // icon_url is frequently derived from the real brand domain — drop it rather
+    // than risk re-leaking the true brand alongside the fictional hostname above.
+    icon_url: null,
     prompts_updated_at: projectRow.prompts_updated_at,
     is_paused: boolFromInt(projectRow.is_paused),
     is_archived: boolFromInt(projectRow.is_archived),
@@ -154,9 +160,13 @@ export function buildDemoFixture(live: LiveRows, options: BuildDemoFixtureOption
       updated_at: row.updated_at,
       url: `https://${demo.hostname}`,
       name: demo.name,
-      aliases: normalizeStringArray(row.aliases),
+      // Aliases are typically the real brand name/misspellings the operator
+      // entered — blank rather than pass through verbatim.
+      aliases: [],
       hostname: demo.hostname,
-      icon_url: row.icon_url,
+      // icon_url is frequently derived from the real brand domain — drop it rather
+      // than risk re-leaking the true brand alongside the fictional hostname above.
+      icon_url: null,
       project_id: row.project_id,
       is_archived: boolFromInt(row.is_archived),
     };
@@ -212,20 +222,4 @@ export function buildDemoFixture(live: LiveRows, options: BuildDemoFixtureOption
  * returns the raw int. Normalise. */
 function boolFromInt(n: unknown): boolean {
   return Boolean(n);
-}
-
-/** Normalises a `aliases`/`enabled_chatbots`/similar column coming back from raw
- * SQL — either an already-parsed object (drizzle JSON mode) or a JSON string — to
- * the typed JS array shape. */
-function normalizeStringArray(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw as string[];
-  if (typeof raw === 'string' && raw.length > 0) {
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.map(String) : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
 }
