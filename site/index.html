@@ -21,12 +21,34 @@
           your own AI provider keys — no account, no server, no data leaving your computer.
         </p>
         <div class="cta-row">
-          <a class="button button-primary" href="https://github.com/clacladev/allsearch-open">
-            View on GitHub
+          <div class="install-box">
+            <code>npx allsearch</code>
+            <button type="button" class="copy-btn" data-copy="npx allsearch">Copy</button>
+          </div>
+          <a
+            class="button button-secondary"
+            href="https://github.com/clacladev/allsearch-open/releases/tag/v0.1.0"
+          >
+            Download for Mac (DMG)
           </a>
-          <a class="button button-secondary" href="#install">Install</a>
+          <a
+            class="icon-button"
+            href="https://github.com/clacladev/allsearch-open"
+            aria-label="View source on GitHub"
+          >
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+                -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+                -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+                a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+                0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38
+                A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+              />
+            </svg>
+          </a>
         </div>
-        <code class="install-command">bunx allsearch</code>
       </div>
     </header>
 
@@ -80,11 +102,24 @@
     <section id="install">
       <div class="wrap">
         <h2>Install and run</h2>
-        <code class="install-command">bunx allsearch</code>
+        <div class="install-box">
+          <code>npx allsearch</code>
+          <button type="button" class="copy-btn" data-copy="npx allsearch">Copy</button>
+        </div>
+        <p class="key-note">
+          New to this? Install <a href="https://nodejs.org">Node.js</a> first — it
+          includes npx.
+        </p>
         <p class="key-note">
           Starts a local server and opens your browser. A Google AI key is enough to get going —
           OpenAI and Perplexity keys are optional and add those chatbots to your tracking. Your
           data stays in a SQLite file on your machine.
+        </p>
+        <p class="key-note">
+          A native Mac app is also available from the
+          <a href="https://github.com/clacladev/allsearch-open/releases/tag/v0.1.0">releases page</a>
+          (Apple Silicon only). It's unsigned, so on first launch right-click the app and choose
+          Open instead of double-clicking.
         </p>
       </div>
     </section>
@@ -95,5 +130,20 @@
         <a href="https://github.com/clacladev/allsearch-open">github.com/clacladev/allsearch-open</a>
       </div>
     </footer>
+
+    <script>
+      document.querySelectorAll(".copy-btn").forEach((button) => {
+        const defaultLabel = button.textContent;
+        button.addEventListener("click", async () => {
+          await navigator.clipboard.writeText(button.dataset.copy);
+          button.textContent = "Copied";
+          button.classList.add("copied");
+          setTimeout(() => {
+            button.textContent = defaultLabel;
+            button.classList.remove("copied");
+          }, 1500);
+        });
+      });
+    </script>
   </body>
 </html>
