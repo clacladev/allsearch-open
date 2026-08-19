@@ -73,8 +73,9 @@ export default function CompetitorsForm() {
   const [customIconUrl, setCustomIconUrl] = useState('');
   const [isUpdating, startTransition] = useTransition();
 
-  const { data: metadata, isLoading: isLoadingDomainMetadata } =
-    useDomainMetadata(customUrlDebounced);
+  const { data: metadata, isLoading: isLoadingDomainMetadata } = useDomainMetadata(
+    isValidUrl(customUrlDebounced) ? customUrlDebounced : undefined
+  );
 
   useEffect(() => {
     if (!metadata) return;
