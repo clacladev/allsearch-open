@@ -4,6 +4,11 @@ directories:
   output: release/desktop
 files:
   - dist/desktop/main.cjs
+  # main.cjs is Bun-bundled (only 'electron' is external), so the app needs no node_modules in the
+  # asar. Excluding the standalone server's node_modules from the asar node-module collector stops
+  # electron-builder from stripping them out of the extraResources below — they must ship as real
+  # files beside server.js, or `require('next')` fails and the server never starts.
+  - '!**/standalone/node_modules/**'
 extraResources:
   - from: dist/desktop/serverRunner.cjs
     to: serverRunner.cjs
