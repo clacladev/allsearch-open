@@ -62,11 +62,19 @@ bun run build:desktop
 open release/desktop/AllSearch-*.dmg
 ```
 
-The DMG is unsigned and not notarized. If macOS blocks it, use Finder’s
-**Open** action (or System Settings → Privacy & Security → **Open Anyway**) only
-when you built or received it from a source you trust. The desktop app runs the
-same loopback-only server and uses the same database as the CLI, so do not run
-both at once.
+The DMG is unsigned and not notarized. Recent macOS versions report apps
+downloaded via a browser as **"damaged and can't be opened"** instead of the
+older "unidentified developer" prompt — Finder's right-click **Open** no
+longer works around this. If you trust the source, clear the quarantine flag
+from Terminal instead:
+
+```bash
+xattr -cr /Applications/AllSearch.app
+```
+
+(adjust the path if you placed the app elsewhere), then open it normally. The
+desktop app runs the same loopback-only server and uses the same database as
+the CLI, so do not run both at once.
 
 ## Your data
 
