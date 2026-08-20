@@ -4,16 +4,19 @@ directories:
   output: release/desktop
 files:
   - dist/desktop/main.cjs
-  # main.cjs is Bun-bundled (only 'electron' is external), so the app needs no node_modules in the
-  # asar. Excluding the standalone server's node_modules from the asar node-module collector stops
-  # electron-builder from stripping them out of the extraResources below — they must ship as real
-  # files beside server.js, or `require('next')` fails and the server never starts.
-  - '!**/standalone/node_modules/**'
 extraResources:
   - from: dist/desktop/serverRunner.cjs
     to: serverRunner.cjs
-  - from: dist/desktop/standalone
-    to: standalone
+  # electron-builder unconditionally strips a `node_modules` dir that sits directly at the root of
+  # a copy's `from` path (app-builder-lib's filter.js: `if (relative === "node_modules") return
+  # false`), no matter what `files`/`filter` patterns say. `from: dist/desktop/standalone` would put
+  # node_modules exactly at that root, so it copies from one level up and filters down to
+  # `standalone/**/*` — node_modules then lands as `standalone/node_modules`, which the hardcoded
+  # check doesn't match. Without this, `require('next')` fails and the server never starts.
+  - from: dist/desktop
+    to: .
+    filter:
+      - 'standalone/**/*'
   - from: dist/desktop/drizzle
     to: drizzle
 asar: true
