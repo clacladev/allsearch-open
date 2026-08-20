@@ -1,6 +1,6 @@
 {
   "name": "allsearch-open",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Track how AI chatbots talk about your brand. Runs entirely on your own machine, against your own AI provider keys.",
   "license": "AGPL-3.0-or-later",
   "private": false,

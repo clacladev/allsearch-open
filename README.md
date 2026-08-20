@@ -33,8 +33,8 @@ bun run start:cli
 Once a version has been published to npm, you can instead run:
 
 ```bash
-npx allsearch
-bunx allsearch
+npx allsearch-open
+bunx allsearch-open
 ```
 
 New to Node? Install it from [nodejs.org](https://nodejs.org) — npx ships with it.
