@@ -21,23 +21,49 @@ function isLoopbackHost(request: NextRequest): boolean {
  * the host the request actually came in on; same-origin requests (including non-browser
  * clients that send neither header) are unaffected.
  */
+/**
+ * Next.js normalizes `request.nextUrl`'s hostname (`127.0.0.1` becomes `localhost`), while the
+ * browser's Origin/Referer headers keep the literal host the page was loaded from. So a page
+ * served at `http://127.0.0.1:3001` sends `Origin: http://127.0.0.1:3001` but `nextUrl.host`
+ * reads `localhost:3001` — a naive string comparison rejects every same-origin request from
+ * the CLI's own URL (`http://127.0.0.1:<port>`, see cli/runtime.ts). Canonicalize all loopback
+ * spellings to one name before comparing, so the check still catches real cross-origin
+ * attackers without breaking the app's own loopback clients.
+ */
+function canonicalLoopbackHostname(hostname: string): string {
+  const lower = hostname.toLowerCase();
+  // Bracketed IPv6 literals as URL parsers report them.
+  const bare = lower.startsWith('[') && lower.endsWith(']') ? lower.slice(1, -1) : lower;
+  return LOOPBACK_HOSTNAMES.includes(bare) ? 'localhost' : lower;
+}
+
+function sameLoopbackHost(a: string, b: string): boolean {
+  let urlA: URL;
+  let urlB: URL;
+  try {
+    urlA = new URL(a);
+    urlB = new URL(b);
+  } catch {
+    return false;
+  }
+  return (
+    canonicalLoopbackHostname(urlA.hostname) === canonicalLoopbackHostname(urlB.hostname) &&
+    urlA.port === urlB.port
+  );
+}
+
 function requestClaimsForeignOrigin(request: NextRequest): boolean {
-  const requestHost = request.nextUrl.host;
+  // Compare against the raw Host header the client actually sent — `nextUrl.host` is already
+  // normalized by Next and can disagree with it on loopback (see above).
+  const requestHost = request.headers.get('host') ?? request.nextUrl.host;
+  const requestUrl = `http://${requestHost}`;
   const origin = request.headers.get('origin');
   if (origin) {
-    try {
-      return new URL(origin).host !== requestHost;
-    } catch {
-      return true;
-    }
+    return !sameLoopbackHost(origin, requestUrl);
   }
   const referer = request.headers.get('referer');
   if (referer) {
-    try {
-      return new URL(referer).host !== requestHost;
-    } catch {
-      return true;
-    }
+    return !sameLoopbackHost(referer, requestUrl);
   }
   return false;
 }
