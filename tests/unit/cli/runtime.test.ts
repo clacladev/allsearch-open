@@ -54,6 +54,20 @@ describe('AllSearchRuntime', () => {
     await first.stop();
   });
 
+  // The desktop shell passes the bundle's helper binary here, because macOS gives anything
+  // launched from the app's main executable its own Dock tile (issue: stray `exec` icon).
+  it('runs the server child with the executable it was given', async () => {
+    const { databasePath, serverEntry, runnerEntry } = fixture();
+    const marker = join(dirname(serverEntry), 'exec-path-used');
+    const shim = join(dirname(serverEntry), 'shim.sh');
+    writeFileSync(shim, `#!/bin/sh\ntouch '${marker}'\nexec '${process.execPath}' "$@"\n`, { mode: 0o755 });
+    const runtime = new AllSearchRuntime({ databasePath, serverEntry, runnerEntry, execPath: shim, packageRoot: process.cwd() });
+
+    await runtime.start();
+    await runtime.stop();
+    expect(existsSync(marker)).toBe(true);
+  });
+
   it('keeps polling while the readiness probe answers 404 (server still initializing)', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'allsearch-runtime-'));
     directories.push(directory);

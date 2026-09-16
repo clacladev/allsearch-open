@@ -23,6 +23,9 @@ const STOP_TIMEOUT_MS = 10_000;
 
 export type RuntimeOptions = {
   databasePath?: string;
+  /** Binary to run the server child with. Defaults to whatever is running this code, which is
+   * right for the CLI but not for the Electron shell — see `desktop/main.ts`. */
+  execPath?: string;
   packageRoot?: string;
   preferredPort?: number;
   runnerEntry?: string;
@@ -57,7 +60,7 @@ export class AllSearchRuntime {
     if (!lock.acquired) throw new RuntimeLockError(describeRunningInstance(lock.heldBy, lockPath));
 
     this.lockOwnerPid = record.pid;
-    const child = spawn(process.execPath, [this.runnerEntry, serverEntry], {
+    const child = spawn(this.options.execPath ?? process.execPath, [this.runnerEntry, serverEntry], {
       cwd: dirname(serverEntry),
       env: {
         ...process.env,

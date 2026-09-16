@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, nativeImage, shell } from 'electron';
-import { join, dirname } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { AllSearchRuntime } from '../cli/runtime';
@@ -25,6 +26,24 @@ const runnerEntry = app.isPackaged
   ? join(process.resourcesPath, 'serverRunner.cjs')
   : join(packageRoot, 'dist', 'desktop', 'serverRunner.cjs');
 
+/** Which binary runs the server child. `process.execPath` is the app bundle's main executable, and
+ * macOS registers anything started from it as a second foreground application — the stray `exec`
+ * Dock tile next to AllSearch's own, which never settles because the child runs as Node and never
+ * finishes an AppKit launch. The bundled helper is the same binary marked `LSUIElement`, so the
+ * identical Node process runs without a tile. Non-macOS layouts have no helper and fall back. */
+function resolveServerExecPath(): string {
+  const name = basename(process.execPath);
+  const helper = join(
+    dirname(dirname(process.execPath)),
+    'Frameworks',
+    `${name} Helper.app`,
+    'Contents',
+    'MacOS',
+    `${name} Helper`
+  );
+  return existsSync(helper) ? helper : process.execPath;
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -49,7 +68,12 @@ async function start(): Promise<void> {
   if (!app.isPackaged && process.platform === 'darwin') {
     app.dock?.setIcon(nativeImage.createFromPath(join(packageRoot, 'resources', 'logo-1024.png')));
   }
-  runtime = new AllSearchRuntime({ packageRoot: runtimeRoot, runnerEntry, serverEntry });
+  runtime = new AllSearchRuntime({
+    packageRoot: runtimeRoot,
+    runnerEntry,
+    serverEntry,
+    execPath: resolveServerExecPath(),
+  });
   const server = await runtime.start();
   createWindow(server.url);
 }
