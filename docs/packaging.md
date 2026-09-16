@@ -34,7 +34,20 @@ bun run build:desktop       # Build unsigned Apple-Silicon DMG in release/deskto
 ```
 
 The desktop build and CLI share the local server runtime and database lock. The
-desktop release is an unsigned Apple-Silicon DMG.
+desktop release is an unsigned Apple-Silicon DMG. The DMG also ships a
+`Fix AllSearch.command` helper (`resources/dmg/`, wired via `dmg.contents` in
+`electron-builder.yml`): after dragging the app to Applications, double-clicking
+it runs `xattr -cr /Applications/AllSearch.app` and opens the app. Keep the
+script executable (`chmod +x`) — git preserves the bit. The DMG window
+background (`resources/dmg/background.tiff`, 1376×768 source used unmodified:
+688×384 1x + 2x combined with
+`tiffutil -cathidpicheck bg-1x.png bg-2x.png -out resources/dmg/background.tiff`).
+The window is 688×420, slightly taller than the 688×384 image; the uncovered
+36px strip at the bottom renders in Finder's default background, which blends
+with the image's near-white (`#F0F1F3`) bottom edge. (Note: electron-builder
+rejects setting `dmg.background` and `dmg.backgroundColor` together, so no
+`backgroundColor` is set.) Icon positions in `dmg.contents` were measured against the
+background's baked-in arrow/badges — re-measure if the image changes.
 
 Electron's own `postinstall` (which downloads and unpacks `Electron.app` into
 `node_modules/electron`) silently hangs on Node.js 26: `extract-zip` stalls
