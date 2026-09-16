@@ -10,6 +10,10 @@ minimumReleaseAgeExcludes = [
   "@types/react",
   "@types/react-dom",
   "@types/bun",
+  "@next/env",
+  "@next/eslint-plugin-next",
+  "eslint-config-next",
+  "scheduler",
 ]
 
 [test]
