@@ -35,10 +35,11 @@ bun run build:desktop       # Build unsigned Apple-Silicon DMG in release/deskto
 
 The desktop build and CLI share the local server runtime and database lock. The
 desktop release is an unsigned Apple-Silicon DMG. The DMG also ships a
-`Fix AllSearch.command` helper (`resources/dmg/`, wired via `dmg.contents` in
-`electron-builder.yml`): after dragging the app to Applications, double-clicking
-it runs `xattr -cr /Applications/AllSearch.app` and opens the app. Keep the
-script executable (`chmod +x`) — git preserves the bit. The DMG window
+`Fix AllSearch.txt` note (`resources/dmg/`, wired via `dmg.contents` in
+`electron-builder.yml`) telling the user to paste
+`xattr -dr com.apple.quarantine /Applications/AllSearch.app` into Terminal after
+dragging the app to Applications. (A double-clickable `.command` script was
+dropped because macOS blocks it with the same permission issues.) The DMG window
 background (`resources/dmg/background.tiff`, 1376×768 source used unmodified:
 688×384 1x + 2x combined with
 `tiffutil -cathidpicheck bg-1x.png bg-2x.png -out resources/dmg/background.tiff`).

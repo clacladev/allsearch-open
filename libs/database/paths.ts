@@ -41,13 +41,13 @@ export function getDatabaseFileInfo(): DatabaseFileInfo {
 
   const totalSizeBytes = sidecarPaths.reduce((total, sidecarPath) => {
     try {
-      return total + statSync(sidecarPath).size;
+      return total + statSync(/* turbopackIgnore: true */ sidecarPath).size;
     } catch {
       return total;
     }
   }, 0);
 
-  return { path, directory: dirname(path), exists: existsSync(path), totalSizeBytes };
+  return { path, directory: dirname(path), exists: existsSync(/* turbopackIgnore: true */ path), totalSizeBytes };
 }
 
 function getAppDataDir(): string {

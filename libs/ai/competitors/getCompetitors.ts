@@ -6,8 +6,8 @@ import { google } from '@ai-sdk/google';
 
 // Models: https://ai.google.dev/gemini-api/docs/models
 const MODEL_ID = 'gemini-3.1-flash-lite';
-const RESEARCH_PROMPT_FILE_PATH = 'libs/ai/competitors/researchSystemPrompt.md';
-const OBJECT_PROMPT_FILE_PATH = 'libs/ai/competitors/objectSystemPrompt.md';
+const RESEARCH_PROMPT_FILE_PATH = 'competitors/researchSystemPrompt.md';
+const OBJECT_PROMPT_FILE_PATH = 'competitors/objectSystemPrompt.md';
 const MAX_COMPETITORS = 5;
 
 const Schema = z

@@ -11,7 +11,7 @@ import type {
 // Same model the outline generator uses; keeping symmetry until we have eval
 // evidence to justify a different one.
 export const ARTICLE_MODEL_ID = 'gemini-flash-latest';
-const SYSTEM_PROMPT_PATH = 'libs/ai/promptArticles/articleSystemPrompt.md';
+const SYSTEM_PROMPT_PATH = 'promptArticles/articleSystemPrompt.md';
 
 // Soft cap. Most outlines produce ~2000 words. Going higher than 8000 tokens
 // (~6000 words) is rarely useful and risks finishReason='length' that wastes

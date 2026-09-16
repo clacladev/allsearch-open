@@ -3,6 +3,8 @@ import z from 'zod';
 import { getPromptsIdeas } from '@/libs/ai/promptsIdeas/getPromptsIdeas';
 import { aiErrorToResponseInit, toAiError } from '@/libs/ai/errors';
 
+export const runtime = 'nodejs';
+
 export async function GET(req: NextRequest) {
   try {
     const { url, name, categories, targetLocation } = z
