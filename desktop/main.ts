@@ -10,6 +10,12 @@ let mainWindow: BrowserWindow | undefined;
 let runtime: AllSearchRuntime | undefined;
 let quitting = false;
 
+/** How often the window reloads after a failed load before giving up and just showing itself. */
+const LOAD_RETRY_ATTEMPTS = 20;
+const LOAD_RETRY_DELAY_MS = 3_000;
+/** Never leave the user with an invisible window longer than this. */
+const FORCE_SHOW_TIMEOUT_MS = 60_000;
+
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const runtimeRoot = app.isPackaged ? process.resourcesPath : packageRoot;
 const serverEntry = app.isPackaged
@@ -50,6 +56,7 @@ async function start(): Promise<void> {
 
 function createWindow(url: string): void {
   const allowedOrigin = new URL(url).origin;
+  let retriesRemaining = LOAD_RETRY_ATTEMPTS;
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 960,
@@ -64,6 +71,21 @@ function createWindow(url: string): void {
     },
   });
   mainWindow.once('ready-to-show', () => mainWindow?.show());
+  // `ready-to-show` only fires after a successful first paint. If the first load fails or stalls
+  // (slow cold start, transient 404 while routes initialize), the window would otherwise stay
+  // hidden forever with no way back — running processes, bouncing Dock icon, no window.
+  mainWindow.webContents.on('did-finish-load', () => mainWindow?.show());
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedUrl) => {
+    console.error(`AllSearch window failed to load ${validatedUrl}: ${errorDescription} (${errorCode})`);
+    if (retriesRemaining > 0) {
+      retriesRemaining -= 1;
+      setTimeout(() => void mainWindow?.loadURL(url), LOAD_RETRY_DELAY_MS);
+    } else {
+      mainWindow?.show();
+    }
+  });
+  // Last resort: never leave the user with an invisible window.
+  setTimeout(() => mainWindow?.show(), FORCE_SHOW_TIMEOUT_MS);
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     if (new URL(navigationUrl).origin !== allowedOrigin) event.preventDefault();
   });

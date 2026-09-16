@@ -17,6 +17,7 @@ import { PortUnavailableError, resolveServerPort } from './port';
 export const LOCALHOST = '127.0.0.1';
 const LOCK_FILE_NAME = 'allsearch.lock';
 const READY_TIMEOUT_MS = 90_000;
+const READY_PROBE_PATH = '/logo.svg';
 const READY_POLL_INTERVAL_MS = 250;
 const STOP_TIMEOUT_MS = 10_000;
 
@@ -92,8 +93,11 @@ export class AllSearchRuntime {
     });
 
     try {
-      if (!(await waitForServerReady(url, child))) {
-        throw new Error(`The server did not respond within ${READY_TIMEOUT_MS / 1000}s.`);
+      const readiness = await waitForServerReady(url, child);
+      if (!readiness.ready) {
+        throw new Error(
+          `The server did not respond within ${READY_TIMEOUT_MS / 1000}s (last reply from ${url}${READY_PROBE_PATH}: ${readiness.lastReply}).`
+        );
       }
       this.running = { url, port, databasePath };
       return this.running;
@@ -179,18 +183,33 @@ export function describeRunningInstance(heldBy: InstanceLockRecord | undefined, 
   ].join('\n');
 }
 
-async function waitForServerReady(url: string, child: ChildProcess): Promise<boolean> {
+/** Reports the last thing the probe saw alongside the verdict: a readiness timeout is otherwise
+ * indistinguishable from a server that is up but answering the wrong thing. */
+async function waitForServerReady(
+  url: string,
+  child: ChildProcess
+): Promise<{ ready: boolean; lastReply: string }> {
   const deadline = Date.now() + READY_TIMEOUT_MS;
+  let lastReply = 'nothing';
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) return false;
+    if (child.exitCode !== null) return { ready: false, lastReply: `the server exited (code ${child.exitCode})` };
     try {
-      await fetch(`${url}/logo.svg`, { redirect: 'manual', signal: AbortSignal.timeout(5_000) });
-      return true;
-    } catch {
-      await sleep(READY_POLL_INTERVAL_MS);
+      // Require a 2xx, not just "the port accepts connections": the standalone
+      // server answers with 404 ("not found") while routes are still
+      // initializing, and treating that as ready loads the window too early.
+      const response = await fetch(`${url}${READY_PROBE_PATH}`, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (response.ok) return { ready: true, lastReply: `HTTP ${response.status}` };
+      lastReply = `HTTP ${response.status}`;
+    } catch (error) {
+      // Connection refused while the server boots — keep polling.
+      lastReply = error instanceof Error ? error.message : String(error);
     }
+    await sleep(READY_POLL_INTERVAL_MS);
   }
-  return false;
+  return { ready: false, lastReply };
 }
 
 function sleep(ms: number): Promise<void> {

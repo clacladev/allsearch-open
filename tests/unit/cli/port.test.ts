@@ -42,6 +42,19 @@ afterEach(async () => {
   await Promise.all([...openServers].map(close));
 });
 
+/** Occupies `*:port` rather than `127.0.0.1:port`, the way a dev server started elsewhere on the
+ * machine does. */
+function occupyWildcard(port: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(port, '0.0.0.0', () => {
+      openServers.add(server);
+      resolve();
+    });
+  });
+}
+
 describe('isPortAvailable', () => {
   it('is false while something is listening and true once it lets go', async () => {
     const port = await findEphemeralPort(HOST);
@@ -50,6 +63,16 @@ describe('isPortAvailable', () => {
 
     await Promise.all([...openServers].map(close));
     expect(await isPortAvailable(port, HOST)).toBe(true);
+  });
+
+  // macOS lets `127.0.0.1:port` be bound while another process holds `*:port`, so a bind check
+  // alone calls the port free and both servers end up serving it. Requests to the URL AllSearch
+  // hands out then reach whichever socket the kernel picks.
+  it('is false when another process holds the wildcard address for that port', async () => {
+    const port = await findEphemeralPort(HOST);
+    await occupyWildcard(port);
+
+    expect(await isPortAvailable(port, HOST)).toBe(false);
   });
 });
 
