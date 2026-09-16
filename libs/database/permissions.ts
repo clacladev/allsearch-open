@@ -1,7 +1,7 @@
 import { chmod } from 'node:fs/promises';
 
-// Server-only module. Imported from instrumentation.ts via a
-// `turbopackIgnore` dynamic import so the Edge build never traces it.
+// Server-only module, imported from instrumentation.ts (which early-returns for
+// non-nodejs runtimes, so the Edge build never executes it).
 
 // The database can hold provider API keys in plaintext (see libs/database/Settings) — restrict
 // the file, and its WAL/SHM siblings (which can carry the same rows mid-transaction), to

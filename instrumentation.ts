@@ -3,12 +3,10 @@ export async function register() {
     return;
   }
 
-  const { getDatabase } = await import(/* turbopackIgnore: true */ './libs/database/client');
-  const { migrateDatabase } = await import(/* turbopackIgnore: true */ './libs/database/migrate');
-  const { getDatabasePath } = await import(/* turbopackIgnore: true */ './libs/database/paths');
-  const { restrictDatabaseFilePermissions } = await import(
-    /* turbopackIgnore: true */ './libs/database/permissions'
-  );
+  const { getDatabase } = await import('./libs/database/client');
+  const { migrateDatabase } = await import('./libs/database/migrate');
+  const { getDatabasePath } = await import('./libs/database/paths');
+  const { restrictDatabaseFilePermissions } = await import('./libs/database/permissions');
 
   const db = await getDatabase();
   const dbPath = getDatabasePath();
@@ -26,7 +24,7 @@ export async function register() {
 async function resumeAndStartCollectionRunLoop(): Promise<void> {
   try {
     const { releaseRunningCollectionRuns, ensureCollectionRunLoopIsRunning } =
-      await import(/* turbopackIgnore: true */ './libs/collection');
+      await import('./libs/collection');
     await releaseRunningCollectionRuns();
     ensureCollectionRunLoopIsRunning();
 
@@ -35,7 +33,7 @@ async function resumeAndStartCollectionRunLoop(): Promise<void> {
     // that has to happen before exit gets back to it, since the CLI cannot import into the
     // standalone server bundle. Registered here rather than in the CLI because the database
     // access has to happen on this side of the bundle boundary.
-    const { registerShutdownHook } = await import(/* turbopackIgnore: true */ './libs/shutdown');
+    const { registerShutdownHook } = await import('./libs/shutdown');
     registerShutdownHook('collection-runs', releaseRunningCollectionRuns);
   } catch (error) {
     console.error('Failed to resume Collection Runs', error);
