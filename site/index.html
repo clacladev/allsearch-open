@@ -39,8 +39,10 @@
               Download for Mac (DMG)
             </a>
             <p class="cta-hint">
-              Unsigned — if macOS says the app is damaged, run
-              <code>xattr -cr /Applications/AllSearch.app</code> in Terminal.
+              Unsigned — macOS will say it's damaged (right-click Open doesn't
+              work). After dragging it to Applications, run
+              <code>xattr -cr /Applications/AllSearch.app</code> in Terminal,
+              then open it normally.
             </p>
           </div>
         </div>
@@ -109,9 +111,11 @@
         <p class="key-note">
           A native Mac app is also available from the
           <a href="https://github.com/clacladev/allsearch-open/releases/latest">releases page</a>
-          (Apple Silicon only). It's unsigned, so macOS may say it's damaged and refuse to open it.
-          If that happens, run <code>xattr -cr /Applications/AllSearch.app</code> in Terminal to
-          clear the quarantine flag, then open it normally.
+          (Apple Silicon only). It's unsigned, so macOS reports it as damaged and
+          refuses to open it — right-click Open doesn't bypass this. To open it:
+          open the DMG, drag AllSearch to Applications, then double-click
+          <code>Fix AllSearch</code> in the DMG window (right-click → Open
+          once if macOS blocks the script itself) and open it normally.
         </p>
       </div>
     </section>

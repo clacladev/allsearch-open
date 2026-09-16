@@ -1,4 +1,4 @@
-import { createServer } from 'node:net';
+import { connect, createServer } from 'node:net';
 
 /** Where the scan starts when the user did not pass `--port`. 3000 is what Next.js prints in
  * every tutorial, so it is the port a returning user is most likely to have bookmarked — worth
@@ -8,10 +8,39 @@ export const PORT_SCAN_START = 3000;
 /** How many consecutive ports to try before falling back to an OS-assigned ephemeral port. */
 export const PORT_SCAN_COUNT = 20;
 
-/** Whether `port` can be bound on `host` right now. Answered by actually binding it — the only
- * check that accounts for another process, another user's process, and the OS's own reservations
- * at the same time. */
-export function isPortAvailable(port: number, host: string): Promise<boolean> {
+/** How long to wait for a connection attempt before deciding nothing is listening. Loopback
+ * connections either succeed or are refused immediately, so this only bounds pathological cases. */
+const LISTENER_PROBE_TIMEOUT_MS = 500;
+
+/** Whether `port` is free to serve `host` right now. Two questions, because on macOS neither
+ * answers alone:
+ *
+ * 1. Is anyone already answering on `host:port`? A bind check misses this. `SO_REUSEADDR` — which
+ *    Node sets on every listener — lets a BSD-family kernel bind `127.0.0.1:3000` while another
+ *    process holds the wildcard `*:3000`, so the bind succeeds and both servers live on the port.
+ *    Connections are then answered by whichever socket the kernel picks, which is how a stray
+ *    dev server elsewhere on the machine ends up answering AllSearch's readiness probe and window.
+ * 2. Can we bind it? Catches a listener that accepts nothing, plus the OS's own reservations. */
+export async function isPortAvailable(port: number, host: string): Promise<boolean> {
+  if (await isAnyoneListening(port, host)) return false;
+  return canBind(port, host);
+}
+
+function isAnyoneListening(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = connect({ port, host });
+    const settle = (listening: boolean) => {
+      socket.destroy();
+      resolve(listening);
+    };
+    socket.setTimeout(LISTENER_PROBE_TIMEOUT_MS);
+    socket.once('connect', () => settle(true));
+    socket.once('timeout', () => settle(false));
+    socket.once('error', () => settle(false));
+  });
+}
+
+function canBind(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const probe = createServer();
     probe.once('error', () => resolve(false));

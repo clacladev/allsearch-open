@@ -65,14 +65,12 @@ open release/desktop/AllSearch-*.dmg
 The DMG is unsigned and not notarized. Recent macOS versions report apps
 downloaded via a browser as **"damaged and can't be opened"** instead of the
 older "unidentified developer" prompt — Finder's right-click **Open** no
-longer works around this. If you trust the source, clear the quarantine flag
-from Terminal instead:
+longer works around this. Install steps:
 
-```bash
-xattr -cr /Applications/AllSearch.app
-```
-
-(adjust the path if you placed the app elsewhere), then open it normally. The
+1. Drag AllSearch to Applications.
+2. Double-click **Fix AllSearch** in the DMG window (if macOS blocks the
+   script itself, right-click it → Open once). This clears the quarantine
+   flag, i.e. `xattr -cr /Applications/AllSearch.app`, then opens the app. The
 desktop app runs the same loopback-only server and uses the same database as
 the CLI, so do not run both at once.
 

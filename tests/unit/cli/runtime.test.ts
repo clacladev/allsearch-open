@@ -54,6 +54,42 @@ describe('AllSearchRuntime', () => {
     await first.stop();
   });
 
+  // The desktop shell passes the bundle's helper binary here, because macOS gives anything
+  // launched from the app's main executable its own Dock tile (issue: stray `exec` icon).
+  it('runs the server child with the executable it was given', async () => {
+    const { databasePath, serverEntry, runnerEntry } = fixture();
+    const marker = join(dirname(serverEntry), 'exec-path-used');
+    const shim = join(dirname(serverEntry), 'shim.sh');
+    writeFileSync(shim, `#!/bin/sh\ntouch '${marker}'\nexec '${process.execPath}' "$@"\n`, { mode: 0o755 });
+    const runtime = new AllSearchRuntime({ databasePath, serverEntry, runnerEntry, execPath: shim, packageRoot: process.cwd() });
+
+    await runtime.start();
+    await runtime.stop();
+    expect(existsSync(marker)).toBe(true);
+  });
+
+  it('keeps polling while the readiness probe answers 404 (server still initializing)', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'allsearch-runtime-'));
+    directories.push(directory);
+    const databasePath = join(directory, 'existing.db');
+    const serverEntry = join(directory, 'server.cjs');
+    writeFileSync(
+      serverEntry,
+      `const http=require('node:http');let hits=0;const server=http.createServer((request,response)=>{if(request.url==='/logo.svg'&&++hits<=2){response.statusCode=404;response.end('not found');}else{response.end(process.env.ALLSEARCH_DB_PATH);}});server.listen(Number(process.env.PORT),process.env.HOSTNAME);process.on('SIGTERM',()=>server.close(()=>process.exit(0)));`
+    );
+    const runnerEntry = join(directory, 'runner.cjs');
+    writeFileSync(runnerEntry, "require(process.argv[2]);");
+    const runtime = new AllSearchRuntime({ databasePath, serverEntry, runnerEntry, packageRoot: process.cwd() });
+
+    const startedAt = Date.now();
+    const server = await runtime.start();
+    expect(server.url).toStartWith('http://127.0.0.1:');
+    // Two 404s at a 250ms poll interval: start() must have waited through them
+    // instead of treating the first 404 as "ready" (which loaded the window early).
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(250);
+    await runtime.stop();
+  });
+
   it('waits for a SIGKILLed server child to exit before releasing its database lock', async () => {
     const { databasePath, serverEntry, runnerEntry } = fixture(true);
     const runtime = new AllSearchRuntime({
