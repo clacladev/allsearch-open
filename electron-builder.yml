@@ -47,4 +47,4 @@ dmg:
     - x: 344
       y: 280
       type: file
-      path: resources/dmg/Fix AllSearch.command
+      path: resources/dmg/Fix AllSearch.txt

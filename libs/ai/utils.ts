@@ -14,6 +14,8 @@ export function logNoObjectGeneratedError(error: NoObjectGeneratedError) {
 }
 
 export async function getPrompt(path: string) {
-  const filePath = join(process.cwd(), path);
+  // Scoped to `libs/ai` so the file tracer only includes prompt files
+  // instead of the whole project (see Next.js "dynamic filesystem access" warning).
+  const filePath = join(process.cwd(), 'libs/ai', path);
   return readFile(filePath, 'utf8');
 }

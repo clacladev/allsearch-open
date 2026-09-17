@@ -68,10 +68,11 @@ older "unidentified developer" prompt — Finder's right-click **Open** no
 longer works around this. Install steps:
 
 1. Drag AllSearch to Applications.
-2. Double-click **Fix AllSearch** in the DMG window (if macOS blocks the
-   script itself, right-click it → Open once). This clears the quarantine
-   flag, i.e. `xattr -cr /Applications/AllSearch.app`, then opens the app. The
-desktop app runs the same loopback-only server and uses the same database as
+2. Open **Fix AllSearch.txt** in the DMG window and follow it: paste
+   `xattr -dr com.apple.quarantine /Applications/AllSearch.app` into Terminal
+   and press Return. This clears the quarantine flag.
+
+The desktop app runs the same loopback-only server and uses the same database as
 the CLI, so do not run both at once.
 
 ## Your data

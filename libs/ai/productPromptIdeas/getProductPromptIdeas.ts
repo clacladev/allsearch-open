@@ -5,8 +5,8 @@ import { getPrompt, logNoObjectGeneratedError } from '../utils';
 import { google } from '@ai-sdk/google';
 
 const MODEL_ID = 'gemini-3.1-flash-lite';
-const RESEARCH_PROMPT_FILE_PATH = 'libs/ai/productPromptIdeas/researchSystemPrompt.md';
-const OBJECT_PROMPT_FILE_PATH = 'libs/ai/productPromptIdeas/objectSystemPrompt.md';
+const RESEARCH_PROMPT_FILE_PATH = 'productPromptIdeas/researchSystemPrompt.md';
+const OBJECT_PROMPT_FILE_PATH = 'productPromptIdeas/objectSystemPrompt.md';
 
 const PromptGroupSchema = z.object({
   group: z.string().describe('Category/group name for this set of prompts'),
